@@ -1,0 +1,14 @@
+.panel {
+  border-style: solid;
+  border-width: 3px;
+  border-color: #ffffff;
+  margin-bottom: 1.25rem;
+  padding: 1.25rem;
+  background: #00BCD4;
+  color: #333333;
+}
+
+body {
+  font: {{ font_size }}px "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <style> {% include 'foundation.css' %} </style>
+    <style> {% include 'ssv.css' %} </style>
+</head>
+<body>
+  <div class="row">
+    <div class="small-12 large-12 columns" align="center"><h1>{{ title }}</h1></div>
+  </div>
+  <div class="row" style="max-height:50%">
+    <div class="small-12 large-12 columns" align="center">{{ sim_visual }}</div>
+  </div>
+  <div class="row" data-equalizer>
+    <a id="speed-button" class="small-2 large-1 columns panel button radius" data-equalizer-watch align="center"
+       style="display: table">
+      <span id="speed-val" style="display: table-cell;vertical-align: middle;color: white"><b>1x</b></span>
+    </a>
+    <a id="play-button" class="small-2 large-1 columns panel button radius" data-equalizer-watch align="center"
+       style="display: table;">
+      <span id="play-icon">{% include 'fi-play-circle.svg' %}</span>
+      <span id="pause-icon" style="display:none;vertical-align: middle">{% include 'fi-pause.svg' %}</span>
+    </a>
+    <div class="small-4 large-8 columns" data-equalizer-watch style="display: table">
+      <div style="display: table-cell;vertical-align: middle;">
+        <div class="range-slider" data-slider>
+          <span class="range-slider-handle" role="slider" tabindex="0"></span>
+          <span class="range-slider-active-segment"></span>
+          <input type="hidden">
+        </div>
+      </div>
+    </div>
+    <div class="small-4 large-2 columns panel radius" data-equalizer-watch align="center" style="display: table">
+      <span style="display: table-cell;vertical-align: middle; color: white">
+        <span id="x-series-val"></span>
+        <span><i><b>{{ x_series_unit }}</b></i></span>
+      </span>
+    </div>
+  </div>
+  <script> {% include 'd3.min.js' %} </script>
+  <script> {% include 'jquery-2.1.4.min.js' %} </script>
+  <script> {% include 'foundation.js' %} </script>
+  <script> {% include 'foundation.slider.js' %} </script>
+  <script> {% include 'foundation.equalizer.js' %} </script>
+  <script> {% include 'foundation.dropdown.js' %} </script>
+  <script> {% include 'ssv.js' %} </script>
+</body>
+</html>
