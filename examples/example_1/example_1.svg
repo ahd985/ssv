@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   viewBox="0 0 181 290.99998"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.91 r13725"
+   sodipodi:docname="example_1 copy.svg"
+   width="2.011111in"
+   height="3.2333329in">
+  <defs
+     id="defs4">
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="0 : 0.50000002 : 1"
+       inkscape:vp_y="0 : 0.95024322 : 0"
+       inkscape:vp_z="1 : 0.50000002 : 1"
+       inkscape:persp3d-origin="0.50000004 : 0.33333336 : 1"
+       id="perspective4143" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.979899"
+     inkscape:cx="116.87132"
+     inkscape:cy="152.40062"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="true"
+     inkscape:window-width="1280"
+     inkscape:window-height="680"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     units="in"
+     width="7.5in"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0">
+    <inkscape:grid
+       type="xygrid"
+       id="grid4144"
+       originx="-119.5"
+       originy="-99.500044" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     style="display:inline"
+     transform="translate(-119.5,-661.86218)">
+    <path
+       style="fill:#999999;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 120,902.36218 0,50 80,0 0,-50 0,0"
+       id="path4160"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 120,892.36218 0,-160 c 0,-30 10,-40 40.06128,-40.29586 C 190,692.36218 200,702.36218 200,732.36218 l 0,160 c 0,30 -10,40 -40,40 -30,0 -40,-15 -40,-40 z"
+       id="path4152"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccccc">
+      <title
+         id="title4164">tank-1</title>
+    </path>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 150,702.36218 c 0,-40 0,-40 0,-40 l 50,0 0,10 -40,0 0,30 z"
+       id="relief-valve"
+       inkscape:connector-curvature="0"
+       inkscape:label="#path4158" />
+    <rect
+       style="opacity:1;fill:#999999;fill-opacity:0;stroke:#000000;stroke-width:1.01854563;stroke-opacity:1"
+       id="rect4162"
+       width="83.011909"
+       height="89.981453"
+       x="210.72357"
+       y="692.37146">
+      <title
+         id="title4166">tank-1-report</title>
+    </rect>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 150.00001,887.36219 c 0,-20 0,-20 0,-20 l 120,0 0,10 -110,0 0,10 z"
+       id="path4193"
+       inkscape:connector-curvature="0" />
+  </g>
+</svg>

@@ -1,8 +1,6 @@
 import ssv
 
-# Comment
-
-x = ssv.SSV([1, 2, 3, 4, 5], 'seconds', 'sample/drawing.svg', font_size=12)
+x = ssv.SSV([1, 2, 3, 4, 5], 'seconds', 'examples/example_1.svg', font_size=12)
 cell = x.add_element('cell', 'box_1', 'Box 1', cell_report_id='report_1')
 cell.add_condition(type='background', description='Air Temp', unit='F', data=[1, 2, 3, 4, 5], color_scale=['#ffffb2','#fecc5c','#fd8d3c','#f03b20','#bd0026'],
                    color_levels=[1, 2, 3, 4, 5], opacity=0.1)

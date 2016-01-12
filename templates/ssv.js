@@ -139,72 +139,91 @@ function Element(element_ids, element_description, element_conditions, report_id
     this.initialize_report = function() {
         sel = d3.select("#" + this.report_id);
         parent = d3.select(sel.node().parentNode);
-        sizing_str = "sizing....";
-        margin = 0.1;
 
-        height = sel.node().getBBox().height;
-        width = sel.node().getBBox().width;
-        width = width - 2*margin*width;
-        pos_x = sel.node().getBBox().x + margin*width;
+        this.height = sel.node().getBBox().height;
+        this.width = sel.node().getBBox().width;
+        pos_x = sel.node().getBBox().x;
         pos_y = sel.node().getBBox().y;
-
-        // y_len represents element title(description) and each condition
-        y_len = this.conditions.length + 1;
-        y = d3.scale.linear().domain([0, y_len]).range([0, height]);
+        this.margin = 0.1;
+        this.desc_val_split = 0.5;
 
         g = parent.append("g")
                 .attr("transform", "translate(" + pos_x + "," + pos_y + ")")
                 .append("g");
 
-        x_section = g.selectAll()
-            .data(new Array(y_len))
-            .enter()
-            .append("text")
-            .attr("class", "text_section")
-            .attr("x", width / 2)
-            .attr("y", function(d,i){
-                return (y(i+1) + y(i)) / 2
-            })
+        // Create title box and outlined rect
+        title_text = g.append("text")
+            .attr("x", this.width / 2)
             .attr("text-anchor", "middle")
             .style("font-size", "1em")
-            .text(function() {return sizing_str});
+            .text(this.description);
 
-        // Format header
-        g.select(".text_section").attr("font-weight", "bold");
+        this.max_text_len = Math.floor(this.description.length * this.width /
+            title_text.node().getComputedTextLength());
+        title_text.text(this.description.slice(0, this.max_text_len));
+        text_height = title_text.node().getBBox().height;
+        title_text.attr("y", text_height);
 
-        this.report_max_chars = Math.floor(sizing_str.length *
-            width / g.select(".text_section").node().getComputedTextLength());
+        g.append("rect")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("fill-opacity", 0)
+            .attr("stroke", "black")
+            .attr("height", text_height * (1 + 2*this.margin))
+            .attr("width", this.width);
 
-        // Determine max unit and value lengths
+        // Create description box and limit description length
+        y_len = this.conditions.length;
+        descriptions = "";
+
+        description_text = g.append("text")
+            .attr("x", 0)
+            .attr("y", text_height * (1 + this.margin))
+            .attr("text-anchor", "start")
+            .style("font-size", "1em")
+            .text(descriptions);
+
         for (condition in this.conditions) {
             condition = this.conditions[condition];
-            this.unit_max_chars = Math.max(this.unit_max_chars, condition.unit.length);
-            this.val_max_chars = Math.max(this.val_max_chars, this.num_format(d3.max(condition.data)))
+            description_text.append("tspan")
+                .text(condition.description.slice(0, this.max_text_len * this.desc_val_split))
+                .attr("dy", "1em")
+                .attr("x", 0)
         }
+
+        g.append("rect")
+            .attr("x", 0)
+            .attr("y", text_height * (1 + 2*this.margin))
+            .attr("fill-opacity", 0)
+            .attr("stroke", "black")
+            .attr("height", this.height - text_height * (1 + 2*this.margin))
+            .attr("width", this.width * this.desc_val_split);
+
+        // Create value box
+        value_text = g.append("text")
+            .attr("class", "value-text")
+            .attr("x", this.width * this.desc_val_split)
+            .attr("y", text_height * (1 + this.margin))
+            .attr("text-anchor", "start")
+            .style("font-size", "1em");
 
         this.report_initialized = true
     };
 
     this.update_report = function(x) {
         if (!this.report_initialized) {this.initialize_report()}
-        body = [this.description.slice(0, this.report_max_chars)];
-        desc_val_sep = ": ";
 
+        parent = d3.select(d3.select("#" + this.report_id).node().parentNode);
+        value_text = parent.select(".value-text");
+        value_text.html(null);
         for (condition in this.conditions) {
             condition = this.conditions[condition];
-            line_str = this.str_format(condition.unit, this.unit_max_chars, 'left');
-            line_str = this.num_format(condition.data[x]) + " " + line_str;
-            line_str = this.str_format(condition.description,
-                    Math.max(0,this.report_max_chars - line_str.length) +
-                    desc_val_sep.length, 'right') + desc_val_sep + line_str;
-
-            body.push(line_str.slice(Math.max(line_str.length - this.report_max_chars, 0)))
+            val_unit = this.num_format(condition.data[x]) + " " + condition.unit;
+            value_text.append("tspan")
+                .text(val_unit.slice(0, this.max_text_len * (1 - this.desc_val_split)))
+                .attr("dy", "1em")
+                .attr("x", this.width * this.desc_val_split)
         }
-
-        sel = d3.select("#" + this.report_id);
-        parent = d3.select(sel.node().parentNode);
-
-        parent.selectAll(".text_section").data(body).text(function(d) { return d; });
     };
 
     this.update_linear_gradient = function(sel, grad_id, grad_heights_colors_opacities, style_apply) {
