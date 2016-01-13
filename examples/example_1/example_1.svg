@@ -13,7 +13,7 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.91 r13725"
-   sodipodi:docname="example_1 copy.svg"
+   sodipodi:docname="example_1.svg"
    width="2.011111in"
    height="3.2333329in">
   <defs
@@ -34,7 +34,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.979899"
-     inkscape:cx="116.87132"
+     inkscape:cx="42.625108"
      inkscape:cy="152.40062"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
@@ -82,9 +82,10 @@
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 120,892.36218 0,-160 c 0,-30 10,-40 40.06128,-40.29586 C 190,692.36218 200,702.36218 200,732.36218 l 0,160 c 0,30 -10,40 -40,40 -30,0 -40,-15 -40,-40 z"
-       id="path4152"
+       id="tank-1"
        inkscape:connector-curvature="0"
-       sodipodi:nodetypes="ccccccc">
+       sodipodi:nodetypes="ccccccc"
+       inkscape:label="#path4152">
       <title
          id="title4164">tank-1</title>
     </path>
@@ -95,19 +96,21 @@
        inkscape:connector-curvature="0"
        inkscape:label="#path4158" />
     <rect
-       style="opacity:1;fill:#999999;fill-opacity:0;stroke:#000000;stroke-width:1.01854563;stroke-opacity:1"
-       id="rect4162"
+       style="opacity:0.72;fill:#999999;fill-opacity:0;stroke:#000000;stroke-width:1.01854563;stroke-opacity:1"
+       id="tank-1-report"
        width="83.011909"
        height="89.981453"
        x="210.72357"
-       y="692.37146">
+       y="692.37146"
+       inkscape:label="#rect4162">
       <title
          id="title4166">tank-1-report</title>
     </rect>
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 150.00001,887.36219 c 0,-20 0,-20 0,-20 l 120,0 0,10 -110,0 0,10 z"
-       id="path4193"
-       inkscape:connector-curvature="0" />
+       id="steam-discharge"
+       inkscape:connector-curvature="0"
+       inkscape:label="#path4193" />
   </g>
 </svg>
