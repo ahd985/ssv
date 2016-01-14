@@ -297,6 +297,10 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
                 } else if (condition.type == 'level_dynamic') {
                     heights_colors_opacities.push([condition.data[x] / condition.max_height * 100,
                         condition.color_scale(condition.data_dynamic[x]), condition.opacity]);
+                } else if (condition.type == 'logical') {
+                    // AHD fix logical comparison
+                    heights_colors_opacities.push([100,
+                        condition.data[x] ? condition.true_color : condition.false_color, condition.opacity]);
                 }
             }
 

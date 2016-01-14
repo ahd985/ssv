@@ -12,3 +12,22 @@ body {
   font: {{ font_size }}px "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
+svg {
+    height:100%;
+}
+
+.sim-title {
+    height:10vh;
+    max-height:10vh;
+}
+
+.sim-visual {
+    height:80vh;
+    max-height:80vh;
+}
+
+.sim-control {
+    height:10vh;
+    max-height:10vh;
+}
+

@@ -9,23 +9,15 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   viewBox="0 0 181 290.99998"
+   viewBox="0 0 174.74476 292.86919"
    id="svg2"
    version="1.1"
    inkscape:version="0.91 r13725"
    sodipodi:docname="example_1.svg"
-   width="2.011111in"
-   height="3.2333329in">
+   width="174.74474"
+   height="292.86917">
   <defs
-     id="defs4">
-    <inkscape:perspective
-       sodipodi:type="inkscape:persp3d"
-       inkscape:vp_x="0 : 0.50000002 : 1"
-       inkscape:vp_y="0 : 0.95024322 : 0"
-       inkscape:vp_z="1 : 0.50000002 : 1"
-       inkscape:persp3d-origin="0.50000004 : 0.33333336 : 1"
-       id="perspective4143" />
-  </defs>
+     id="defs4" />
   <sodipodi:namedview
      id="base"
      pagecolor="#ffffff"
@@ -33,18 +25,18 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.979899"
-     inkscape:cx="42.625108"
-     inkscape:cy="152.40062"
+     inkscape:zoom="3.959798"
+     inkscape:cx="76.642045"
+     inkscape:cy="237.46971"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
-     inkscape:window-width="1280"
-     inkscape:window-height="680"
-     inkscape:window-x="0"
-     inkscape:window-y="0"
+     inkscape:window-width="1440"
+     inkscape:window-height="897"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
      inkscape:window-maximized="1"
-     units="in"
+     units="px"
      width="7.5in"
      fit-margin-top="0"
      fit-margin-left="0"
@@ -53,8 +45,8 @@
     <inkscape:grid
        type="xygrid"
        id="grid4144"
-       originx="-119.5"
-       originy="-99.500044" />
+       originx="-119.50001"
+       originy="-99.500077" />
   </sodipodi:namedview>
   <metadata
      id="metadata7">
@@ -73,7 +65,13 @@
      inkscape:groupmode="layer"
      id="layer1"
      style="display:inline"
-     transform="translate(-119.5,-661.86218)">
+     transform="translate(-119.5,-659.99298)">
+    <path
+       style="fill:#8d8771;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 150,702.36218 c 0,-40 0,-40 0,-40 l 50,0 0,10 -40,0 0,30 z"
+       id="x"
+       inkscape:connector-curvature="0"
+       inkscape:label="#path4158" />
     <path
        style="fill:#999999;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 120,902.36218 0,50 80,0 0,-50 0,0"
@@ -89,14 +87,8 @@
       <title
          id="title4164">tank-1</title>
     </path>
-    <path
-       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="m 150,702.36218 c 0,-40 0,-40 0,-40 l 50,0 0,10 -40,0 0,30 z"
-       id="relief-valve"
-       inkscape:connector-curvature="0"
-       inkscape:label="#path4158" />
     <rect
-       style="opacity:0.72;fill:#999999;fill-opacity:0;stroke:#000000;stroke-width:1.01854563;stroke-opacity:1"
+       style="opacity:0.72000002;fill:#999999;fill-opacity:0;stroke:#000000;stroke-width:1.01854563;stroke-opacity:1"
        id="tank-1-report"
        width="83.011909"
        height="89.981453"
@@ -107,10 +99,57 @@
          id="title4166">tank-1-report</title>
     </rect>
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       style="fill:#8d8771;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 150.00001,887.36219 c 0,-20 0,-20 0,-20 l 120,0 0,10 -110,0 0,10 z"
-       id="steam-discharge"
+       id="y"
        inkscape:connector-curvature="0"
        inkscape:label="#path4193" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:46.03671646px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="257.75067"
+       y="745.51251"
+       id="text3342"
+       sodipodi:linespacing="125%"
+       transform="scale(0.83716434,1.1945086)"><tspan
+         sodipodi:role="line"
+         x="257.75067"
+         y="745.51251"
+         id="tspan3346"
+         style="font-size:11.18138409px">Steam</tspan><tspan
+         sodipodi:role="line"
+         x="257.75067"
+         y="759.48926"
+         id="tspan3350"
+         style="font-size:11.18138409px">Discharge</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:46.03671646px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="243.21039"
+       y="563.40161"
+       id="text3342-1"
+       sodipodi:linespacing="125%"
+       transform="scale(0.83716434,1.1945086)"><tspan
+         sodipodi:role="line"
+         x="243.21039"
+         y="563.40161"
+         id="tspan3350-2"
+         style="font-size:11.18138409px">Relief Valve</tspan></text>
+    <ellipse
+       style="fill:#000000;fill-opacity:0;stroke:#000000;stroke-width:0.95762378;stroke-opacity:1"
+       id="relief-valve"
+       cx="174.92387"
+       cy="667.99298"
+       rx="7.5211887"
+       ry="7.5211878"
+       inkscape:label="#path4175" />
+    <ellipse
+       style="display:inline;fill:#8d8771;fill-opacity:1;stroke:#000000;stroke-width:0.95762378;stroke-opacity:1"
+       id="steam-discharge"
+       cx="211.59012"
+       cy="872.99298"
+       rx="7.5211892"
+       ry="7.5211878"
+       inkscape:label="#path4175-3" />
   </g>
 </svg>

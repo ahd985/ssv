@@ -13,7 +13,7 @@ class SSV:
     svg_namespace = "http://www.w3.org/2000/svg"
     supported_svg_attribs = ['viewBox', 'xmlns']
     element_classes = ['cell', 'line', 'heatmap']
-    supported_svg = ['path', 'circle', 'rect']
+    supported_svg = ['path', 'circle', 'rect', 'ellipse']
 
     def __init__(self, x_series, x_series_unit, svg_file_path, title="My Simulation", font_size=12):
         if not isinstance(x_series_unit, str):
@@ -231,12 +231,14 @@ class Element:
 class Cell(Element):
     def __init__(self, cell_id, cell_description, x_series_len, cell_report_id=None):
         super(Cell, self).__init__(cell_id, cell_description, x_series_len, cell_report_id)
-        self.Condition.input_types_allowed.update({'max_height': (float, int), 'data_dynamic': list})
+        self.Condition.input_types_allowed.update({'max_height': (float, int), 'data_dynamic': list,
+                                                   'true_color': str, 'false_color': str})
         base_required = ['data']
         self.Condition.required_inp_by_type.update({'level_static': base_required + ['max_height'],
                                                'level_dynamic': base_required + ['max_height', 'data_dynamic',
                                                                                  'color_scale', 'color_levels'],
-                                               'background': base_required + ['color_scale', 'color_levels']})
+                                               'background': base_required + ['color_scale', 'color_levels'],
+                                               'logical': base_required + ['true_color', 'false_color']})
         self.conditions = []
 
 
