@@ -13,6 +13,16 @@
     height:100%;
 }
 
+.ssv-button {
+    border-right-width:1px;
+    border-right-color:white;
+    border-right-style:solid;
+}
+
+.ssv-button:hover {
+    background-color:#90CAF9;
+}
+
 .full-width {
    width: 100%;
    margin-left: auto;
@@ -40,10 +50,7 @@ h1 {
 }
 
 .sim-title {
-    border-bottom-width:1px;
-    border-bottom-color:#424242;
-    border-bottom-style:solid;
-    background-color:#01579B;
+    background-color:#BDBDBD;
 }
 
 .sim-visual {
@@ -51,20 +58,21 @@ h1 {
     height:80vh;
     max-height:80vh;
     padding:2%;
-    border-bottom-width:1px;
-    border-bottom-color:#424242black;
-    border-bottom-style:solid;
 }
 
 .sim-control {
     height:10vh;
     max-height:10vh;
-    background-color:#01579B;
+    background-color:#BDBDBD;
+    border-top-color:white;
+    border-top-width:1px;
+    border-top-style:solid;
+    border-right-color:white;
+    border-right-width:1px;
+    border-right-style:solid;
 }
 
-.unit-span {
-    border-left-width:1px;
-    border-left-color:white;
-    border-left-style:solid;
+.ssv-slider {
+    background-color:black;
 }
 

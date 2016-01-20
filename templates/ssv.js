@@ -48,10 +48,10 @@ function ElementContext() {
             if (_self.play_enabled) {
                 _self.play_enabled = false;
                 $("#pause-icon").attr("style", "display:none");
-                $("#play-icon").attr("style", "display:block");
+                $("#play-icon").attr("style", "");
             } else {
                 _self.play_enabled = true;
-                $("#pause-icon").attr("style", "display:block");
+                $("#pause-icon").attr("style", "");
                 $("#play-icon").attr("style", "display:none");
                 if (_self.current_x == _self.x_series.length - 1) {
                     _self.current_x = 0;
