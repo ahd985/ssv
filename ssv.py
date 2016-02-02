@@ -257,4 +257,11 @@ class Heatmap(Element):
         self.Condition.required_inp_by_type = {'rect': base_required + ['color_scale', 'color_levels']}
         self.conditions = []
 
+class Toggle(Element):
+    def __init__(self, toggle_id, x_series_len):
+        super(Toggle, self).__init__(toggle_id, '', x_series_len, None)
+        base_required = ['data']
+        self.Condition.required_inp_by_type = {'show_hide': base_required + ['color']}
+        self.conditions = []
+
 

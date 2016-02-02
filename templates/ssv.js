@@ -144,18 +144,32 @@ function Element(element_ids, element_description, element_conditions, report_id
         this.width = sel.node().getBBox().width;
         pos_x = sel.node().getBBox().x;
         pos_y = sel.node().getBBox().y;
-        this.margin = 0.1;
-        this.desc_val_split = 0.5;
+        this.margin = this.width * 0.025;
 
+        // Hide sel element
+        sel.style("visibility", "hidden");
+
+        // Start new parent element
         g = parent.append("g")
                 .attr("transform", "translate(" + pos_x + "," + pos_y + ")")
                 .append("g");
 
-        // Create title box and outlined rect
+        // Create title outline
+        title_outline = g.append("rect")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("width", this.width)
+            .attr("fill", "#616161")
+            .attr("fill-opacity", 1)
+            .attr("stroke", "white");
+
+        // Create title text
         title_text = g.append("text")
             .attr("x", this.width / 2)
+            .attr("y", this.margin)
             .attr("text-anchor", "middle")
-            .style("font-size", "1em")
+            .attr("fill", "#FFC107")
+            .style("font-size", "1.2em")
             .text(this.description);
 
         this.max_text_len = Math.floor(this.description.length * this.width /
@@ -164,48 +178,52 @@ function Element(element_ids, element_description, element_conditions, report_id
         text_height = title_text.node().getBBox().height;
         title_text.attr("y", text_height);
 
-        g.append("rect")
-            .attr("x", 0)
-            .attr("y", 0)
-            .attr("fill-opacity", 0)
-            .attr("stroke", "black")
-            .attr("height", text_height * (1 + 2*this.margin))
-            .attr("width", this.width);
+        // Now that we have height of text update title box height
+        title_outline.attr("height", text_height + 2*this.margin);
 
-        // Create description box and limit description length
-        y_len = this.conditions.length;
-        descriptions = "";
+        // Create output box outlines and add text boxes
+        for (i=0; i<this.conditions.length; i++) {
+            condition = this.conditions[i];
 
-        description_text = g.append("text")
-            .attr("x", 0)
-            .attr("y", text_height * (1 + this.margin))
-            .attr("text-anchor", "start")
-            .style("font-size", "1em")
-            .text(descriptions);
-
-        for (condition in this.conditions) {
-            condition = this.conditions[condition];
-            description_text.append("tspan")
-                .text(condition.description.slice(0, this.max_text_len * this.desc_val_split))
-                .attr("dy", "1em")
+            // Outline
+            g.append("rect")
                 .attr("x", 0)
+                .attr("y", (i+1/2)*2*(text_height + 2*this.margin))
+                .attr("stroke", "white")
+                .attr("height", 2*(text_height + 2*this.margin))
+                .attr("width", this.width)
+                .attr("fill", "#616161")
+                .attr("fill-opacity", 1)
+                .attr("stroke", "white");
+
+            // Description text
+            g.append("text")
+                .attr("x", this.width/2)
+                .attr("y", (i+1/2)*2*(text_height + 2*this.margin) + this.margin + text_height)
+                .attr("text-anchor", "middle")
+                .attr("fill", "#00BFA5")
+                .style("font-size", "1em")
+                .attr("font-style","oblique")
+                .text(condition.description);
+
+            // Value text
+            g.append("text")
+                .attr("class", "value-text")
+                .attr("x", this.width/4)
+                .attr("y", (i+1/2)*2*(text_height + 2*this.margin) + 2*this.margin + 2*text_height)
+                .attr("text-anchor", "middle")
+                .attr("fill", "#FFEB3B")
+                .style("font-size", "1em");
+
+            // Unit text
+            g.append("text")
+                .attr("x", 3*this.width/4)
+                .attr("y", (i+1/2)*2*(text_height + 2*this.margin) + 2*this.margin + 2*text_height)
+                .attr("text-anchor", "middle")
+                .attr("fill", "#FFFFFF")
+                .style("font-size", "1em")
+                .text(condition.unit);
         }
-
-        g.append("rect")
-            .attr("x", 0)
-            .attr("y", text_height * (1 + 2*this.margin))
-            .attr("fill-opacity", 0)
-            .attr("stroke", "black")
-            .attr("height", this.height - text_height * (1 + 2*this.margin))
-            .attr("width", this.width * this.desc_val_split);
-
-        // Create value box
-        value_text = g.append("text")
-            .attr("class", "value-text")
-            .attr("x", this.width * this.desc_val_split)
-            .attr("y", text_height * (1 + this.margin))
-            .attr("text-anchor", "start")
-            .style("font-size", "1em");
 
         this.report_initialized = true
     };
@@ -214,15 +232,11 @@ function Element(element_ids, element_description, element_conditions, report_id
         if (!this.report_initialized) {this.initialize_report()}
 
         parent = d3.select(d3.select("#" + this.report_id).node().parentNode);
-        value_text = parent.select(".value-text");
-        value_text.html(null);
-        for (condition in this.conditions) {
-            condition = this.conditions[condition];
-            val_unit = this.num_format(condition.data[x]) + " " + condition.unit;
-            value_text.append("tspan")
-                .text(val_unit.slice(0, this.max_text_len * (1 - this.desc_val_split)))
-                .attr("dy", "1em")
-                .attr("x", this.width * this.desc_val_split)
+        value_texts = parent.selectAll(".value-text");
+        console.log(value_texts);
+        for (i=0; i<this.conditions.length; i++) {
+            condition = this.conditions[i];
+            value_texts[0][i].innerHTML = this.num_format(condition.data[x]);
         }
     };
 
