@@ -175,8 +175,6 @@ function Element(element_ids, element_description, element_conditions, report_id
             .style("font-size", "1.2em")
             .text(this.description);
 
-        alert(this.description)
-
         this.max_text_len = Math.floor(this.description.length * this.width /
             title_text.node().getComputedTextLength());
         title_text.text(this.description.slice(0, this.max_text_len));
