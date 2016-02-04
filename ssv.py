@@ -12,8 +12,8 @@ import numpy as np
 class SSV:
     svg_namespace = "http://www.w3.org/2000/svg"
     supported_svg_attribs = ['viewBox', 'xmlns']
-    element_classes = ['cell', 'line', 'heatmap']
-    supported_svg = ['path', 'circle', 'rect', 'ellipse']
+    element_classes = ['cell', 'line', 'heatmap', 'toggle']
+    supported_svg = ['g', 'path', 'circle', 'rect', 'ellipse']
 
     def __init__(self, x_series, x_series_unit, svg_file_path, title="My Simulation", font_size=12):
         if not isinstance(x_series_unit, str):
@@ -59,9 +59,9 @@ class SSV:
         self._svg_out = None
         self._font_size = font_size
 
-    def add_element(self, element_type, element_ids, element_description, **kwargs):
+    def add_element(self, element_type, element_ids, element_description='', **kwargs):
         if not element_type in self.element_classes:
-            raise ValueError("element_type is not an acceptable value.")
+            raise ValueError("element_type \"%s\" is not an acceptable value." % element_type)
         if not isinstance(element_ids, (list, str)):
             raise TypeError("element_id input must be a string or a list of strings.")
         if isinstance(element_ids, str):
@@ -73,6 +73,8 @@ class SSV:
             element_entry = Line(element_ids, element_description, len(self._x_series), **kwargs)
         elif element_type == 'heatmap':
             element_entry = Heatmap(element_ids, element_description, len(self._x_series), **kwargs)
+        elif element_type == 'toggle':
+            element_entry = Toggle(element_ids, element_description, len(self._x_series), **kwargs)
         self._elements[element_type].update({element_id: element_entry for element_id in element_ids})
 
         return element_entry
@@ -132,6 +134,7 @@ class SSV:
         element_ids += [element.report_id for element in elements.values() if element.report_id is not None]
         for element_id in element_ids:
             elements_out = []
+
             for svg_element in self.supported_svg:
                 parents = self._svg_root.findall(".//{http://www.w3.org/2000/svg}%s[@id='%s'].."
                                                             % (svg_element, element_id))
@@ -170,7 +173,7 @@ class Element:
                 setattr(self, key, val)
 
             if not self.type in self.required_inp_by_type:
-                raise ValueError("condition type %s not supported" % self.type)
+                raise ValueError("condition type \"%s\" not supported" % self.type)
 
             for required_inp in self.required_inp_by_type[self.type]:
                 try:
@@ -232,7 +235,7 @@ class Cell(Element):
     def __init__(self, cell_id, cell_description, x_series_len, cell_report_id=None):
         super(Cell, self).__init__(cell_id, cell_description, x_series_len, cell_report_id)
         self.Condition.input_types_allowed.update({'max_height': (float, int), 'data_dynamic': list,
-                                                   'true_color': str, 'false_color': str})
+                                                   'true_color': str, 'false_color': str, 'pattern': str})
         base_required = ['data']
         self.Condition.required_inp_by_type.update({'level_static': base_required + ['max_height'],
                                                'level_dynamic': base_required + ['max_height', 'data_dynamic',
@@ -254,14 +257,14 @@ class Heatmap(Element):
     def __init__(self, heatmap_id, heatmap_description, x_series_len, heatmap_report_id=None):
         super(Heatmap, self).__init__(heatmap_id, heatmap_description, x_series_len, heatmap_report_id)
         base_required = ['data']
-        self.Condition.required_inp_by_type = {'rect': base_required + ['color_scale', 'color_levels']}
+        self.Condition.required_inp_by_type.update({'rect': base_required + ['color_scale', 'color_levels']})
         self.conditions = []
 
 class Toggle(Element):
-    def __init__(self, toggle_id, x_series_len):
-        super(Toggle, self).__init__(toggle_id, '', x_series_len, None)
+    def __init__(self, toggle_id, toggle_description, x_series_len, toggle_report_id=None):
+        super(Toggle, self).__init__(toggle_id, toggle_description, x_series_len, toggle_report_id)
         base_required = ['data']
-        self.Condition.required_inp_by_type = {'show_hide': base_required + ['color']}
+        self.Condition.required_inp_by_type.update({'show_hide': base_required})
         self.conditions = []
 
 

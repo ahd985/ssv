@@ -23,6 +23,9 @@ function ElementContext() {
                 } else if (element_type == 'heatmap') {
                     this.elements.push(new Heatmap(element.ids, element.description,
                         element.conditions, element.report_id))
+                } else if (element_type == 'toggle') {
+                    this.elements.push(new Toggle(element.ids, element.description,
+                        element.conditions, element.report_id))
                 }
             }
         }
@@ -172,6 +175,8 @@ function Element(element_ids, element_description, element_conditions, report_id
             .style("font-size", "1.2em")
             .text(this.description);
 
+        alert(this.description)
+
         this.max_text_len = Math.floor(this.description.length * this.width /
             title_text.node().getComputedTextLength());
         title_text.text(this.description.slice(0, this.max_text_len));
@@ -233,7 +238,6 @@ function Element(element_ids, element_description, element_conditions, report_id
 
         parent = d3.select(d3.select("#" + this.report_id).node().parentNode);
         value_texts = parent.selectAll(".value-text");
-        console.log(value_texts);
         for (i=0; i<this.conditions.length; i++) {
             condition = this.conditions[i];
             value_texts[0][i].innerHTML = this.num_format(condition.data[x]);
@@ -312,9 +316,10 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
                     heights_colors_opacities.push([condition.data[x] / condition.max_height * 100,
                         condition.color_scale(condition.data_dynamic[x]), condition.opacity]);
                 } else if (condition.type == 'logical') {
-                    // AHD fix logical comparison
+
                     heights_colors_opacities.push([100,
-                        condition.data[x] ? condition.true_color : condition.false_color, condition.opacity]);
+                        (condition.data[x] == true ||  condition.data[x] > 0) ?
+                            condition.true_color : condition.false_color, condition.opacity]);
                 }
             }
 
@@ -437,6 +442,32 @@ function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_r
     heatmap.initialize();
 
     return heatmap
+}
+
+function Toggle(toggle_ids, toggle_description, toggle_conditions, toggle_report_id) {
+    toggle = new Element(toggle_ids, toggle_description, toggle_conditions, toggle_report_id);
+
+    toggle.update = function(x) {
+        for (selector in this.selectors) {
+            sel = d3.select(this.selectors[selector]);
+
+            for (i in this.conditions) {
+                condition = this.conditions[i];
+
+                if (condition.type == 'show_hide') {
+                    if (condition.data[x] == true || condition.data[x] > 0) {
+                        sel.transition().attr("opacity",1)
+                    } else {
+                        sel.transition().attr("opacity",0)
+                    }
+                }
+            }
+        };
+
+        if (this.report_id) {this.update_report(x)}
+    };
+
+    return toggle
 }
 
 $(document).ready(function() {element_context = new ElementContext()});

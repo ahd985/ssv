@@ -25,9 +25,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="3.2676382"
-     inkscape:cx="123.46834"
-     inkscape:cy="62.843181"
+     inkscape:zoom="1.1552846"
+     inkscape:cx="28.588821"
+     inkscape:cy="140.58058"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -56,7 +56,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -87,17 +87,6 @@
       <title
          id="title4164">tank-1</title>
     </path>
-    <rect
-       style="opacity:0.72000002;fill:#999999;fill-opacity:0;stroke:#000000;stroke-width:1.01854563;stroke-opacity:1"
-       id="tank-1-report"
-       width="83.011909"
-       height="89.981453"
-       x="210.72357"
-       y="692.37146"
-       inkscape:label="#rect4162">
-      <title
-         id="title4166">tank-1-report</title>
-    </rect>
     <path
        style="fill:#8d8771;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 150.00001,887.36219 c 0,-20 0,-20 0,-20 l 120,0 0,10 -110,0 0,10 z"
@@ -153,7 +142,8 @@
        inkscape:label="#path4175-3" />
     <g
        id="steam-toggle"
-       inkscape:label="#g4221">
+       inkscape:label="#g4221"
+       style="stroke:#b9b9b9;stroke-opacity:1;stroke-width:1.00000003;stroke-miterlimit:4;stroke-dasharray:none">
       <path
          d="m 164.27885,895.17871 c -0.29676,-0.35997 0.33883,-0.57763 0.5983,-0.49324 0.70316,0.22869 0.73009,1.16013 0.38818,1.68984 -0.61158,0.94751 -1.96177,0.93546 -2.78137,0.28312 -1.2028,-0.95733 -1.14811,-2.77472 -0.17807,-3.87291 1.29293,-1.46372 3.59174,-1.36395 4.96445,-0.073 1.72742,1.62452 1.58144,4.41071 -0.032,6.05599 -1.95415,1.99265 -5.23078,1.79989 -7.14752,-0.13711 -2.25882,-2.28268 -2.01895,-6.05154 0.24216,-8.23906 2.61055,-2.52558 6.87277,-2.23841 9.33061,0.34722 2.79274,2.93796 2.45815,7.69431 -0.45229,10.42214 -3.26506,3.06021 -8.51609,2.6781 -11.51367,-0.55734 -2.91253,-3.14364 -3.00612,-8.05812 -0.41873,-11.42564"
          sodipodi:t0="0"
@@ -164,7 +154,7 @@
          sodipodi:cy="895.17871"
          sodipodi:cx="164.27885"
          id="path4217"
-         style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         style="fill:none;fill-rule:evenodd;stroke:#b9b9b9;stroke-width:1.00000003;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
          sodipodi:type="spiral" />
       <path
          transform="scale(-1,1)"
@@ -177,13 +167,13 @@
          sodipodi:cy="895.09662"
          sodipodi:cx="-144.55293"
          id="path4219"
-         style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         style="fill:none;fill-rule:evenodd;stroke:#b9b9b9;stroke-width:1.00000003;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
          sodipodi:type="spiral" />
     </g>
     <g
-       id="g4251">
-      <desc
-         id="desc4255">relief-valve-toggle</desc>
+       id="relief-toggle"
+       inkscape:label="#g4251"
+       style="stroke:#b9b9b9;stroke-opacity:1">
       <path
          transform="matrix(0.63575951,0,0,0.50083203,73.629969,331.14656)"
          d="m 208.36635,656.95709 c -0.18024,0.52662 -0.7988,0.0169 -0.87528,-0.29956 -0.20726,-0.8575 0.72238,-1.46723 1.4744,-1.451 1.3452,0.029 2.17714,1.40856 2.02672,2.64925 -0.22075,1.82077 -2.10166,2.90151 -3.82409,2.60243 -2.29573,-0.39862 -3.63166,-2.79692 -3.17815,-4.99893 0.57069,-2.77102 3.49313,-4.36471 6.17378,-3.75387 3.24663,0.73981 5.09942,4.18986 4.32958,7.34863 -0.90724,3.72249 -4.8869,5.83519 -8.52347,4.90529 -4.19855,-1.0736 -6.57165,-5.58416 -5.48101,-9.69831 1.23925,-4.67475 6.28158,-7.3086 10.87315,-6.05673 5.15105,1.40441 8.04591,6.97911 6.63245,12.048 -1.56921,5.62743 -7.67672,8.78348 -13.22284,7.20816 -0.47899,-0.13605 -0.94878,-0.30441 -1.40524,-0.50336"
@@ -195,7 +185,7 @@
          sodipodi:cy="656.95709"
          sodipodi:cx="208.36635"
          id="path4247"
-         style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         style="fill:none;fill-rule:evenodd;stroke:#b9b9b9;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
          sodipodi:type="spiral" />
       <path
          transform="matrix(0.59302658,0,0,-0.49841788,73.734655,342.79804)"
@@ -208,8 +198,25 @@
          sodipodi:cy="-664.23615"
          sodipodi:cx="225"
          id="path4249"
-         style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         style="fill:none;fill-rule:evenodd;stroke:#b9b9b9;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
          sodipodi:type="spiral" />
     </g>
+    <rect
+       style="opacity:0.63999999;fill:#800000;fill-opacity:0;stroke:#b9b9b9;stroke-width:0.77074826;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="disch-report"
+       width="85.035728"
+       height="37.723972"
+       x="209.88538"
+       y="824.27435"
+       ry="0"
+       inkscape:label="#rect4155" />
+    <rect
+       style="opacity:0.63999999;fill:#800000;fill-opacity:0;stroke:#b9b9b9;stroke-width:1.06491363;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="tank-1-report"
+       width="79.456551"
+       height="69.935089"
+       x="210.51099"
+       y="702.39471"
+       inkscape:label="#rect4187" />
   </g>
 </svg>
