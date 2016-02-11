@@ -242,12 +242,11 @@ function Element(element_ids, element_description, element_conditions, report_id
         }
     };
 
-    this.update_linear_gradient = function(sel, grad_id, grad_heights_colors_opacities, style_apply) {
-        // heights_colors is an array of elements containing an array of the gradient height and gradient stop color
+    this.update_linear_gradient = function(sel, grad_id, grad_props, style_apply) {
         grad = d3.select("#" + grad_id);
 
         if (grad.empty()) {
-            sel.style("fill-opacity",1);
+            sel.style("fill-opacity", 1);
             if (d3.select("svg defs").empty()) {
                 svg.append("defs")
             }
@@ -262,32 +261,69 @@ function Element(element_ids, element_description, element_conditions, report_id
             grad = d3.select("#" + grad_id);
         }
 
-        // Sort ascending and add % input value
-        grad_heights_colors_opacities = grad_heights_colors_opacities.sort(function(a, b){return a[0]-b[0]});
-        grad_heights_colors_opacities = grad_heights_colors_opacities.map(function(row) {
-            return [Math.round(row[0]).toString() + "%", row[1], row[2]]
+        // Zip arrays in grad_props, sort, and apply percent function to order property
+        order_prop = 'y';
+        props_zipped = grad_props[order_prop];
+        props_zipped = props_zipped.map(function(e, i) {return [grad_props[order_prop][i]]});
+        prop_keys = Object.keys(grad_props);
+        for (i in prop_keys) {
+            if (prop_keys[i] != order_prop) {
+                prop_vals = grad_props[prop_keys[i]];
+                props_zipped = props_zipped.map(function(e, ii) {return props_zipped[ii].concat([prop_vals[ii]])})
+            }
+        }
+
+        props_zipped = props_zipped.sort(function(a,b) {return a[0] - b[0]});
+        props_zipped = props_zipped.map(function(row) {
+            return [Math.round(row[0]).toString() + "%"].concat(row.slice(1,row.length))
         });
 
-        for (ii in grad_heights_colors_opacities) {
-            stop_id_1 = "stop_" + ii.toString() + "_1";
+        for (i in prop_keys) {
+            grad_props[prop_keys[i]] = props_zipped.map(function (row) {
+                return row[i]
+            })
+        };
+
+        for (i in grad_props[order_prop]) {
+            stop_id_1 = "stop_" + i.toString() + "_1";
             grad_stop_1 = grad.select("#" + stop_id_1);
             if (grad_stop_1.empty()) {
                 grad.append("stop").attr("id", stop_id_1);
             }
 
-            grad_stop_1.transition().attr("offset", grad_heights_colors_opacities[ii][0])
-                .style("stop-color", grad_heights_colors_opacities[ii][1])
-                .style("stop-opacity", grad_heights_colors_opacities[ii][2]);
+            grad_stop_1.transition().attr("offset", grad_props[order_prop][i])
+                .style("stop-color", grad_props['color'][i])
+                .style("stop-opacity", grad_props['opacity'][i]);
 
-            stop_id_2 = "stop_" + ii.toString() + "_2";
-            grad_stop_2 = grad.select("#" + stop_id_2);
-            if (ii < grad_heights_colors_opacities.length - 1) {
+            if (i < grad_props[order_prop].length - 1) {
+                // Draw transition zone
+                transition_id_1 = "transition_" + i.toString()  + "_1";
+                transition_id_2 = "transition_" + i.toString()  + "_2";
+                transition_stop_1 = grad.select("#" + transition_id_1);
+                transition_stop_2 = grad.select("#" + transition_id_2);
+                if (transition_stop_1.empty()) {
+                    grad.append("stop").attr("id", transition_id_1);
+                    grad.append("stop").attr("id", transition_id_2);
+                }
+
+                // AHD - fix so this works - need to adjust level %.
+                transition_stop_1.transition().attr("offset", grad_props[order_prop][i])
+                    .style("stop-color", '#FFFFFF')
+                    .style("stop-opacity", grad_props['opacity'][i]);
+                transition_stop_2.transition().attr("offset", grad_props[order_prop][i])
+                    .style("stop-color", '#FFFFFF')
+                    .style("stop-opacity", grad_props['opacity'][parseInt(i) + 1]);
+
+                // Draw next color
+                stop_id_2 = "stop_" + i.toString() + "_2";
+                grad_stop_2 = grad.select("#" + stop_id_2);
                 if (grad_stop_2.empty()) {
                     grad.append("stop").attr("id", stop_id_2);
                 }
-                grad_stop_2.transition().attr("offset", grad_heights_colors_opacities[ii][0])
-                    .style("stop-color", grad_heights_colors_opacities[parseInt(ii)+1][1])
-                    .style("stop-opacity", grad_heights_colors_opacities[parseInt(ii)+1][2]);
+
+                grad_stop_2.transition().attr("offset", grad_props[order_prop][i])
+                    .style("stop-color", grad_props['color'][parseInt(i)+1])
+                    .style("stop-opacity", grad_props['opacity'][parseInt(i)+1]);
             }
         }
     }
@@ -301,27 +337,32 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
             sel = d3.select(this.selectors[selector]);
             grad_id = "grad_" + this.ids[selector];
 
-            heights_colors_opacities = [];
+            grad_props = {'y':[], 'color':[], 'opacity':[]};
+
             for (i in this.conditions) {
                 condition = this.conditions[i];
 
                 if (condition.type == 'background') {
-                    heights_colors_opacities.push([100, condition.color_scale(condition.data[x]), condition.opacity]);
+                    grad_props['y'].push(100);
+                    grad_props['color'].push(condition.color_scale(condition.data[x]));
+                    grad_props['opacity'].push(condition.opacity);
                 } else if (condition.type == 'level_static') {
-                    heights_colors_opacities.push([condition.data[x] / condition.max_height * 100, condition.color,
-                        condition.opacity]);
+                    grad_props['y'].push(condition.data[x] / condition.max_height * 100);
+                    grad_props['color'].push(condition.color);
+                    grad_props['opacity'].push(condition.opacity);
                 } else if (condition.type == 'level_dynamic') {
-                    heights_colors_opacities.push([condition.data[x] / condition.max_height * 100,
-                        condition.color_scale(condition.data_dynamic[x]), condition.opacity]);
+                    grad_props['y'].push(condition.data[x] / condition.max_height * 100);
+                    grad_props['color'].push(condition.color_scale(condition.data_dynamic[x]));
+                    grad_props['opacity'].push(condition.opacity);
                 } else if (condition.type == 'logical') {
-
-                    heights_colors_opacities.push([100,
-                        (condition.data[x] == true ||  condition.data[x] > 0) ?
-                            condition.true_color : condition.false_color, condition.opacity]);
+                    grad_props['y'].push(100);
+                    grad_props['color'].push((condition.data[x] == true ||  condition.data[x] > 0) ?
+                            condition.true_color : condition.false_color)
+                    grad_props['opacity'].push(condition.opacity);
                 }
             }
 
-            this.update_linear_gradient(sel, grad_id, heights_colors_opacities, "fill");
+            this.update_linear_gradient(sel, grad_id, grad_props, "fill");
         };
 
         if (this.report_id) {this.update_report(x)}

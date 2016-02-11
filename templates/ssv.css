@@ -55,8 +55,10 @@ h1 {
 
 .sim-visual {
     font-size: {{ font_size }}px;
-    height:80vh;
-    max-height:80vh;
+    {% if scale %}
+        height:vh;
+        max-height:80vh;
+    {% endif %}
     padding:2%;
 }
 
