@@ -26,6 +26,9 @@ function ElementContext() {
                 } else if (element_type == 'toggle') {
                     this.elements.push(new Toggle(element.ids, element.description,
                         element.conditions, element.report_id))
+                } else if (element_type == 'report') {
+                    this.elements.push(new Report(element.ids, element.description,
+                        element.conditions, element.report_id))
                 }
             }
         }
@@ -90,9 +93,41 @@ function ElementContext() {
         }, 1000 / this. play_speed);
     };
 
+    this.initialize_zoom = function() {
+        // Setup overlay for panning
+        // AHD fix x and width attributes
+        ssv_overlay = d3.select("#ssv-overlay")
+            .attr("height", "100%")
+            .attr("x","-10000%")
+            .attr("width", "10000000%");
+        bbox = ssv_overlay.node().getBBox();
+
+        zoom_container = d3.select("#zoom-container");
+
+        zoom = d3.behavior.zoom()
+            .scale(1)
+            .scaleExtent([1, 8])
+            .on("zoom", function() {
+                /* AHD implement span constraints here
+                tx = Math.max(bbox.x, d3.event.translate[0]);
+                tx = Math.min(tx + bbox.width, bbox.x + bbox.width);
+                ty = Math.max(bbox.y, d3.event.translate[1]);
+                ty = Math.min(ty, bbox.y + bbox.height);
+                zoom.translate([tx,ty]);
+                */
+
+                zoom_container.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+            });
+
+        d3.select("#ssv-overlay").call(zoom);
+    };
+
     this.initialize_elements();
-    this.initialize_slider()
+    this.initialize_slider();
+    this.initialize_zoom()
 }
+
+
 
 function Element(element_ids, element_description, element_conditions, report_id) {
     this.ids = element_ids;
@@ -507,6 +542,16 @@ function Toggle(toggle_ids, toggle_description, toggle_conditions, toggle_report
     };
 
     return toggle
+}
+
+function Report(report_ids, report_description, report_conditions, report_id) {
+    report = new Element(report_ids, report_description, report_conditions, report_id);
+
+    report.update = function(x) {
+        if (this.report_id) {this.update_report(x)}
+    };
+
+    return report
 }
 
 $(document).ready(function() {element_context = new ElementContext()});

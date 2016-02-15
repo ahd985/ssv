@@ -12,10 +12,10 @@ import numpy as np
 class SSV:
     svg_namespace = "http://www.w3.org/2000/svg"
     supported_svg_attribs = ['viewBox', 'xmlns']
-    element_classes = ['cell', 'line', 'heatmap', 'toggle']
-    supported_svg = ['g', 'path', 'circle', 'rect', 'ellipse']
+    element_classes = ['cell', 'line', 'heatmap', 'toggle', 'report']
+    supported_svg = ['path', 'circle', 'rect', 'ellipse']
 
-    def __init__(self, x_series, x_series_unit, svg_file_path, title="My Simulation", font_size=12, scale=True):
+    def __init__(self, x_series, x_series_unit, svg_file_path, title="My Simulation", font_size=12):
         if not isinstance(x_series_unit, str):
             raise TypeError("x_series_unit input must be a string.")
         if not isinstance(title, str):
@@ -49,8 +49,6 @@ class SSV:
 
         if not isinstance(font_size, int):
             raise TypeError("font_size must be provided as an integer.")
-        if not isinstance(scale, bool):
-            raise TypeError("scale input must be a bool.")
 
         self._svg_root = svg_root
         self._title = title
@@ -58,11 +56,8 @@ class SSV:
         self._elements = {element: {} for element in self.element_classes}
         self._svg_out = None
         self._font_size = font_size
-        self._scale = scale
 
     def add_element(self, element_type, element_ids, element_description='', **kwargs):
-        if not element_type in self.element_classes:
-            raise ValueError("element_type \"%s\" is not an acceptable value." % element_type)
         if not isinstance(element_ids, (list, str)):
             raise TypeError("element_id input must be a string or a list of strings.")
         if isinstance(element_ids, str):
@@ -76,6 +71,10 @@ class SSV:
             element_entry = Heatmap(element_ids, element_description, len(self._x_series), **kwargs)
         elif element_type == 'toggle':
             element_entry = Toggle(element_ids, element_description, len(self._x_series), **kwargs)
+        elif element_type == 'report':
+            element_entry = Report(element_ids[0], element_description, len(self._x_series), **kwargs)
+        else:
+            raise ValueError("element_type \"%s\" is not an acceptable value." % element_type)
         self._elements[element_type].update({element_id: element_entry for element_id in element_ids})
 
         return element_entry
@@ -86,7 +85,7 @@ class SSV:
 
         for element_type in self._elements:
             if element_id in self._elements[element_type]:
-                del self._elements[element_id]
+                del self._elements[element_type][element_id]
 
     def __getitem__(self, element_id):
         if not isinstance(element_id, str):
@@ -126,10 +125,26 @@ class SSV:
         return template.render({'title': self._title, 'element_data': json.dumps(element_data),
                                 'x_series': self._x_series,
                                 'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
-                                'scale': self._scale,
                                 'sim_visual': ET.tostring(self._svg_root, 'utf-8', method="xml").decode('utf-8')})
 
     def prepare_svg(self):
+        # Add container elements to allow for zooming and panning
+        g_zoom = ET.Element('g')
+        g_zoom.attrib["id"] = "zoom-container"
+
+        for element in list(self._svg_root):
+            if self.namespace_strip(element.tag) in self.supported_svg + ['g']:
+                element_copy = element
+                g_zoom.append(element_copy)
+                self._svg_root.remove(element)
+
+        overlay_rect = ET.Element('rect')
+        overlay_rect.attrib["id"] = "ssv-overlay"
+
+        self._svg_root.attrib["id"] = "ssv-svg"
+        self._svg_root.insert(-1,g_zoom)
+        self._svg_root.insert(-1,overlay_rect)
+
         # Build dict of element ids and include report ids
         elements = {k: v for e in list(self._elements.values()) for k, v in e.items()}
         element_ids = list(elements.keys())
@@ -161,10 +176,12 @@ class SSV:
                     del g_element.attrib['id']
                     elements_out += self.element_recurse(g_element, element_id)
 
-            # Warn user if input id is not found in svg
+            # Warn user if input id is not found in svg and delete element_id
             if len(elements_out) < 1:
                 print("Warning: SVG element with id '%s' not found for supported svg element types."
                       "  No data will be bound to this element." % element_id)
+
+                self.del_element(element_id)
 
     def namespace_strip(self, tag):
         return tag.split('}')[-1]
@@ -290,6 +307,12 @@ class Toggle(Element):
         super(Toggle, self).__init__(toggle_id, toggle_description, x_series_len, toggle_report_id)
         base_required = ['data']
         self.Condition.required_inp_by_type.update({'show_hide': base_required})
+        self.conditions = []
+
+class Report(Element):
+    def __init__(self, report_id, report_description, x_series_len):
+        super(Report, self).__init__('', report_description, x_series_len, report_id)
+        base_required = ['data']
         self.conditions = []
 
 
