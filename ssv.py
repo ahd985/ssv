@@ -15,7 +15,8 @@ class SSV:
     element_classes = ['cell', 'line', 'heatmap', 'toggle', 'report']
     supported_svg = ['path', 'circle', 'rect', 'ellipse']
 
-    def __init__(self, x_series, x_series_unit, svg_file_path, title="My Simulation", font_size=12):
+    def __init__(self, x_series, x_series_unit, svg_file_path, title="My Simulation", font_size=12,
+                 color_scale_id=None):
         if not isinstance(x_series_unit, str):
             raise TypeError("x_series_unit input must be a string.")
         if not isinstance(title, str):
@@ -49,6 +50,8 @@ class SSV:
 
         if not isinstance(font_size, int):
             raise TypeError("font_size must be provided as an integer.")
+        if not color_scale_id is None and not isinstance(color_scale_id, str):
+            raise TypeError("color_scale_id must be provided as a string.")
 
         self._svg_root = svg_root
         self._title = title
@@ -56,6 +59,7 @@ class SSV:
         self._elements = {element: {} for element in self.element_classes}
         self._svg_out = None
         self._font_size = font_size
+        self._color_scale_id = color_scale_id
 
     def add_element(self, element_type, element_ids, element_description='', **kwargs):
         if not isinstance(element_ids, (list, str)):
@@ -123,7 +127,7 @@ class SSV:
                 element_data[element_type].append(element_dict)
 
         return template.render({'title': self._title, 'element_data': json.dumps(element_data),
-                                'x_series': self._x_series,
+                                'x_series': self._x_series, 'color_scale_id': self._color_scale_id,
                                 'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
                                 'sim_visual': ET.tostring(self._svg_root, 'utf-8', method="xml").decode('utf-8')})
 
@@ -149,6 +153,7 @@ class SSV:
         elements = {k: v for e in list(self._elements.values()) for k, v in e.items()}
         element_ids = list(elements.keys())
         element_ids += [element.report_id for element in elements.values() if element.report_id is not None]
+        element_ids += [self._color_scale_id] if not self._color_scale_id is None else []
         for element_id in element_ids:
             elements_out = []
 
@@ -279,13 +284,27 @@ class Cell(Element):
         self.Condition.input_types_allowed.update({'max_height': (float, int), 'data_dynamic': list,
                                                    'true_color': str, 'false_color': str, 'pattern': str})
         base_required = ['data']
-        self.Condition.required_inp_by_type.update({'level_static': base_required + ['max_height'],
-                                               'level_dynamic': base_required + ['max_height', 'data_dynamic',
+        self.Condition.required_inp_by_type.update({'level_static': base_required + ['max_height', 'min_height'],
+                                               'level_dynamic': base_required + ['max_height', 'min_height',
+                                                                                 'data_dynamic', 'description_dynamic',
                                                                                  'color_scale', 'color_levels'],
                                                'background': base_required + ['color_scale', 'color_levels'],
                                                'logical': base_required + ['true_color', 'false_color']})
         self.conditions = []
 
+    def add_condition(self, unit='', opacity=1.0, report=True, **kwargs):
+        super(Cell, self).add_condition(unit=unit, opacity=opacity, report=report, **kwargs)
+
+        # Add extra information for dynamic level
+        if kwargs['type'] == 'level_dynamic':
+            kwargs_dynamic = {'type': 'info',
+                              'data': kwargs['data_dynamic'],
+                              'description': kwargs['description_dynamic']}
+
+            unit = kwargs['unit_dynamic'] if 'unit_dynamic' in kwargs else ''
+            condition_id = "%s_%s" % ('_'.join(self.ids), 'dynamic')
+            condition = self.Condition(condition_id, unit=unit, opacity=opacity, report=report, **kwargs_dynamic)
+            self.conditions.append(condition)
 
 class Line(Element):
     def __init__(self, line_id, line_description, x_series_len, line_report_id=None):

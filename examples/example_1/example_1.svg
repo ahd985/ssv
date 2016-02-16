@@ -9,13 +9,13 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   viewBox="0 0 174.74474 297.4803"
+   viewBox="0 0 415.8065 297.48033"
    id="svg2"
    version="1.1"
    inkscape:version="0.91 r13725"
    sodipodi:docname="example_1.svg"
-   width="174.74472"
-   height="297.48029">
+   width="415.80646"
+   height="297.48032">
   <defs
      id="defs4" />
   <sodipodi:namedview
@@ -26,8 +26,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.1552846"
-     inkscape:cx="28.588821"
-     inkscape:cy="140.58058"
+     inkscape:cx="117.97657"
+     inkscape:cy="140.5806"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -45,8 +45,8 @@
     <inkscape:grid
        type="xygrid"
        id="grid4144"
-       originx="-119.50001"
-       originy="-99.500084" />
+       originx="120.5"
+       originy="-99.500059" />
   </sodipodi:namedview>
   <metadata
      id="metadata7">
@@ -56,7 +56,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -65,7 +65,7 @@
      inkscape:groupmode="layer"
      id="layer1"
      style="display:inline"
-     transform="translate(-119.5,-655.38187)">
+     transform="translate(120.5,-655.38186)">
     <path
        style="fill:#8d8771;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 150,702.36218 c 0,-40 0,-40 0,-40 l 50,0 0,10 -40,0 0,30 z"
@@ -143,7 +143,7 @@
     <g
        id="steam-toggle"
        inkscape:label="#g4221"
-       style="stroke:#b9b9b9;stroke-opacity:1;stroke-width:1.00000003;stroke-miterlimit:4;stroke-dasharray:none">
+       style="stroke:#b9b9b9;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1">
       <path
          d="m 164.27885,895.17871 c -0.29676,-0.35997 0.33883,-0.57763 0.5983,-0.49324 0.70316,0.22869 0.73009,1.16013 0.38818,1.68984 -0.61158,0.94751 -1.96177,0.93546 -2.78137,0.28312 -1.2028,-0.95733 -1.14811,-2.77472 -0.17807,-3.87291 1.29293,-1.46372 3.59174,-1.36395 4.96445,-0.073 1.72742,1.62452 1.58144,4.41071 -0.032,6.05599 -1.95415,1.99265 -5.23078,1.79989 -7.14752,-0.13711 -2.25882,-2.28268 -2.01895,-6.05154 0.24216,-8.23906 2.61055,-2.52558 6.87277,-2.23841 9.33061,0.34722 2.79274,2.93796 2.45815,7.69431 -0.45229,10.42214 -3.26506,3.06021 -8.51609,2.6781 -11.51367,-0.55734 -2.91253,-3.14364 -3.00612,-8.05812 -0.41873,-11.42564"
          sodipodi:t0="0"
@@ -154,7 +154,7 @@
          sodipodi:cy="895.17871"
          sodipodi:cx="164.27885"
          id="path4217"
-         style="fill:none;fill-rule:evenodd;stroke:#b9b9b9;stroke-width:1.00000003;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
+         style="fill:none;fill-rule:evenodd;stroke:#b9b9b9;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          sodipodi:type="spiral" />
       <path
          transform="scale(-1,1)"
@@ -167,7 +167,7 @@
          sodipodi:cy="895.09662"
          sodipodi:cx="-144.55293"
          id="path4219"
-         style="fill:none;fill-rule:evenodd;stroke:#b9b9b9;stroke-width:1.00000003;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
+         style="fill:none;fill-rule:evenodd;stroke:#b9b9b9;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          sodipodi:type="spiral" />
     </g>
     <g
@@ -218,5 +218,13 @@
        x="210.51099"
        y="702.39471"
        inkscape:label="#rect4187" />
+    <rect
+       style="opacity:0.63999999;fill:none;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="color-scale"
+       width="230"
+       height="80"
+       x="-120"
+       y="852.36224"
+       inkscape:label="#rect4154" />
   </g>
 </svg>

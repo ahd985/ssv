@@ -2,6 +2,9 @@ function ElementContext() {
     _self = this;
     this.element_data = {{ element_data }};
     this.x_series = {{ x_series }};
+    {% if color_scale_id %}
+    this.color_scale_id = "{{ color_scale_id }}";
+    {% endif %}
     this.elements = [];
     this.play_enabled = false;
     this.current_x = 0;
@@ -124,7 +127,55 @@ function ElementContext() {
 
     this.initialize_elements();
     this.initialize_slider();
-    this.initialize_zoom()
+    this.initialize_zoom();
+
+    if ('color_scale_id' in this) {
+        sel = d3.select("#" + this.color_scale_id);
+        parent = d3.select(sel.node().parentNode);
+        scales = [];
+
+        var height = sel.node().getBBox().height;
+        var width = sel.node().getBBox().width;
+        var pos_x = sel.node().getBBox().x;
+        var pos_y = sel.node().getBBox().y;
+
+        for (i in this.elements) {
+            for (j in this.elements[i].conditions) {
+                if ('color_scale' in this.elements[i].conditions[j])
+                    scales.push(this.elements[i].conditions[j].color_scale)
+            }
+        };
+
+        for (i in scales) {
+            scale = scales[i];
+            var scale_len = scale.range().length;
+
+            legend = parent.append('g').attr("transform", "translate(" + pos_x + "," + pos_y + ")")
+                .append("g");
+
+            var x = d3.scale.linear()
+                .domain([0, scale_len])
+                .range([0, width]);
+
+            var keys = legend.selectAll('rect').data(scale.range());
+
+            keys.enter().append('rect')
+                .attr("height",10)
+                .attr("x", function(d,i) {return x(i)})
+                .attr("width", function(d,i) {return x(i+1) - x(i)})
+                .attr("height", function(d) {return height / 2})
+                .style("fill", function(d) {return d})
+
+            keys.enter().append("text")
+                .text(function(d) {return scale.invertExtent(d)[0].toFixed(0)})
+                .attr("x", function(d,i) {return x(i)})
+                .attr("y", function(d) {return height})
+                .attr("width", function(d,i) {return x(i+1) - x(i)})
+                .attr("height", function(d) {return height})
+                .attr("font-family","sans-serif")
+                .attr("font-size", height/3)
+        }
+    }
 }
 
 
@@ -382,11 +433,13 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
                     grad_props['color'].push(condition.color_scale(condition.data[x]));
                     grad_props['opacity'].push(condition.opacity);
                 } else if (condition.type == 'level_static') {
-                    grad_props['y'].push(condition.data[x] / condition.max_height * 100);
+                    grad_props['y'].push(Math.min((condition.data[x] - condition.min_height) /
+                        (condition.max_height - condition.min_height) * 100, 100));
                     grad_props['color'].push(condition.color);
                     grad_props['opacity'].push(condition.opacity);
                 } else if (condition.type == 'level_dynamic') {
-                    grad_props['y'].push(condition.data[x] / condition.max_height * 100);
+                    grad_props['y'].push(Math.min((condition.data[x] - condition.min_height) /
+                        (condition.max_height - condition.min_height) * 100, 100));
                     grad_props['color'].push(condition.color_scale(condition.data_dynamic[x]));
                     grad_props['opacity'].push(condition.opacity);
                 } else if (condition.type == 'logical') {
@@ -523,7 +576,7 @@ function Toggle(toggle_ids, toggle_description, toggle_conditions, toggle_report
 
     toggle.update = function(x) {
         for (selector in this.selectors) {
-            sel = d3.select(this.selectors[selector]);
+            sel = d3.selectAll(this.selectors[selector]);
 
             for (i in this.conditions) {
                 condition = this.conditions[i];
