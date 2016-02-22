@@ -15,8 +15,7 @@ class SSV:
     element_classes = ['cell', 'line', 'heatmap', 'toggle', 'report']
     supported_svg = ['path', 'circle', 'rect', 'ellipse']
 
-    def __init__(self, x_series, x_series_unit, svg_file_path, title="My Simulation", font_size=12,
-                 color_scale_id=None):
+    def __init__(self, x_series, x_series_unit, svg_file_path, title="My Simulation", font_size=12):
         if not isinstance(x_series_unit, str):
             raise TypeError("x_series_unit input must be a string.")
         if not isinstance(title, str):
@@ -50,8 +49,6 @@ class SSV:
 
         if not isinstance(font_size, int):
             raise TypeError("font_size must be provided as an integer.")
-        if not color_scale_id is None and not isinstance(color_scale_id, str):
-            raise TypeError("color_scale_id must be provided as a string.")
 
         self._svg_root = svg_root
         self._title = title
@@ -59,7 +56,7 @@ class SSV:
         self._elements = {element: {} for element in self.element_classes}
         self._svg_out = None
         self._font_size = font_size
-        self._color_scale_id = color_scale_id
+        self._color_scales = []
 
     def add_element(self, element_type, element_ids, element_description='', **kwargs):
         if not isinstance(element_ids, (list, str)):
@@ -90,6 +87,10 @@ class SSV:
         for element_type in self._elements:
             if element_id in self._elements[element_type]:
                 del self._elements[element_type][element_id]
+
+    def show_color_scale(self, color_scale, color_levels, color_scale_desc, color_scale_id):
+        scale = ColorScale(color_scale, color_levels, color_scale_desc, color_scale_id)
+        self._color_scales.append(scale)
 
     def __getitem__(self, element_id):
         if not isinstance(element_id, str):
@@ -126,8 +127,10 @@ class SSV:
 
                 element_data[element_type].append(element_dict)
 
+        color_scales_data = [scale.__dict__ for scale in self._color_scales]
+
         return template.render({'title': self._title, 'element_data': json.dumps(element_data),
-                                'x_series': self._x_series, 'color_scale_id': self._color_scale_id,
+                                'x_series': self._x_series, 'color_scales_data': json.dumps(color_scales_data),
                                 'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
                                 'sim_visual': ET.tostring(self._svg_root, 'utf-8', method="xml").decode('utf-8')})
 
@@ -153,7 +156,7 @@ class SSV:
         elements = {k: v for e in list(self._elements.values()) for k, v in e.items()}
         element_ids = list(elements.keys())
         element_ids += [element.report_id for element in elements.values() if element.report_id is not None]
-        element_ids += [self._color_scale_id] if not self._color_scale_id is None else []
+        element_ids += [color_scale.id for color_scale in self._color_scales]
         for element_id in element_ids:
             elements_out = []
 
@@ -282,7 +285,7 @@ class Cell(Element):
     def __init__(self, cell_id, cell_description, x_series_len, cell_report_id=None):
         super(Cell, self).__init__(cell_id, cell_description, x_series_len, cell_report_id)
         self.Condition.input_types_allowed.update({'max_height': (float, int), 'data_dynamic': list,
-                                                   'true_color': str, 'false_color': str, 'pattern': str})
+                                                   'true_color': str, 'false_color': str, 'overlay': str})
         base_required = ['data']
         self.Condition.required_inp_by_type.update({'level_static': base_required + ['max_height', 'min_height'],
                                                'level_dynamic': base_required + ['max_height', 'min_height',
@@ -313,7 +316,6 @@ class Line(Element):
         self.Condition.required_inp_by_type.update({'sections_equal': base_required + ['color_scale', 'color_levels']})
         self.conditions = []
 
-
 class Heatmap(Element):
     def __init__(self, heatmap_id, heatmap_description, x_series_len, heatmap_report_id=None):
         super(Heatmap, self).__init__(heatmap_id, heatmap_description, x_series_len, heatmap_report_id)
@@ -333,5 +335,19 @@ class Report(Element):
         super(Report, self).__init__('', report_description, x_series_len, report_id)
         base_required = ['data']
         self.conditions = []
+
+class ColorScale:
+    def __init__(self, color_scale, color_levels, color_scale_desc, color_scale_id):
+        if not isinstance(color_scale, list) or not isinstance(color_levels, list):
+            raise TypeError("color_scale and color_levels must be a list.")
+        if not isinstance(color_scale_id, str):
+            raise TypeError("color_scale_id must be a string.")
+        if not isinstance(color_scale_desc, str):
+            raise TypeError("color_scale_desc must be a string.")
+
+        self.scale = color_scale
+        self.levels = color_levels
+        self.desc = color_scale_desc
+        self.id = color_scale_id
 
 

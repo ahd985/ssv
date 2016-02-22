@@ -1,9 +1,11 @@
 function ElementContext() {
-    _self = this;
+    _context = this;
     this.element_data = {{ element_data }};
     this.x_series = {{ x_series }};
-    {% if color_scale_id %}
-    this.color_scale_id = "{{ color_scale_id }}";
+    {% if color_scales_data %}
+        this.color_scales = {{ color_scales_data }};
+    {% else %}
+        this.color_scales = [];
     {% endif %}
     this.elements = [];
     this.play_enabled = false;
@@ -12,6 +14,25 @@ function ElementContext() {
     this.max_speed = 5.0;
     this.min_speed = 1.0;
     this.speed_step = 1.0;
+    this.svg_overlays = {% include 'svg-overlays.json' %}
+
+    this.initialize_overlays = function() {
+        if (d3.select("svg defs").empty()) {
+            svg.append("defs")
+        }
+
+        for (i in _context.svg_overlays) {
+            alert(i)
+            d3.select("svg defs").html(d3.select("svg defs").html() + _context.svg_overlays[i])
+        }
+    }
+
+    this.set_font_scale = function() {
+        _context.font_scale = parseFloat(d3.select("#ssv-svg").attr("viewBox").split(" ")[3]) /
+            d3.select(".sim-visual").node().getBoundingClientRect().height;
+
+        d3.select("#ssv-svg").attr("font-scale", _context.font_scale)
+    };
 
     this.initialize_elements = function() {
         for (element_type in this.element_data) {
@@ -50,45 +71,45 @@ function ElementContext() {
         $(".range-slider").attr("data-options", "initial: 0; start: 0; end: " + (this.x_series.length - 1).toString());
         $(document).foundation();
         $('[data-slider]').on('change.fndtn.slider', function(){
-            _self.current_x = Math.round($('.range-slider').attr('data-slider'));
-            _self.update_elements(_self.current_x)
+            _context.current_x = Math.round($('.range-slider').attr('data-slider'));
+            _context.update_elements(_context.current_x)
         });
         $("#play-button").click(function() {
-            if (_self.play_enabled) {
-                _self.play_enabled = false;
+            if (_context.play_enabled) {
+                _context.play_enabled = false;
                 $("#pause-icon").attr("style", "display:none");
                 $("#play-icon").attr("style", "");
             } else {
-                _self.play_enabled = true;
+                _context.play_enabled = true;
                 $("#pause-icon").attr("style", "");
                 $("#play-icon").attr("style", "display:none");
-                if (_self.current_x == _self.x_series.length - 1) {
-                    _self.current_x = 0;
-                    $('.range-slider').foundation('slider', 'set_value', _self.current_x);
+                if (_context.current_x == _context.x_series.length - 1) {
+                    _context.current_x = 0;
+                    $('.range-slider').foundation('slider', 'set_value', _context.current_x);
                 }
-                _self.x_series_forward()
+                _context.x_series_forward()
             }
         });
         $("#speed-button").click(function() {
-            if (_self.play_speed == _self.max_speed) {
-                _self.play_speed = _self.min_speed
+            if (_context.play_speed == _context.max_speed) {
+                _context.play_speed = _context.min_speed
             } else {
-                _self.play_speed += _self.speed_step
+                _context.play_speed += _context.speed_step
             }
-            $("#speed-val").html(_self.play_speed.toString() + "x")
+            $("#speed-val").html(_context.play_speed.toString() + "x")
         })
     };
 
     this.x_series_forward = function () {
         window.setTimeout(function() {
-            if (_self.play_enabled && _self.current_x < _self.x_series.length) {
-                _self.current_x += 1;
-                $('.range-slider').foundation('slider', 'set_value', _self.current_x);
-                _self.update_elements(_self.current_x);
+            if (_context.play_enabled && _context.current_x < _context.x_series.length) {
+                _context.current_x += 1;
+                $('.range-slider').foundation('slider', 'set_value', _context.current_x);
+                _context.update_elements(_context.current_x);
 
 
-                if (_self.current_x < _self.x_series.length - 1) {
-                    _self.x_series_forward()
+                if (_context.current_x < _context.x_series.length - 1) {
+                    _context.x_series_forward()
                 } else {
                     $("#play-button").trigger("click")
                 }
@@ -125,60 +146,73 @@ function ElementContext() {
         d3.select("#ssv-overlay").call(zoom);
     };
 
+    this.build_color_scales = function() {
+        font_scale = d3.select("#ssv-svg").attr("font-scale");
+        header_height = 1.5 * font_scale;
+        label_height = 1.0 * font_scale;
+        margin = 1.10;
+
+        for (i in _context.color_scales) {
+            scale = _context.color_scales[i];
+            sel = d3.select("#" + scale.id);
+
+            if (!sel.empty()) {
+                // Hide sel element
+                sel.style("visibility", "hidden");
+
+                parent = d3.select(sel.node().parentNode);
+                color_scale = d3.scale.quantile()
+                            .domain([d3.min(scale.levels), d3.max(scale.levels)])
+                            .range(scale.scale);
+
+                bbox = sel.node().getBBox();
+                width = bbox.width;
+                pos_x = bbox.x;
+                pos_y = bbox.y;
+
+                var scale_len = color_scale.range().length;
+                legend = parent.append('g').attr("transform", "translate(" + pos_x + "," + pos_y + ")")
+                    .append("g");
+
+                var x = d3.scale.linear()
+                    .domain([0, scale_len])
+                    .range([0, width]);
+
+                legend.append("text")
+                    .text(scale.desc)
+                    .attr("x", (width/2))
+                    .attr("y", (header_height).toString() + "em")
+                    .attr("text-anchor", "middle")
+                    .attr("font-size", header_height.toString() + "em");
+
+                var keys = legend.selectAll('rect').data(color_scale.range());
+
+                keys.enter().append('rect')
+                    .attr("x", function(d,i) {return x(i)})
+                    .attr("y", function() {return (header_height * margin).toString() + "em"})
+                    .attr("width", function(d,i) {return x(i+1) - x(i)})
+                    .attr("height", function() {return header_height.toString() + "em"})
+                    .attr("font-size", header_height.toString() + "em")
+                    .style("fill", function(d) {return d});
+
+                keys.enter().append("text")
+                    .text(function(d) {return color_scale.invertExtent(d)[0].toFixed(0)})
+                    .attr("x", function(d,i) {return x(i)})
+                    .attr("y", function() {return ((2 * header_height + label_height) *
+                        header_height / label_height * margin).toString() + "em"})
+                    .attr("text-anchor", "middle")
+                    .attr("font-size", (label_height).toString() + "em");
+            }
+        }
+    };
+
+    this.initialize_overlays();
+    this.set_font_scale();
     this.initialize_elements();
     this.initialize_slider();
     this.initialize_zoom();
-
-    if ('color_scale_id' in this) {
-        sel = d3.select("#" + this.color_scale_id);
-        parent = d3.select(sel.node().parentNode);
-        scales = [];
-
-        var height = sel.node().getBBox().height;
-        var width = sel.node().getBBox().width;
-        var pos_x = sel.node().getBBox().x;
-        var pos_y = sel.node().getBBox().y;
-
-        for (i in this.elements) {
-            for (j in this.elements[i].conditions) {
-                if ('color_scale' in this.elements[i].conditions[j])
-                    scales.push(this.elements[i].conditions[j].color_scale)
-            }
-        };
-
-        for (i in scales) {
-            scale = scales[i];
-            var scale_len = scale.range().length;
-
-            legend = parent.append('g').attr("transform", "translate(" + pos_x + "," + pos_y + ")")
-                .append("g");
-
-            var x = d3.scale.linear()
-                .domain([0, scale_len])
-                .range([0, width]);
-
-            var keys = legend.selectAll('rect').data(scale.range());
-
-            keys.enter().append('rect')
-                .attr("height",10)
-                .attr("x", function(d,i) {return x(i)})
-                .attr("width", function(d,i) {return x(i+1) - x(i)})
-                .attr("height", function(d) {return height / 2})
-                .style("fill", function(d) {return d})
-
-            keys.enter().append("text")
-                .text(function(d) {return scale.invertExtent(d)[0].toFixed(0)})
-                .attr("x", function(d,i) {return x(i)})
-                .attr("y", function(d) {return height})
-                .attr("width", function(d,i) {return x(i+1) - x(i)})
-                .attr("height", function(d) {return height})
-                .attr("font-family","sans-serif")
-                .attr("font-size", height/3)
-        }
-    }
+    this.build_color_scales();
 }
-
-
 
 function Element(element_ids, element_description, element_conditions, report_id) {
     this.ids = element_ids;
@@ -241,7 +275,10 @@ function Element(element_ids, element_description, element_conditions, report_id
         // Start new parent element
         g = parent.append("g")
                 .attr("transform", "translate(" + pos_x + "," + pos_y + ")")
-                .append("g");
+                .append("g")
+                .attr("id","ssv-report");
+
+        font_scale = d3.select("#ssv-svg").attr("font-scale");
 
         // Create title outline
         title_outline = g.append("rect")
@@ -258,7 +295,7 @@ function Element(element_ids, element_description, element_conditions, report_id
             .attr("y", this.margin)
             .attr("text-anchor", "middle")
             .attr("fill", "#FFC107")
-            .style("font-size", "1.2em")
+            .style("font-size", (1.2 * font_scale).toString() + "em")
             .text(this.description);
 
         this.max_text_len = Math.floor(this.description.length * this.width /
@@ -291,7 +328,7 @@ function Element(element_ids, element_description, element_conditions, report_id
                 .attr("y", (i+1/2)*2*(text_height + 2*this.margin) + this.margin + text_height)
                 .attr("text-anchor", "middle")
                 .attr("fill", "#00BFA5")
-                .style("font-size", "1em")
+                .style("font-size", font_scale.toString() + "em")
                 .attr("font-style","oblique")
                 .text(condition.description);
 
@@ -302,7 +339,7 @@ function Element(element_ids, element_description, element_conditions, report_id
                 .attr("y", (i+1/2)*2*(text_height + 2*this.margin) + 2*this.margin + 2*text_height)
                 .attr("text-anchor", "middle")
                 .attr("fill", "#FFEB3B")
-                .style("font-size", "1em");
+                .style("font-size", font_scale.toString() + "em");
 
             // Unit text
             g.append("text")
@@ -310,7 +347,7 @@ function Element(element_ids, element_description, element_conditions, report_id
                 .attr("y", (i+1/2)*2*(text_height + 2*this.margin) + 2*this.margin + 2*text_height)
                 .attr("text-anchor", "middle")
                 .attr("fill", "#FFFFFF")
-                .style("font-size", "1em")
+                .style("font-size", font_scale.toString() + "em")
                 .text(condition.unit);
         }
 
@@ -328,89 +365,76 @@ function Element(element_ids, element_description, element_conditions, report_id
         }
     };
 
-    this.update_linear_gradient = function(sel, grad_id, grad_props, style_apply) {
-        grad = d3.select("#" + grad_id);
+    this.update_pattern = function(sel, pattern_id, pattern_props, style_apply) {
+        pattern = d3.select("#" + pattern_id);
 
-        if (grad.empty()) {
-            sel.style("fill-opacity", 1);
+        if (pattern.empty()) {
             if (d3.select("svg defs").empty()) {
                 svg.append("defs")
             }
 
             defs = d3.select("svg defs");
-            defs.append("linearGradient").attr("id", grad_id)
-                .attr("x1", "0%").attr("x2", "0%").attr("y1", "100%").attr("y2", "0%");
+            defs.append("pattern").attr("id", pattern_id)
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("width", "100%")
+                .attr("height", "100%")
+                .attr("patternContentUnits", "userSpaceOnUse");
 
-            style_apply == 'fill' ? sel.style("fill", "url(#" + grad_id + ")") :
-                sel.style("stroke", "url(#" + grad_id + ")");
+            style_apply == 'fill' ? sel.style("fill", "url(#" + pattern_id + ")") :
+                sel.style("stroke", "url(#" + pattern_id + ")");
 
-            grad = d3.select("#" + grad_id);
+            sel.style("fill-opacity", 1);
+            pattern = d3.select("#" + pattern_id);
         }
 
-        // Zip arrays in grad_props, sort, and apply percent function to order property
+        // Zip arrays in pattern_props, sort, and apply percent function to order property
         order_prop = 'y';
-        props_zipped = grad_props[order_prop];
-        props_zipped = props_zipped.map(function(e, i) {return [grad_props[order_prop][i]]});
-        prop_keys = Object.keys(grad_props);
+        props_zipped = pattern_props[order_prop];
+        props_zipped = props_zipped.map(function(e, i) {return [pattern_props[order_prop][i]]});
+        prop_keys = Object.keys(pattern_props);
         for (i in prop_keys) {
             if (prop_keys[i] != order_prop) {
-                prop_vals = grad_props[prop_keys[i]];
+                prop_vals = pattern_props[prop_keys[i]];
                 props_zipped = props_zipped.map(function(e, ii) {return props_zipped[ii].concat([prop_vals[ii]])})
             }
         }
 
-        props_zipped = props_zipped.sort(function(a,b) {return a[0] - b[0]});
-        props_zipped = props_zipped.map(function(row) {
-            return [Math.round(row[0]).toString() + "%"].concat(row.slice(1,row.length))
-        });
+        props_zipped = props_zipped.sort(function(a,b) {return -(a[0] - b[0])});
 
         for (i in prop_keys) {
-            grad_props[prop_keys[i]] = props_zipped.map(function (row) {
+            pattern_props[prop_keys[i]] = props_zipped.map(function (row) {
                 return row[i]
             })
         };
 
-        for (i in grad_props[order_prop]) {
-            stop_id_1 = "stop_" + i.toString() + "_1";
-            grad_stop_1 = grad.select("#" + stop_id_1);
-            if (grad_stop_1.empty()) {
-                grad.append("stop").attr("id", stop_id_1);
+        bbox = sel.node().getBBox();
+        for (i in pattern_props[order_prop]) {
+            rect_id = "rect_" + i.toString();
+            pattern_rect = pattern.select("#" + rect_id);
+
+            if (pattern_rect.empty()) {
+                pattern.append("rect").attr("id", rect_id);
+
+                // Check for pattern overlays
+                if (pattern_props['overlay'][i]) {
+                    if (pattern_props['overlay'][i] in _context.svg_overlays) {
+                        pattern.append("rect").attr("fill", "url(#" + pattern_props['overlay'][i] + ")")
+                            .attr("x",0)
+                            .attr("y",Math.max(0, 1 - pattern_props[order_prop][i]) * bbox.height)
+                            .attr("height","100%")
+                            .attr("width","100%");
+                    }
+                }
             }
 
-            grad_stop_1.transition().attr("offset", grad_props[order_prop][i])
-                .style("stop-color", grad_props['color'][i])
-                .style("stop-opacity", grad_props['opacity'][i]);
-
-            if (i < grad_props[order_prop].length - 1) {
-                // Draw transition zone
-                transition_id_1 = "transition_" + i.toString()  + "_1";
-                transition_id_2 = "transition_" + i.toString()  + "_2";
-                transition_stop_1 = grad.select("#" + transition_id_1);
-                transition_stop_2 = grad.select("#" + transition_id_2);
-                if (transition_stop_1.empty()) {
-                    grad.append("stop").attr("id", transition_id_1);
-                    grad.append("stop").attr("id", transition_id_2);
-                }
-
-                // AHD - fix so this works - need to adjust level %.
-                transition_stop_1.transition().attr("offset", grad_props[order_prop][i])
-                    .style("stop-color", '#FFFFFF')
-                    .style("stop-opacity", grad_props['opacity'][i]);
-                transition_stop_2.transition().attr("offset", grad_props[order_prop][i])
-                    .style("stop-color", '#FFFFFF')
-                    .style("stop-opacity", grad_props['opacity'][parseInt(i) + 1]);
-
-                // Draw next color
-                stop_id_2 = "stop_" + i.toString() + "_2";
-                grad_stop_2 = grad.select("#" + stop_id_2);
-                if (grad_stop_2.empty()) {
-                    grad.append("stop").attr("id", stop_id_2);
-                }
-
-                grad_stop_2.transition().attr("offset", grad_props[order_prop][i])
-                    .style("stop-color", grad_props['color'][parseInt(i)+1])
-                    .style("stop-opacity", grad_props['opacity'][parseInt(i)+1]);
-            }
+            pattern_rect.transition()
+                .attr("x","0")
+                .attr("y", Math.max(0, 1 - pattern_props[order_prop][i]) * bbox.height)
+                .attr("width","100%")
+                .attr("height", "100%")
+                .style("fill", pattern_props['color'][i])
+                .style("opacity", pattern_props['opacity'][i]);
         }
     }
 }
@@ -421,36 +445,44 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
     cell.update = function(x) {
         for (selector in this.selectors) {
             sel = d3.select(this.selectors[selector]);
-            grad_id = "grad_" + this.ids[selector];
+            pattern_id = "pattern_" + this.ids[selector];
 
-            grad_props = {'y':[], 'color':[], 'opacity':[]};
+            pattern_props = {'y':[], 'color':[], 'opacity':[], overlay:[]};
 
             for (i in this.conditions) {
                 condition = this.conditions[i];
 
                 if (condition.type == 'background') {
-                    grad_props['y'].push(100);
-                    grad_props['color'].push(condition.color_scale(condition.data[x]));
-                    grad_props['opacity'].push(condition.opacity);
+                    pattern_props['y'].push(1.01);
+                    pattern_props['color'].push(condition.color_scale(condition.data[x]));
+                    pattern_props['opacity'].push(condition.opacity);
+                    "overlay" in condition ? pattern_props['overlay'].push(condition.overlay) :
+                        pattern_props['overlay'].push(null)
                 } else if (condition.type == 'level_static') {
-                    grad_props['y'].push(Math.min((condition.data[x] - condition.min_height) /
-                        (condition.max_height - condition.min_height) * 100, 100));
-                    grad_props['color'].push(condition.color);
-                    grad_props['opacity'].push(condition.opacity);
+                    pattern_props['y'].push(Math.min((condition.data[x] - condition.min_height) /
+                        (condition.max_height - condition.min_height), 1));
+                    pattern_props['color'].push(condition.color);
+                    pattern_props['opacity'].push(condition.opacity);
+                    "overlay" in condition ? pattern_props['overlay'].push(condition.overlay) :
+                        pattern_props['overlay'].push(null)
                 } else if (condition.type == 'level_dynamic') {
-                    grad_props['y'].push(Math.min((condition.data[x] - condition.min_height) /
-                        (condition.max_height - condition.min_height) * 100, 100));
-                    grad_props['color'].push(condition.color_scale(condition.data_dynamic[x]));
-                    grad_props['opacity'].push(condition.opacity);
+                    pattern_props['y'].push(Math.min((condition.data[x] - condition.min_height) /
+                        (condition.max_height - condition.min_height), 1));
+                    pattern_props['color'].push(condition.color_scale(condition.data_dynamic[x]));
+                    pattern_props['opacity'].push(condition.opacity);
+                    "overlay" in condition ? pattern_props['overlay'].push(condition.overlay) :
+                        pattern_props['overlay'].push(null)
                 } else if (condition.type == 'logical') {
-                    grad_props['y'].push(100);
-                    grad_props['color'].push((condition.data[x] == true ||  condition.data[x] > 0) ?
-                            condition.true_color : condition.false_color)
-                    grad_props['opacity'].push(condition.opacity);
+                    pattern_props['y'].push(1.01);
+                    pattern_props['color'].push((condition.data[x] == true ||  condition.data[x] > 0) ?
+                            condition.true_color : condition.false_color);
+                    pattern_props['opacity'].push(condition.opacity);
+                    "overlay" in condition ? pattern_props['overlay'].push(condition.overlay) :
+                        pattern_props['overlay'].push(null)
                 }
             }
 
-            this.update_linear_gradient(sel, grad_id, grad_props, "fill");
+            this.update_pattern(sel, pattern_id, pattern_props, "fill");
         };
 
         if (this.report_id) {this.update_report(x)}
@@ -471,9 +503,10 @@ function Line(line_ids, line_description, line_conditions, line_report_id) {
     line.update = function(x) {
         for (selector in this.selectors) {
             sel = d3.select(this.selectors[selector]);
-            grad_id = "grad_" + this.ids[selector];
+            pattern_id = "pattern_" + this.ids[selector];
 
-            heights_colors_opacities = [];
+            pattern_props = {'y':[], 'color':[], 'opacity':[], 'overlay':[]};
+
             for (i in this.conditions) {
                 condition = this.conditions[i];
 
@@ -481,13 +514,16 @@ function Line(line_ids, line_description, line_conditions, line_report_id) {
                     for (j=1; j<=condition.num_sections; j++) {
                         condition.data[0].constructor == Array ? color_level = condition.data[x][j-1] :
                             color_level = condition.data[x];
-                        heights_colors_opacities.push([j / condition.num_sections * 100,
-                            condition.color_scale(color_level), condition.opacity]);
+                        patter_props['y'].push(j / condition.num_sections);
+                        pattern_props['color'].push(condition.color_scale(color_level));
+                        pattern_props['opacity'].push(condition.opacity);
+                        "overlay" in condition ? pattern_props['overlay'].push(condition.overlay) :
+                            pattern_props['overlay'].push(null)
                     }
                 }
             }
 
-            this.update_linear_gradient(sel, grad_id, heights_colors_opacities, "stroke");
+            this.update_pattern(sel, pattern_id, pattern_props, "stroke");
         };
 
         if (this.report_id) {this.update_report(x)}
