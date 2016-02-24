@@ -22,7 +22,6 @@ function ElementContext() {
         }
 
         for (i in _context.svg_overlays) {
-            alert(i)
             d3.select("svg defs").html(d3.select("svg defs").html() + _context.svg_overlays[i])
         }
     }
@@ -416,18 +415,24 @@ function Element(element_ids, element_description, element_conditions, report_id
             if (pattern_rect.empty()) {
                 pattern.append("rect").attr("id", rect_id);
 
+                // Add transition rect
+                pattern.append("rect").attr("id", rect_id + "_trans")
+                    .attr("fill", "#FFFFFF")
+                    .attr("x",0)
+                    .attr("height","1px")
+                    .attr("width","100%");
+
                 // Check for pattern overlays
-                if (pattern_props['overlay'][i]) {
-                    if (pattern_props['overlay'][i] in _context.svg_overlays) {
-                        pattern.append("rect").attr("fill", "url(#" + pattern_props['overlay'][i] + ")")
-                            .attr("x",0)
-                            .attr("y",Math.max(0, 1 - pattern_props[order_prop][i]) * bbox.height)
-                            .attr("height","100%")
-                            .attr("width","100%");
-                    }
+                if (pattern_props['overlay'][i] && pattern_props['overlay'][i] in _context.svg_overlays) {
+                    pattern.append("rect").attr("id", rect_id + "_" + pattern_props['overlay'][i])
+                        .attr("fill", "url(#" + pattern_props['overlay'][i] + ")")
+                        .attr("x",0)
+                        .attr("height","100%")
+                        .attr("width","100%");
                 }
             }
 
+            // Update levels
             pattern_rect.transition()
                 .attr("x","0")
                 .attr("y", Math.max(0, 1 - pattern_props[order_prop][i]) * bbox.height)
@@ -435,6 +440,21 @@ function Element(element_ids, element_description, element_conditions, report_id
                 .attr("height", "100%")
                 .style("fill", pattern_props['color'][i])
                 .style("opacity", pattern_props['opacity'][i]);
+
+            // Update transitions
+            if (pattern_props[order_prop][i] < 1.0) {
+                pattern.select("#" + rect_id + "_trans").transition()
+                    .attr("y",Math.max(0, 1 - pattern_props[order_prop][i]) * bbox.height);
+            } else {
+                pattern.select("#" + rect_id + "_trans").transition()
+                    .attr("y", "-1%");
+            }
+
+            // Update pattern overlays
+            if (pattern_props['overlay'][i] && pattern_props['overlay'][i] in _context.svg_overlays) {
+                pattern_overlay = pattern.select("#" + rect_id + "_" + pattern_props['overlay'][i]);
+                pattern_overlay.transition().attr("y", Math.max(0, 1 - pattern_props[order_prop][i]) * bbox.height);
+            }
         }
     }
 }
