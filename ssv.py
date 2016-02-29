@@ -292,7 +292,10 @@ class Cell(Element):
                                                                                  'data_dynamic', 'description_dynamic',
                                                                                  'color_scale', 'color_levels'],
                                                'background': base_required + ['color_scale', 'color_levels'],
-                                               'logical': base_required + ['true_color', 'false_color']})
+                                               'logical': base_required + ['true_color', 'false_color'],
+                                               'zonal_y': base_required + ['max_height', 'min_height',
+                                                                           'data_dynamic', 'description_dynamic',
+                                                                           'color_scale', 'color_levels']})
         self.conditions = []
 
     def add_condition(self, unit='', opacity=1.0, report=True, **kwargs):
@@ -303,6 +306,20 @@ class Cell(Element):
             kwargs_dynamic = {'type': 'info',
                               'data': kwargs['data_dynamic'],
                               'description': kwargs['description_dynamic']}
+
+            unit = kwargs['unit_dynamic'] if 'unit_dynamic' in kwargs else ''
+            condition_id = "%s_%s" % ('_'.join(self.ids), 'dynamic')
+            condition = self.Condition(condition_id, unit=unit, opacity=opacity, report=report, **kwargs_dynamic)
+            self.conditions.append(condition)
+
+        # Logic for zonal visualization
+        if kwargs['type'] == 'zonal_y':
+            if not isinstance(kwargs['data'][0], list) or 2 < len(kwargs['data'][0]) < 2:
+                raise TypeError("data input for %s must be the of len 2 in the 2nd dimension" % self.description)
+
+            kwargs_dynamic = {'type': 'info',
+                  'data': kwargs['data_dynamic'],
+                  'description': kwargs['description_dynamic']}
 
             unit = kwargs['unit_dynamic'] if 'unit_dynamic' in kwargs else ''
             condition_id = "%s_%s" % ('_'.join(self.ids), 'dynamic')
