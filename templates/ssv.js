@@ -2,23 +2,19 @@
 // Called on $(document).ready()
 function ElementContext() {
     // Initialize properties
-    // -- Context reference
     _context = this;
-    // -- Bulk simulation data from Python
-    //    Element_data is the "y" data representing svg elements that corresponds to the x_series data
+    // -- Element_data is the "y" data representing svg elements that corresponds to the x_series data
     this.x_series = {{ x_series }};
     this.element_data = {{ element_data }};
-    // -- Add in color scale data if provided by Python
-    //    This data provides for rendering graphical color scale legends within the svg
+    // -- This data provides for rendering graphical color scale legends within the svg
     {% if color_scales_data %}
         this.color_scales = {{ color_scales_data }};
     {% else %}
         this.color_scales = [];
     {% endif %}
-    // -- Storage array of svg elements being manipulated
+
     this.elements = [];
-    // -- Simulation interface properties
-    //    Control automatic play, play speed, etc
+    // -- Simulation interface properties - control automatic play, play speed, etc
     this.play_enabled = false;
     this.current_x = 0;
     this.play_speed = 1.0;
@@ -35,7 +31,7 @@ function ElementContext() {
             svg.append("defs")
         }
 
-        for (i in _context.svg_overlays) {
+        for (var i in _context.svg_overlays) {
             d3.select("svg defs").html(d3.select("svg defs").html() + _context.svg_overlays[i])
         }
     }
@@ -49,10 +45,9 @@ function ElementContext() {
         d3.select("#ssv-svg").attr("font-scale", _context.font_scale)
     };
 
-    // Initializer function of svg elements by parsing data from this.element_data into classes by element types
     this.initialize_elements = function() {
-        for (element_type in this.element_data) {
-            for (element in this.element_data[element_type]) {
+        for (var element_type in this.element_data) {
+            for (var element in this.element_data[element_type]) {
                 element = this.element_data[element_type][element];
                 if (element_type == 'cell') {
                     this.elements.push(new Cell(element.ids, element.description,
@@ -83,8 +78,8 @@ function ElementContext() {
     // Function to tell all manipulated element classes to update rendering given index of this.x_series
     this.update_elements = function(x) {
         $("#x-series-val").html(this.x_series[x]);
-        for (element in this.elements) {
-            this.elements[element].update(x);
+        for (var element in _context.elements) {
+            _context.elements[element].update(x);
         }
     };
 
@@ -147,10 +142,8 @@ function ElementContext() {
     // Initializer of pan and zoom functionality
     this.initialize_pan_zoom = function() {
         // Add border to svg to outline zoom/pan zone
-        ssv_svg = d3.select("#ssv-svg");
+        var ssv_svg = d3.select("#ssv-svg");
         ssv_svg.append("rect")
-            .attr("x", 0)
-            .attr("y", 0)
             .attr("height", "100%")
             .attr("width", "100%")
             .style("stroke", "black")
@@ -158,37 +151,36 @@ function ElementContext() {
             .style("stroke-width", "2px");
 
         // Get svg, svg parent div dimensions
-        viewbox = ssv_svg.attr("viewBox").split(" ");
-        svg_bbox = ssv_svg.node().getBBox();
-        x1 = parseFloat(viewbox[0]);
-        x2 = parseFloat(viewbox[2]);
-        y1 = parseFloat(viewbox[1]);
-        y2 = parseFloat(viewbox[3]);
+        var viewbox = ssv_svg.attr("viewBox").split(" ");
+        var svg_bbox = ssv_svg.node().getBBox();
+        var x1 = parseFloat(viewbox[0]);
+        var x2 = parseFloat(viewbox[2]);
+        var y1 = parseFloat(viewbox[1]);
+        var y2 = parseFloat(viewbox[3]);
 
-        div_bbox = d3.select(".sim-visual").node().getBoundingClientRect();
+        var div_bbox = d3.select(".sim-visual").node().getBoundingClientRect();
 
-        // Calculate max allowable svg width and height;
-        max_width = (x2 - x1);
-        max_height = (y2 - y1);
+        var max_width = (x2 - x1);
+        var max_height = (y2 - y1);
 
         // Apply overlay to control zoom/pan;
-        ssv_overlay = d3.select("#ssv-overlay")
+        var ssv_overlay = d3.select("#ssv-overlay")
             .attr("y", svg_bbox.y)
             .attr("height", svg_bbox.height)
             .attr("x", svg_bbox.x)
             .attr("width", svg_bbox.width);
 
         // Apply zoom/pan features and pan limit
-        zoom_container = d3.select("#zoom-container");
-        zoom = d3.behavior.zoom()
+        var zoom_container = d3.select("#zoom-container");
+        var zoom = d3.behavior.zoom()
             .scale(1)
             .scaleExtent([1, 8])
             .on("zoom", function() {
-                scale = d3.event.scale;
-                tx = Math.max(d3.event.translate[0], -(x2 * scale - max_width));
-                tx = Math.min(tx, x1);
-                ty = Math.max(d3.event.translate[1], -(y2 * scale - max_height));
-                ty = Math.min(ty, y1);
+                var scale = d3.event.scale;
+                var tx = Math.max(d3.event.translate[0], -(x2 * scale - max_width));
+                var tx = Math.min(tx, x1);
+                var ty = Math.max(d3.event.translate[1], -(y2 * scale - max_height));
+                var ty = Math.min(ty, y1);
 
                 zoom.translate([tx,ty]);
                 zoom_container.attr("transform", "translate(" + [tx,ty] + ")scale(" + scale + ")")
@@ -197,34 +189,33 @@ function ElementContext() {
         d3.select("#ssv-overlay").call(zoom);
     };
 
-    // Function to generate color scale legends in ssv output
     this.build_color_scales = function() {
         // Loop through all color scale data
-        for (i in _context.color_scales) {
-            scale = _context.color_scales[i];
-            sel = d3.select("#" + scale.id);
+        for (var i in _context.color_scales) {
+            var scale = _context.color_scales[i];
+            var sel = d3.select("#" + scale.id);
 
             // If scale selector not empty fill it in with color scale legend
-            // Placement element width is only property used - height is ultimately determined by user specified
-            // font size
             if (!sel.empty()) {
                 // Hide original placement element
                 sel.style("visibility", "hidden");
 
                 // Get bounding box of placement element
-                bbox = sel.node().getBBox();
-                width = bbox.width;
-                pos_x = bbox.x;
-                pos_y = bbox.y;
+                // Placement element height is not used - height of legend is ultimately determined by user specified
+                // font size
+                var bbox = sel.node().getBBox();
+                var width = bbox.width;
+                var pos_x = bbox.x;
+                var pos_y = bbox.y;
 
                 // Append legend outline to parent of placement element
                 // Set legend font size to font scale property
-                parent = d3.select(sel.node().parentNode);
-                legend = parent.append('g').attr("transform", "translate(" + pos_x + "," + pos_y + ")")
+                var parent = d3.select(sel.node().parentNode);
+                var legend = parent.append('g').attr("transform", "translate(" + pos_x + "," + pos_y + ")")
                     .append("g").attr("font-size", _context.font_scale + "em");
 
                 // Calculate discrete color bin scale
-                color_scale = d3.scale.quantile().domain([d3.min(scale.levels), d3.max(scale.levels)])
+                var color_scale = d3.scale.quantile().domain([d3.min(scale.levels), d3.max(scale.levels)])
                     .range(scale.scale);
                 var scale_len = color_scale.range().length;
                 var x = d3.scale.linear()
@@ -234,9 +225,9 @@ function ElementContext() {
                 // Generate legend
                 // "header_em" represents the color scale title font size
                 // "label" represents the color scale bin values font size
-                header_em = 1.5;
-                label_em = 1;
-                margin = 1.1;
+                var header_em = 1.5;
+                var label_em = 1;
+                var margin = 1.1;
 
                 // -- Append header text
                 legend.append("text")
@@ -244,7 +235,7 @@ function ElementContext() {
                     .attr("x", (width/2))
                     .attr("y", "1em")
                     .attr("text-anchor", "middle")
-                    .attr("font-size", header_em + "em");
+                    .attr("font-size", header_em.toString() + "em");
 
                 // -- Generate range of colors required for legend
                 var keys = legend.selectAll('rect').data(color_scale.range());
@@ -257,7 +248,7 @@ function ElementContext() {
                     .attr("width", function(d,i) {return x(i+1) - x(i)})
                     .attr("height", "1em")
                     .style("fill", function(d) {return d})
-                    .attr("font-size", header_em + "em");;
+                    .attr("font-size", header_em.toString() + "em");;
 
                 // -- Append value text immediately below the left-most area of every color rect
                 keys.enter().append("text")
@@ -265,7 +256,7 @@ function ElementContext() {
                     .attr("x", function(d,i) {return x(i)})
                     .attr("y", (2 * header_em/label_em + 1)* margin  + "em")
                     .attr("text-anchor", "middle")
-                    .attr("font-size", label_em + "em");
+                    .attr("font-size", label_em.toString() + "em");
             }
         }
     };
@@ -281,13 +272,11 @@ function ElementContext() {
 
 // Inheritable parent class of every element type
 function Element(element_ids, element_description, element_conditions, report_id) {
-    // Base element properties
-    // -- Store representative element ids for every element in svg represented by this class
     this.ids = element_ids;
     // -- Build list of selectors from ids
     this.selectors = [];
-    for (id in this.ids) {
-        this.selectors.push("#" + this.ids[id])
+    for (var i in this.ids) {
+        this.selectors.push("#" + this.ids[i])
     }
     // -- Report id represents id of placement element for element report - Optional property
     this.report_id = report_id;
@@ -296,16 +285,16 @@ function Element(element_ids, element_description, element_conditions, report_id
     // -- Array of element conditions - data types that describe simulation characteristics such as
     //    temperature and water levels
     this.conditions = element_conditions;
-    // -- Track initialization of report
+
     this.report_initialized = false;
 
     // Loop through conditions and check for color scale
     // If color scale exists, use d3 to generate domain and range of scale.
-    for (condition in element.conditions) {
-        condition = element.conditions[condition];
+    for (var i in this.conditions) {
+        condition = this.conditions[i];
         if ('color_scale' in condition && 'color_levels' in condition) {
-            color_scale = condition.color_scale;
-            color_levels = condition.color_levels;
+            var color_scale = condition.color_scale;
+            var color_levels = condition.color_levels;
             condition.color_scale = d3.scale.quantile()
                 .domain([d3.min(color_levels), d3.max(color_levels)])
                 .range(color_scale);
@@ -323,136 +312,159 @@ function Element(element_ids, element_description, element_conditions, report_id
 
     // Report initialization function - called if report_id provided and report_initialized == false
     this.initialize_report = function() {
-        sel = d3.select("#" + this.report_id);
-        parent = d3.select(sel.node().parentNode);
+        var sel = d3.select("#" + this.report_id);
+        var parent = d3.select(sel.node().parentNode);
 
-        bbox = sel.node().getBBox();
-        width = bbox.width;
-        x = sel.node().getBBox().x;
-        y = sel.node().getBBox().y;
-        margin = width * 0.025;
+        if (!sel.empty()) {
+            // Get bounding box of placement element
+            // Placement element height is not used - height of legend is ultimately determined by user specified
+            // font size
+            var bbox = sel.node().getBBox();
+            var width = bbox.width;
+            var x = bbox.x;
+            var y = bbox.y;
 
-        // Hide placement element
-        sel.style("visibility", "hidden");
+            var header_em = 1.2;
+            var report_em = 1;
+            var margin = 0.1;
 
-        // Append new parent element for report
-        g = parent.append("g")
+            // Hide placement element
+            sel.style("visibility", "hidden");
+
+            // Reference font scale from svg attr
+            var font_scale = d3.select("#ssv-svg").attr("font-scale");
+
+            // Append new parent element for report
+            var g = parent.append("g")
                 .attr("transform", "translate(" + x + "," + y + ")")
                 .append("g")
-                .attr("id","ssv-report");
+                .attr("id", "ssv-report")
+                .attr("font-size", font_scale.toString() + "em");
 
-        // Reference font scale from svg attr
-        font_scale = d3.select("#ssv-svg").attr("font-scale");
-
-        // Create title outline
-        title_outline = g.append("rect")
-            .attr("x", 0)
-            .attr("y", 0)
-            .attr("width", width)
-            .attr("fill", "#616161")
-            .attr("fill-opacity", 1)
-            .attr("stroke", "white");
-
-        // Create title text
-        title_text = g.append("text")
-            .attr("x", width / 2)
-            .attr("y", margin)
-            .attr("text-anchor", "middle")
-            .attr("fill", "#FFC107")
-            .style("font-size", (1.2 * font_scale).toString() + "em")
-            .text(this.description);
-
-        title_text.text(this.description);
-        text_height = title_text.node().getBBox().height;
-        title_text.attr("y", text_height);
-
-        // Now that we have height of text update title box height
-        title_outline.attr("height", text_height + 2*margin);
-
-        // Create output box outlines and add text boxes
-        line_count = 0;
-        for (i=0; i<this.conditions.length; i++) {
-            condition = this.conditions[i];
-            condition.data[0].length !== undefined ? data_j_len = condition.data[0].length : data_j_len = 1;
-
-            // Outline
-            g.append("rect")
+            // Create report title outline
+            var title_outline = g.append("rect")
                 .attr("x", 0)
-                .attr("y", (line_count+1/2)*2*(text_height + 2*margin))
-                .attr("stroke", "white")
-                .attr("height", (data_j_len + 1)*(text_height + 2*margin))
+                .attr("y", 0)
                 .attr("width", width)
+                .attr("height", (header_em + 2 * report_em * margin).toString() + "em")
                 .attr("fill", "#616161")
                 .attr("fill-opacity", 1)
                 .attr("stroke", "white");
 
-            // Description text
-            g.append("text")
-                .attr("x", width/2)
-                .attr("y", (line_count+1/2)*2*(text_height + 2*margin) + margin + text_height)
+            // Create report title text
+            var title_text = g.append("text")
+                .attr("x", width / 2)
+                .attr("y", (1 + margin * report_em / header_em).toString() + "em")
                 .attr("text-anchor", "middle")
-                .attr("fill", "#00BFA5")
-                .style("font-size", font_scale.toString() + "em")
-                .attr("font-style","oblique")
-                .text(condition.description);
+                .attr("fill", "#FFC107")
+                .style("font-size", header_em.toString() + "em")
+                .text(this.description);
 
-            for (var j=0; j<data_j_len; j++) {
-                data_j_len > 1 ? num_sections = 3 : num_sections = 2;
+            // Create value output box outlines (backgrounds) and add text boxes
+            // This code adds the condition description, value, and unit (if applicable) in a row by row fashion
+            var em_count = header_em + 2 * report_em * margin;
+            for (var i = 0; i < this.conditions.length; i++) {
+                var condition = this.conditions[i];
 
-                // Add Zone # if data_j_len > 1
-                if (data_j_len > 1) {
+                // Do we have 2-d data?  If not, data_j_len is 1.
+                condition.data[0].length !== undefined ? data_j_len = condition.data[0].length : data_j_len = 1;
+
+                // Box outline (background)
+                g.append("rect")
+                    .attr("x", 0)
+                    .attr("y", em_count.toString() + "em")
+                    .attr("stroke", "white")
+                    .attr("height", ((data_j_len + 1)*report_em*(1 + 2*margin)).toString() + "em")
+                    .attr("width", width)
+                    .attr("fill", "#616161")
+                    .attr("fill-opacity", 1)
+                    .style("font-size", report_em.toString() + "em")
+                    .attr("stroke", "white");
+
+                // Condition description text
+                g.append("text")
+                    .attr("x", width / 2)
+                    .attr("y", (em_count + report_em + report_em * margin).toString() + "em")
+                    .attr("text-anchor", "middle")
+                    .attr("fill", "#00BFA5")
+                    .style("font-size", report_em.toString() + "em")
+                    .attr("font-style", "oblique")
+                    .text(condition.description);
+
+                // Check if we have a section label property in the condition.  If not, default to "Zone".
+                var section_label;
+                "section_label" in condition ? section_label = condition.section_label: section_label = "Zone";
+
+                em_count += (report_em + 2 * report_em * margin);
+
+                // Loop through condition data axis #2 and add row for each entry
+                for (var j = 0; j < data_j_len; j++) {
+                    // Do we have a defined second access in the data?  If not, we only need 2 boxes for the section
+                    // (value and unit) else we need 3 (section_label, value, and unit)
+                    data_j_len > 1 ? num_sections = 3 : num_sections = 2;
+
+                    var y = (em_count + report_em*(1 + margin)).toString() + "em";
+
+                    // Add Zone # if data_j_len > 1
+                    if (data_j_len > 1) {
+                        g.append("text")
+                            .attr("x", width / (num_sections * 2))
+                            .attr("y", y)
+                            .attr("text-anchor", "middle")
+                            .attr("fill", "#FFFFFF")
+                            .style("font-size", report_em.toString() + "em")
+                            .text("Zone #" + (j + 1));
+                    }
+
+                    // Value text
                     g.append("text")
-                        .attr("x", width/(num_sections * 2))
-                        .attr("y", (line_count+1/2)*2*(text_height + 2*margin) + 2*margin + 2*text_height)
+                        .attr("class", "value-text")
+                        .attr("x", width / (2 * (4 - num_sections)))
+                        .attr("y", y)
+                        .attr("text-anchor", "middle")
+                        .attr("fill", "#FFEB3B")
+                        .style("font-size", report_em.toString() + "em");
+
+                    // Unit text
+                    g.append("text")
+                        .attr("x", (num_sections * 2 - 1) * width / (2 * num_sections))
+                        .attr("y", y)
                         .attr("text-anchor", "middle")
                         .attr("fill", "#FFFFFF")
-                        .style("font-size", font_scale.toString() + "em")
-                        .text("Zone #" + (j+1));
+                        .style("font-size", report_em.toString() + "em")
+                        .text(condition.unit);
+
+                    // Increment em_count by ems used per row
+                    em_count += (report_em + 2 * report_em * margin);
                 }
-
-                // Value text
-                g.append("text")
-                    .attr("class", "value-text")
-                    .attr("x", width/(2 * (4 - num_sections)))
-                    .attr("y", (line_count+1/2)*2*(text_height + 2*margin) + 2*margin + 2*text_height)
-                    .attr("text-anchor", "middle")
-                    .attr("fill", "#FFEB3B")
-                    .style("font-size", font_scale.toString() + "em");
-
-                // Unit text
-                g.append("text")
-                    .attr("x", (num_sections*2 - 1)*width/(2 * num_sections))
-                    .attr("y", (line_count+1/2)*2*(text_height + 2*margin) + 2*margin + 2*text_height)
-                    .attr("text-anchor", "middle")
-                    .attr("fill", "#FFFFFF")
-                    .style("font-size", font_scale.toString() + "em")
-                    .text(condition.unit);
-
-                line_count += 0.5;
             }
-            line_count += 0.5;
         }
 
         // Report is initialized - prevent further initialization
         this.report_initialized = true
     };
 
+    // Function to update report given index in x-series
     this.update_report = function(x) {
+        // Initialize report if not initialized
         if (!this.report_initialized) {this.initialize_report()}
 
-        parent = d3.select(d3.select("#" + this.report_id).node().parentNode);
-        value_texts = parent.selectAll(".value-text");
+        // Get parent of element with report_id and select all value text in report
+        var parent = d3.select(d3.select("#" + this.report_id).node().parentNode);
+        var value_texts = parent.selectAll(".value-text");
 
-        val_count = 0;
-        for (i=0; i<this.conditions.length; i++) {
-            condition = this.conditions[i];
+        // Update value text
+        var val_count = 0;
+        for (var i=0; i<this.conditions.length; i++) {
+            var condition = this.conditions[i];
 
+            // If axis 2 is defined in data loop over axis 2 values at index x of axis 1
+            // Else get value at index x of axis 1
             if (condition.data[0].length !== undefined) {
-                for (j in condition.data[x]) {
+                for (var j in condition.data[x]) {
                     value_texts[0][val_count].innerHTML = this.num_format(condition.data[x][j]);
                     val_count += 1
                 }
-
             } else {
                 value_texts[0][val_count].innerHTML = this.num_format(condition.data[x]);
                     val_count += 1
@@ -460,15 +472,19 @@ function Element(element_ids, element_description, element_conditions, report_id
         }
     };
 
+    // Function to apply pattern updates to elements
     this.update_pattern = function(sel, pattern_id, pattern_props, style_apply) {
-        pattern = d3.select("#" + pattern_id);
+        var pattern = d3.select("#" + pattern_id);
 
+        // Initialize pattern reference if pattern_id not found
         if (pattern.empty()) {
+            // Add svg defs section if none exist
             if (d3.select("svg defs").empty()) {
                 svg.append("defs")
             }
 
-            defs = d3.select("svg defs");
+            // Build pattern and apply initial state
+            var defs = d3.select("svg defs");
             defs.append("pattern").attr("id", pattern_id)
                 .attr("x", 0)
                 .attr("y", 0)
@@ -476,38 +492,39 @@ function Element(element_ids, element_description, element_conditions, report_id
                 .attr("height", "100%")
                 .attr("patternContentUnits", "userSpaceOnUse");
 
+            // Set to stroke or fill based on style_apply
             style_apply == 'fill' ? sel.style("fill", "url(#" + pattern_id + ")") :
                 sel.style("stroke", "url(#" + pattern_id + ")");
 
+            // Set initial opacities to 1
             sel.style("fill-opacity", 1);
             sel.style("opacity",1);
-            pattern = d3.select("#" + pattern_id);
         }
 
         // Zip arrays in pattern_props, sort, and apply percent function to order property
-        order_prop = 'y';
-        props_zipped = pattern_props[order_prop];
+        var order_prop = 'y';
+        var props_zipped = pattern_props[order_prop];
         props_zipped = props_zipped.map(function(e, i) {return [pattern_props[order_prop][i]]});
-        prop_keys = Object.keys(pattern_props);
-        for (i in prop_keys) {
+        var prop_keys = Object.keys(pattern_props);
+        for (var i in prop_keys) {
             if (prop_keys[i] != order_prop) {
-                prop_vals = pattern_props[prop_keys[i]];
+                var prop_vals = pattern_props[prop_keys[i]];
                 props_zipped = props_zipped.map(function(e, ii) {return props_zipped[ii].concat([prop_vals[ii]])})
             }
         }
 
         props_zipped = props_zipped.sort(function(a,b) {return -(a[0] - b[0])});
 
-        for (i in prop_keys) {
+        for (var i in prop_keys) {
             pattern_props[prop_keys[i]] = props_zipped.map(function (row) {
                 return row[i]
             })
         };
 
-        bbox = sel.node().getBBox();
-        for (i in pattern_props[order_prop]) {
-            rect_id = "rect_" + i.toString();
-            pattern_rect = pattern.select("#" + rect_id);
+        var bbox = sel.node().getBBox();
+        for (var i in pattern_props[order_prop]) {
+            var rect_id = "rect_" + i.toString();
+            var pattern_rect = pattern.select("#" + rect_id);
 
             if (pattern_rect.empty()) {
                 pattern.append("rect").attr("id", rect_id);
@@ -549,7 +566,7 @@ function Element(element_ids, element_description, element_conditions, report_id
 
             // Update pattern overlays
             if (pattern_props['overlay'][i] && pattern_props['overlay'][i] in _context.svg_overlays) {
-                pattern_overlay = pattern.select("#" + rect_id + "_" + pattern_props['overlay'][i]);
+                var pattern_overlay = pattern.select("#" + rect_id + "_" + pattern_props['overlay'][i]);
                 pattern_overlay.transition().attr("y", Math.max(0, 1 - pattern_props[order_prop][i]) * bbox.height);
             }
         }
@@ -557,17 +574,17 @@ function Element(element_ids, element_description, element_conditions, report_id
 }
 
 function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
-    cell = new Element(cell_ids, cell_description, cell_conditions, cell_report_id);
+    var cell = new Element(cell_ids, cell_description, cell_conditions, cell_report_id);
 
     cell.update = function(x) {
-        for (selector in this.selectors) {
-            sel = d3.select(this.selectors[selector]);
-            pattern_id = "pattern_" + this.ids[selector];
+        for (var isel in this.selectors) {
+            var sel = d3.select(this.selectors[isel]);
+            var pattern_id = "pattern_" + this.ids[isel];
 
-            pattern_props = {'y':[], 'color':[], 'opacity':[], overlay:[]};
+            var pattern_props = {'y':[], 'color':[], 'opacity':[], overlay:[]};
 
-            for (i in this.conditions) {
-                condition = this.conditions[i];
+            for (var i in this.conditions) {
+                var condition = this.conditions[i];
 
                 if (condition.type == 'background') {
                     pattern_props['y'].push(1.01);
@@ -597,7 +614,7 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
                     "overlay" in condition ? pattern_props['overlay'].push(condition.overlay) :
                         pattern_props['overlay'].push(null)
                 } else if (condition.type == 'zonal_y') {
-                    for (j in condition.data[x]) {
+                    for (var j in condition.data[x]) {
                         pattern_props['y'].push(Math.min((condition.data[x][j] - condition.min_height) /
                             (condition.max_height - condition.min_height), 1));
                         pattern_props['color'].push(condition.color_scale(condition.data_dynamic[x][j]));
@@ -618,26 +635,27 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
 }
 
 function Line(line_ids, line_description, line_conditions, line_report_id) {
-    line = new Element(line_ids, line_description, line_conditions, line_report_id);
+    var line = new Element(line_ids, line_description, line_conditions, line_report_id);
 
-    for (condition in line.conditions) {
-        condition = line.conditions[condition];
+    for (var i in line.conditions) {
+        condition = line.conditions[i];
         condition.data[0].constructor == Array ? condition.num_sections = condition.data[0].length :
             condition.num_sections = 1;
     }
 
     line.update = function(x) {
-        for (selector in this.selectors) {
-            sel = d3.select(this.selectors[selector]);
-            pattern_id = "pattern_" + this.ids[selector];
+        for (var isel in this.selectors) {
+            var sel = d3.select(this.selectors[isel]);
+            var pattern_id = "pattern_" + this.ids[isel];
 
-            pattern_props = {'y':[], 'color':[], 'opacity':[], 'overlay':[]};
+            var pattern_props = {'y':[], 'color':[], 'opacity':[], 'overlay':[]};
 
-            for (i in this.conditions) {
-                condition = this.conditions[i];
+            for (var i in this.conditions) {
+                var condition = this.conditions[i];
 
                 if (condition.type == 'sections_equal') {
-                    for (j=1; j<=condition.num_sections; j++) {
+                    for (var j=1; j<=condition.num_sections; j++) {
+                        var color_level;
                         condition.data[0].constructor == Array ? color_level = condition.data[x][j-1] :
                             color_level = condition.data[x];
                         patter_props['y'].push(j / condition.num_sections);
@@ -659,66 +677,53 @@ function Line(line_ids, line_description, line_conditions, line_report_id) {
 }
 
 function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_report_id) {
-    heatmap = new Element(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_report_id);
+    var heatmap = new Element(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_report_id);
 
     heatmap.conditions[0].data[0].constructor == Array ? heatmap.conditions.num_sections =
         heatmap.conditions[0].data[0].length : heatmap.conditions[0].num_sections = 1;
 
     heatmap.initialize = function() {
-        initial_vals = this.conditions[0].data[0];
-        for (selector in this.selectors) {
-            sel = d3.select(this.selectors[selector]);
-            parent = d3.select(sel.node().parentNode);
+        var initial_vals = this.conditions[0].data[0];
+        for (var isel in this.selectors) {
+            var sel = d3.select(this.selectors[isel]);
+            var parent = d3.select(sel.node().parentNode);
 
-            height = sel.node().getBBox().height;
-            width = sel.node().getBBox().width;
-            pos_x = sel.node().getBBox().x;
-            pos_y = sel.node().getBBox().y;
+            var bbox = sel.node().getBBox();
 
-            x = d3.scale.linear().domain([0, initial_vals[0].length]).range([0, width]);
-            y = d3.scale.linear().domain([0, initial_vals.length]).range([0, height]);
-            g = parent.append("g")
-                .attr("transform", "translate(" + pos_x + "," + pos_y + ")")
+            // Assume heatmap occupies entire placement element bounding box
+            var x = d3.scale.linear().domain([0, initial_vals[0].length]).range([0, bbox.width]);
+            var y = d3.scale.linear().domain([0, initial_vals.length]).range([0, bbox.height]);
+            var g = parent.append("g")
+                .attr("transform", "translate(" + bbox.x + "," + bbox.y + ")")
                 .append("g");
 
-            x_section = g.selectAll()
+            // Create cross-sectional slice along the x axis
+            var x_section = g.selectAll()
                 .data(initial_vals)
                 .enter()
                 .append("g")
                 .attr("class", "x_section");
+
+            // Add a color bin for every y slot across the axis
             x_section.selectAll(".bin")
-                .data(function (d) {
-                    return d;
-                })
+                .data(function (d) {return d})
                 .enter().append("rect")
                 .attr("class", "bin")
-                .attr("x", function (d, i) {
-                    return x(i);
-                })
-                .attr("width", function (d, i) {
-                    return  x(i + 1) - x(i);
-                })
-                .style("fill", function (d) {
-                    return heatmap.conditions[0].color_scale(d);
-                })
-                .style("fill-opacity", function (d) {
-                    return heatmap.conditions[0].opacity;
-                })
-                .attr("height", height / (initial_vals.length));
-
-            x_section.each(function (d, i) {
-                d3.select(this).selectAll(".bin")
-                    .attr("y", y(i));
-            });
+                .attr("x", function (d, i) {return x(i)})
+                .attr("y", function (d, i) {return y(i)})
+                .attr("width", function (d, i) {return  x(i + 1) - x(i)})
+                .style("fill", function (d) {return heatmap.conditions[0].color_scale(d)})
+                .style("fill-opacity", function (d) {return heatmap.conditions[0].opacity})
+                .attr("height", bbox.height / (initial_vals.length));
         }
     };
 
     heatmap.update = function(x) {
-        for (selector in this.selectors) {
-            sel = d3.select(this.selectors[selector]);
-            parent = d3.select(sel.node().parentNode);
+        for (var isel in this.selectors) {
+            var sel = d3.select(this.selectors[isel]);
+            var parent = d3.select(sel.node().parentNode);
 
-            x_section = parent.selectAll(".x_section").data(heatmap.conditions[0].data[x]);
+            var x_section = parent.selectAll(".x_section").data(heatmap.conditions[0].data[x]);
             x_section.selectAll(".bin")
                 .data(function (d) { return d; })
                 .transition()
@@ -733,15 +738,16 @@ function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_r
     return heatmap
 }
 
+// Toggle class represents show/hide type elements
 function Toggle(toggle_ids, toggle_description, toggle_conditions, toggle_report_id) {
-    toggle = new Element(toggle_ids, toggle_description, toggle_conditions, toggle_report_id);
+    var toggle = new Element(toggle_ids, toggle_description, toggle_conditions, toggle_report_id);
 
     toggle.update = function(x) {
-        for (selector in this.selectors) {
-            sel = d3.selectAll(this.selectors[selector]);
+        for (var isel in this.selectors) {
+            var sel = d3.selectAll(this.selectors[isel]);
 
-            for (i in this.conditions) {
-                condition = this.conditions[i];
+            for (var i in this.conditions) {
+                var condition = this.conditions[i];
 
                 if (condition.type == 'show_hide') {
                     if (condition.data[x] == true || condition.data[x] > 0) {
@@ -760,7 +766,7 @@ function Toggle(toggle_ids, toggle_description, toggle_conditions, toggle_report
 }
 
 function Report(report_ids, report_description, report_conditions, report_id) {
-    report = new Element(report_ids, report_description, report_conditions, report_id);
+    var report = new Element(report_ids, report_description, report_conditions, report_id);
 
     report.update = function(x) {
         if (this.report_id) {this.update_report(x)}
