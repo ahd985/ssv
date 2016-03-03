@@ -227,15 +227,16 @@ function ElementContext() {
                 // "label" represents the color scale bin values font size
                 var header_em = 1.5;
                 var label_em = 1;
-                var margin = 1.1;
+                var margin = 0.1;
 
                 // -- Append header text
-                legend.append("text")
+                legend_text = legend.append("text")
                     .text(scale.desc)
                     .attr("x", (width/2))
                     .attr("y", "1em")
                     .attr("text-anchor", "middle")
                     .attr("font-size", header_em.toString() + "em");
+                legend_text_height = legend_text.node().getBBox().height;
 
                 // -- Generate range of colors required for legend
                 var keys = legend.selectAll('rect').data(color_scale.range());
@@ -244,9 +245,9 @@ function ElementContext() {
                 // -- Rects are same height as header text
                 keys.enter().append('rect')
                     .attr("x", function(d,i) {return x(i)})
-                    .attr("y", margin + "em")
+                    .attr("y", (1 + margin) * legend_text_height)
                     .attr("width", function(d,i) {return x(i+1) - x(i)})
-                    .attr("height", "1em")
+                    .attr("height", legend_text_height)
                     .style("fill", function(d) {return d})
                     .attr("font-size", header_em.toString() + "em");;
 
@@ -254,7 +255,7 @@ function ElementContext() {
                 keys.enter().append("text")
                     .text(function(d) {return color_scale.invertExtent(d)[0].toFixed(0)})
                     .attr("x", function(d,i) {return x(i)})
-                    .attr("y", (2 * header_em/label_em + 1)* margin  + "em")
+                    .attr("y", legend_text_height*(2 + margin + label_em / header_em * (1 + margin)))
                     .attr("text-anchor", "middle")
                     .attr("font-size", label_em.toString() + "em");
             }
@@ -346,23 +347,30 @@ function Element(element_ids, element_description, element_conditions, report_id
                 .attr("x", 0)
                 .attr("y", 0)
                 .attr("width", width)
-                .attr("height", (header_em + 2 * report_em * margin).toString() + "em")
                 .attr("fill", "#616161")
-                .attr("fill-opacity", 1)
-                .attr("stroke", "white");
+                .attr("fill-opacity", 1);
 
             // Create report title text
             var title_text = g.append("text")
                 .attr("x", width / 2)
-                .attr("y", (1 + margin * report_em / header_em).toString() + "em")
+                .attr("y", 0)
                 .attr("text-anchor", "middle")
+                .attr("alignment-baseline", "after-edge")
                 .attr("fill", "#FFC107")
                 .style("font-size", header_em.toString() + "em")
                 .text(this.description);
 
+            // Resize header and outline based on text height
+            title_text_height = title_text.node().getBBox().height;
+            title_text.attr("y", title_text_height * (1 + margin));
+            report_text_height = title_text_height * report_em / header_em;
+            var y_count = title_text_height * (1 + 2*margin);
+            title_outline.attr("height", y_count);
+            var y_text = report_text_height * (1 + 1*margin);
+            var y_row = y_text + report_text_height * margin;
+
             // Create value output box outlines (backgrounds) and add text boxes
             // This code adds the condition description, value, and unit (if applicable) in a row by row fashion
-            var em_count = header_em + 2 * report_em * margin;
             for (var i = 0; i < this.conditions.length; i++) {
                 var condition = this.conditions[i];
 
@@ -372,20 +380,18 @@ function Element(element_ids, element_description, element_conditions, report_id
                 // Box outline (background)
                 g.append("rect")
                     .attr("x", 0)
-                    .attr("y", em_count.toString() + "em")
-                    .attr("stroke", "white")
-                    .attr("height", ((data_j_len + 1)*report_em*(1 + 2*margin)).toString() + "em")
+                    .attr("y", y_count)
+                    .attr("height", ((data_j_len + 1)*y_row))
                     .attr("width", width)
                     .attr("fill", "#616161")
-                    .attr("fill-opacity", 1)
-                    .style("font-size", report_em.toString() + "em")
-                    .attr("stroke", "white");
+                    .attr("fill-opacity", 1);
 
                 // Condition description text
                 g.append("text")
                     .attr("x", width / 2)
-                    .attr("y", (em_count + report_em + report_em * margin).toString() + "em")
+                    .attr("y", y_count + y_text)
                     .attr("text-anchor", "middle")
+                    .attr("alignment-baseline", "after-edge")
                     .attr("fill", "#00BFA5")
                     .style("font-size", report_em.toString() + "em")
                     .attr("font-style", "oblique")
@@ -395,7 +401,7 @@ function Element(element_ids, element_description, element_conditions, report_id
                 var section_label;
                 "section_label" in condition ? section_label = condition.section_label: section_label = "Zone";
 
-                em_count += (report_em + 2 * report_em * margin);
+                y_count += y_row;
 
                 // Loop through condition data axis #2 and add row for each entry
                 for (var j = 0; j < data_j_len; j++) {
@@ -403,14 +409,13 @@ function Element(element_ids, element_description, element_conditions, report_id
                     // (value and unit) else we need 3 (section_label, value, and unit)
                     data_j_len > 1 ? num_sections = 3 : num_sections = 2;
 
-                    var y = (em_count + report_em*(1 + margin)).toString() + "em";
-
                     // Add Zone # if data_j_len > 1
                     if (data_j_len > 1) {
                         g.append("text")
                             .attr("x", width / (num_sections * 2))
-                            .attr("y", y)
+                            .attr("y", y_count + y_text)
                             .attr("text-anchor", "middle")
+                            .attr("alignment-baseline", "after-edge")
                             .attr("fill", "#FFFFFF")
                             .style("font-size", report_em.toString() + "em")
                             .text("Zone #" + (j + 1));
@@ -420,22 +425,24 @@ function Element(element_ids, element_description, element_conditions, report_id
                     g.append("text")
                         .attr("class", "value-text")
                         .attr("x", width / (2 * (4 - num_sections)))
-                        .attr("y", y)
+                        .attr("y", y_count + y_text)
                         .attr("text-anchor", "middle")
+                        .attr("alignment-baseline", "after-edge")
                         .attr("fill", "#FFEB3B")
                         .style("font-size", report_em.toString() + "em");
 
                     // Unit text
                     g.append("text")
                         .attr("x", (num_sections * 2 - 1) * width / (2 * num_sections))
-                        .attr("y", y)
+                        .attr("y", y_count + y_text)
                         .attr("text-anchor", "middle")
+                        .attr("alignment-baseline", "after-edge")
                         .attr("fill", "#FFFFFF")
                         .style("font-size", report_em.toString() + "em")
                         .text(condition.unit);
 
                     // Increment em_count by ems used per row
-                    em_count += (report_em + 2 * report_em * margin);
+                    y_count += y_row;
                 }
             }
         }
@@ -545,6 +552,7 @@ function Element(element_ids, element_description, element_conditions, report_id
                         .attr("width","100%");
                 }
             }
+            var pattern_rect = pattern.select("#" + rect_id);
 
             // Update levels
             pattern_rect.transition()
