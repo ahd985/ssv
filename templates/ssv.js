@@ -472,7 +472,7 @@ function Element(element_ids, element_description, element_conditions, report_id
     };
 
     // Function to apply pattern updates to elements
-    this.update_pattern = function(sel, pattern_id, pattern_props, style_apply) {
+    this.update_pattern = function(sel, pattern_id, props, prop_data, style_apply) {
         var pattern = d3.select("#" + pattern_id);
 
         // Initialize pattern reference if pattern_id not found
@@ -500,28 +500,15 @@ function Element(element_ids, element_description, element_conditions, report_id
             sel.style("opacity",1);
         }
 
-        // Zip arrays in pattern_props, sort, and apply percent function to order property
-        var order_prop = 'y';
-        var props_zipped = pattern_props[order_prop];
-        props_zipped = props_zipped.map(function(e, i) {return [pattern_props[order_prop][i]]});
-        var prop_keys = Object.keys(pattern_props);
-        for (var i in prop_keys) {
-            if (prop_keys[i] != order_prop) {
-                var prop_vals = pattern_props[prop_keys[i]];
-                props_zipped = props_zipped.map(function(e, ii) {return props_zipped[ii].concat([prop_vals[ii]])})
-            }
-        }
-
-        props_zipped = props_zipped.sort(function(a,b) {return -(a[0] - b[0])});
-
-        for (var i in prop_keys) {
-            pattern_props[prop_keys[i]] = props_zipped.map(function (row) {
-                return row[i]
-            })
-        };
+        // Descending sort props based on first property (order prop)
+        prop_data = prop_data.sort(function(a,b) {return -(a[0] - b[0])});
 
         var bbox = sel.node().getBBox();
-        for (var i in pattern_props[order_prop]) {
+        var overlay_i = props.indexOf('overlay');
+        var color_i = props.indexOf('color');
+        var opacity_i = props.indexOf('opacity');
+
+        for (var i in prop_data) {
             var rect_id = "rect_" + i.toString();
             var pattern_rect = pattern.select("#" + rect_id);
 
@@ -536,9 +523,9 @@ function Element(element_ids, element_description, element_conditions, report_id
                     .attr("width","100%");
 
                 // Check for pattern overlays
-                if (pattern_props['overlay'][i] && pattern_props['overlay'][i] in _context.svg_overlays) {
-                    pattern.append("rect").attr("id", rect_id + "_" + pattern_props['overlay'][i])
-                        .attr("fill", "url(#" + pattern_props['overlay'][i] + ")")
+                if (overlay_i > 0 && prop_data[i][overlay_i] in _context.svg_overlays) {
+                    pattern.append("rect").attr("id", rect_id + "_" + prop_data[i][overlay_i])
+                        .attr("fill", "url(#" + prop_data[i][overlay_i] + ")")
                         .attr("x",0)
                         .attr("height","100%")
                         .attr("width","100%");
@@ -549,25 +536,25 @@ function Element(element_ids, element_description, element_conditions, report_id
             // Update levels
             pattern_rect.transition()
                 .attr("x","0")
-                .attr("y", Math.max(0, 1 - pattern_props[order_prop][i]) * bbox.height)
+                .attr("y", Math.max(0, 1 - prop_data[i][0]) * bbox.height)
                 .attr("width","100%")
                 .attr("height", "100%")
-                .style("fill", pattern_props['color'][i])
-                .style("opacity", pattern_props['opacity'][i]);
+                .style("fill", prop_data[i][color_i])
+                .style("opacity", prop_data[i][opacity_i]);
 
             // Update transitions
-            if (pattern_props[order_prop][i] < 1.0) {
+            if (prop_data[i][0] < 1.0) {
                 pattern.select("#" + rect_id + "_trans").transition()
-                    .attr("y",Math.max(0, 1 - pattern_props[order_prop][i]) * bbox.height);
+                    .attr("y",Math.max(0, 1 - prop_data[i][0]) * bbox.height);
             } else {
                 pattern.select("#" + rect_id + "_trans").transition()
                     .attr("y", "-1%");
             }
 
             // Update pattern overlays
-            if (pattern_props['overlay'][i] && pattern_props['overlay'][i] in _context.svg_overlays) {
-                var pattern_overlay = pattern.select("#" + rect_id + "_" + pattern_props['overlay'][i]);
-                pattern_overlay.transition().attr("y", Math.max(0, 1 - pattern_props[order_prop][i]) * bbox.height);
+            if (overlay_i > 0 && prop_data[i][overlay_i] in _context.svg_overlays) {
+                var pattern_overlay = pattern.select("#" + rect_id + "_" + prop_data[i][overlay_i]);
+                pattern_overlay.transition().attr("y", Math.max(0, 1 - prop_data[i][0]) * bbox.height);
             }
         }
     }
@@ -582,59 +569,54 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
             var sel = d3.select(this.selectors[isel]);
             var pattern_id = "pattern_" + this.ids[isel];
 
-            var pattern_props = {'y':[], 'color':[], 'opacity':[], overlay:[]};
+            var order_prop = 'y';
+            var props = [order_prop, 'color', 'opacity', 'overlay'];
+            var prop_data = [];
 
             for (var i in this.conditions) {
                 var condition = this.conditions[i];
 
+                var order_val, color, opacity, overlay;
+                var max_order = 1.01;
+                opacity = condition.opacity;
+                "overlay" in condition ? overlay = condition.overlay : overlay = null;
                 if (condition.type == 'background') {
                     // background represents a changing cell background color only
                     // always 100% of the element height
-                    pattern_props['y'].push(1.01);
-                    pattern_props['color'].push(condition.color_scale(condition.data[x]));
-                    pattern_props['opacity'].push(condition.opacity);
-                    "overlay" in condition ? pattern_props['overlay'].push(condition.overlay) :
-                        pattern_props['overlay'].push(null)
+                    order_val = max_order;
+                    color = condition.color_scale(condition.data[x]);
+                    prop_data.push([order_val, color, opacity, overlay])
                 } else if (condition.type == 'level_static') {
                     // level_static represents a changing level in a cell that does not change color
-                    pattern_props['y'].push(Math.min((condition.data[x] - condition.min_height) /
-                        (condition.max_height - condition.min_height), 1));
-                    pattern_props['color'].push(condition.color);
-                    pattern_props['opacity'].push(condition.opacity);
-                    "overlay" in condition ? pattern_props['overlay'].push(condition.overlay) :
-                        pattern_props['overlay'].push(null)
+                    order_val = Math.min((condition.data[x] - condition.min_height) /
+                        (condition.max_height - condition.min_height), 1);
+                    color = condition.color;
+                    prop_data.push([order_val, color, opacity, overlay])
                 } else if (condition.type == 'level_dynamic') {
                     // level_dynamic represents a changing level in a cell that changes color
-                    pattern_props['y'].push(Math.min((condition.data[x] - condition.min_height) /
-                        (condition.max_height - condition.min_height), 1));
-                    pattern_props['color'].push(condition.color_scale(condition.data_dynamic[x]));
-                    pattern_props['opacity'].push(condition.opacity);
-                    "overlay" in condition ? pattern_props['overlay'].push(condition.overlay) :
-                        pattern_props['overlay'].push(null)
+                    order_val = Math.min((condition.data[x] - condition.min_height) /
+                        (condition.max_height - condition.min_height), 1);
+                    color = condition.color_scale(condition.data_dynamic[x]);
+                    prop_data.push([order_val, color, opacity, overlay])
                 } else if (condition.type == 'logical') {
                     // logical represents a filled cell that alternates between two colors
                     // always 100% of eloement height
-                    pattern_props['y'].push(1.01);
-                    pattern_props['color'].push((condition.data[x] == true ||  condition.data[x] > 0) ?
-                            condition.true_color : condition.false_color);
-                    pattern_props['opacity'].push(condition.opacity);
-                    "overlay" in condition ? pattern_props['overlay'].push(condition.overlay) :
-                        pattern_props['overlay'].push(null)
+                    order_val = max_order;
+                    color = condition.color_scale(condition.data_dynamic[x]);
+                    prop_data.push([order_val, color, opacity, overlay])
                 } else if (condition.type == 'zonal_y') {
                     // zonal_y represents a zonal model in the y direction
                     // number of zones dictated by len of 2nd axis
                     for (var j in condition.data[x]) {
-                        pattern_props['y'].push(Math.min((condition.data[x][j] - condition.min_height) /
-                            (condition.max_height - condition.min_height), 1));
-                        pattern_props['color'].push(condition.color_scale(condition.data_dynamic[x][j]));
-                        pattern_props['opacity'].push(condition.opacity);
-                        "overlay" in condition ? pattern_props['overlay'].push(condition.overlay) :
-                            pattern_props['overlay'].push(null)
+                        order_val = Math.min((condition.data[x][j] - condition.min_height) /
+                            (condition.max_height - condition.min_height), 1);
+                        color = condition.color_scale(condition.data_dynamic[x][j]);
+                        prop_data.push([order_val, color, opacity, overlay])
                     }
                 }
             }
 
-            this.update_pattern(sel, pattern_id, pattern_props, "fill");
+            this.update_pattern(sel, pattern_id, props, prop_data, "fill");
         };
 
         if (this.report_id) {this.update_report(x)}
@@ -658,23 +640,28 @@ function Line(line_ids, line_description, line_conditions, line_report_id) {
             var sel = d3.select(this.selectors[isel]);
             var pattern_id = "pattern_" + this.ids[isel];
 
-            var pattern_props = {'y':[], 'color':[], 'opacity':[], 'overlay':[]};
+            var order_prop = 'y';
+            var props = [order_prop, 'color', 'opacity', 'overlay'];
+            var prop_data = [];
 
             for (var i in this.conditions) {
                 var condition = this.conditions[i];
+
+                var order_val, color, opacity, overlay;
+                var max_order = 1.01;
+                opacity = condition.opacity;
+                overlay = null;
 
                 if (condition.type == 'equal_y') {
                     // equal_y represents an open path element with equally sized patterns along the y axis
                     // number of y regions dictated by len of 2nd axis
                     for (var j=1; j<=condition.num_sections; j++) {
+                        order_val = j / condition.num_sections;
                         var color_level;
                         condition.data[0].constructor == Array ? color_level = condition.data[x][j-1] :
                             color_level = condition.data[x];
-                        pattern_props['y'].push(j / condition.num_sections);
-                        pattern_props['color'].push(condition.color_scale(color_level));
-                        pattern_props['opacity'].push(condition.opacity);
-                        "overlay" in condition ? pattern_props['overlay'].push(condition.overlay) :
-                            pattern_props['overlay'].push(null);
+                        color = condition.color_scale(color_level);
+                        prop_data.push([order_val, color, opacity, overlay])
                     }
                 }
             }
