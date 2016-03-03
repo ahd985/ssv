@@ -329,6 +329,18 @@ function Element(element_ids, element_description, element_conditions, report_id
             var report_em = 1;
             var margin = 0.1;
 
+            // Set text and background fill colors
+            var header_color = "#FFC107";
+            var description_color = "#00BFA5";
+            var zone_color = "#FFFFFF";
+            var unit_color = "#FFFFFF";
+            var val_color = "#FFEB3B";
+            var report_fill = "#616161";
+
+            // Create base attributes for report elements
+            var base_attr = {"x":0, "y":0, "width":width, "fill":report_fill, "fill-opacity":"1",
+                "text-anchor":"middle", "alignment-baseline":"after-edge"};
+
             // Hide placement element
             sel.style("visibility", "hidden");
 
@@ -343,20 +355,12 @@ function Element(element_ids, element_description, element_conditions, report_id
                 .attr("font-size", font_scale.toString() + "em");
 
             // Create report title outline
-            var title_outline = g.append("rect")
-                .attr("x", 0)
-                .attr("y", 0)
-                .attr("width", width)
-                .attr("fill", "#616161")
-                .attr("fill-opacity", 1);
+            var title_outline = g.append("rect").attr(base_attr);
 
             // Create report title text
-            var title_text = g.append("text")
+            var title_text = g.append("text").attr(base_attr)
                 .attr("x", width / 2)
-                .attr("y", 0)
-                .attr("text-anchor", "middle")
-                .attr("alignment-baseline", "after-edge")
-                .attr("fill", "#FFC107")
+                .attr("fill", header_color)
                 .style("font-size", header_em.toString() + "em")
                 .text(this.description);
 
@@ -378,21 +382,15 @@ function Element(element_ids, element_description, element_conditions, report_id
                 condition.data[0].length !== undefined ? data_j_len = condition.data[0].length : data_j_len = 1;
 
                 // Box outline (background)
-                g.append("rect")
-                    .attr("x", 0)
+                g.append("rect").attr(base_attr)
                     .attr("y", y_count)
                     .attr("height", ((data_j_len + 1)*y_row))
-                    .attr("width", width)
-                    .attr("fill", "#616161")
-                    .attr("fill-opacity", 1);
 
                 // Condition description text
-                g.append("text")
+                g.append("text").attr(base_attr)
                     .attr("x", width / 2)
                     .attr("y", y_count + y_text)
-                    .attr("text-anchor", "middle")
-                    .attr("alignment-baseline", "after-edge")
-                    .attr("fill", "#00BFA5")
+                    .attr("fill", description_color)
                     .style("font-size", report_em.toString() + "em")
                     .attr("font-style", "oblique")
                     .text(condition.description);
@@ -411,33 +409,27 @@ function Element(element_ids, element_description, element_conditions, report_id
 
                     // Add Zone # if data_j_len > 1
                     if (data_j_len > 1) {
-                        g.append("text")
+                        g.append("text").attr(base_attr)
                             .attr("x", width / (num_sections * 2))
                             .attr("y", y_count + y_text)
-                            .attr("text-anchor", "middle")
-                            .attr("alignment-baseline", "after-edge")
-                            .attr("fill", "#FFFFFF")
+                            .attr("fill", zone_color)
                             .style("font-size", report_em.toString() + "em")
                             .text("Zone #" + (j + 1));
                     }
 
                     // Value text
-                    g.append("text")
+                    g.append("text").attr(base_attr)
                         .attr("class", "value-text")
                         .attr("x", width / (2 * (4 - num_sections)))
                         .attr("y", y_count + y_text)
-                        .attr("text-anchor", "middle")
-                        .attr("alignment-baseline", "after-edge")
-                        .attr("fill", "#FFEB3B")
+                        .attr("fill", val_color)
                         .style("font-size", report_em.toString() + "em");
 
                     // Unit text
-                    g.append("text")
+                    g.append("text").attr(base_attr)
                         .attr("x", (num_sections * 2 - 1) * width / (2 * num_sections))
                         .attr("y", y_count + y_text)
-                        .attr("text-anchor", "middle")
-                        .attr("alignment-baseline", "after-edge")
-                        .attr("fill", "#FFFFFF")
+                        .attr("fill", unit_color)
                         .style("font-size", report_em.toString() + "em")
                         .text(condition.unit);
 
@@ -581,6 +573,7 @@ function Element(element_ids, element_description, element_conditions, report_id
     }
 }
 
+// Wrapper class for closed path elements
 function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
     var cell = new Element(cell_ids, cell_description, cell_conditions, cell_report_id);
 
@@ -595,12 +588,15 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
                 var condition = this.conditions[i];
 
                 if (condition.type == 'background') {
+                    // background represents a changing cell background color only
+                    // always 100% of the element height
                     pattern_props['y'].push(1.01);
                     pattern_props['color'].push(condition.color_scale(condition.data[x]));
                     pattern_props['opacity'].push(condition.opacity);
                     "overlay" in condition ? pattern_props['overlay'].push(condition.overlay) :
                         pattern_props['overlay'].push(null)
                 } else if (condition.type == 'level_static') {
+                    // level_static represents a changing level in a cell that does not change color
                     pattern_props['y'].push(Math.min((condition.data[x] - condition.min_height) /
                         (condition.max_height - condition.min_height), 1));
                     pattern_props['color'].push(condition.color);
@@ -608,6 +604,7 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
                     "overlay" in condition ? pattern_props['overlay'].push(condition.overlay) :
                         pattern_props['overlay'].push(null)
                 } else if (condition.type == 'level_dynamic') {
+                    // level_dynamic represents a changing level in a cell that changes color
                     pattern_props['y'].push(Math.min((condition.data[x] - condition.min_height) /
                         (condition.max_height - condition.min_height), 1));
                     pattern_props['color'].push(condition.color_scale(condition.data_dynamic[x]));
@@ -615,6 +612,8 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
                     "overlay" in condition ? pattern_props['overlay'].push(condition.overlay) :
                         pattern_props['overlay'].push(null)
                 } else if (condition.type == 'logical') {
+                    // logical represents a filled cell that alternates between two colors
+                    // always 100% of eloement height
                     pattern_props['y'].push(1.01);
                     pattern_props['color'].push((condition.data[x] == true ||  condition.data[x] > 0) ?
                             condition.true_color : condition.false_color);
@@ -622,6 +621,8 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
                     "overlay" in condition ? pattern_props['overlay'].push(condition.overlay) :
                         pattern_props['overlay'].push(null)
                 } else if (condition.type == 'zonal_y') {
+                    // zonal_y represents a zonal model in the y direction
+                    // number of zones dictated by len of 2nd axis
                     for (var j in condition.data[x]) {
                         pattern_props['y'].push(Math.min((condition.data[x][j] - condition.min_height) /
                             (condition.max_height - condition.min_height), 1));
@@ -642,6 +643,7 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
     return cell
 }
 
+// Wrapper class for line (or open path) elements
 function Line(line_ids, line_description, line_conditions, line_report_id) {
     var line = new Element(line_ids, line_description, line_conditions, line_report_id);
 
@@ -661,16 +663,18 @@ function Line(line_ids, line_description, line_conditions, line_report_id) {
             for (var i in this.conditions) {
                 var condition = this.conditions[i];
 
-                if (condition.type == 'sections_equal') {
+                if (condition.type == 'equal_y') {
+                    // equal_y represents an open path element with equally sized patterns along the y axis
+                    // number of y regions dictated by len of 2nd axis
                     for (var j=1; j<=condition.num_sections; j++) {
                         var color_level;
                         condition.data[0].constructor == Array ? color_level = condition.data[x][j-1] :
                             color_level = condition.data[x];
-                        patter_props['y'].push(j / condition.num_sections);
+                        pattern_props['y'].push(j / condition.num_sections);
                         pattern_props['color'].push(condition.color_scale(color_level));
                         pattern_props['opacity'].push(condition.opacity);
                         "overlay" in condition ? pattern_props['overlay'].push(condition.overlay) :
-                            pattern_props['overlay'].push(null)
+                            pattern_props['overlay'].push(null);
                     }
                 }
             }
@@ -684,6 +688,7 @@ function Line(line_ids, line_description, line_conditions, line_report_id) {
     return line
 }
 
+// Wrapper class for generating heatmaps
 function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_report_id) {
     var heatmap = new Element(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_report_id);
 
@@ -746,7 +751,7 @@ function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_r
     return heatmap
 }
 
-// Toggle class represents show/hide type elements
+// Wrapper class for state-type elements (e.g., show/hide)
 function Toggle(toggle_ids, toggle_description, toggle_conditions, toggle_report_id) {
     var toggle = new Element(toggle_ids, toggle_description, toggle_conditions, toggle_report_id);
 
@@ -773,6 +778,7 @@ function Toggle(toggle_ids, toggle_description, toggle_conditions, toggle_report
     return toggle
 }
 
+// Wrapper class for element reports
 function Report(report_ids, report_description, report_conditions, report_id) {
     var report = new Element(report_ids, report_description, report_conditions, report_id);
 
