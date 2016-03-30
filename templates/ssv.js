@@ -670,7 +670,7 @@ function Line(line_ids, line_description, line_conditions, line_report_id) {
                 }
             }
 
-            this.update_pattern(sel, pattern_id, pattern_props, 'stroke');
+            this.update_pattern(sel, pattern_id, props, prop_data, 'stroke');
         };
 
         if (this.report_id) {this.update_report(x)}
@@ -682,8 +682,6 @@ function Line(line_ids, line_description, line_conditions, line_report_id) {
 // Wrapper class for generating heatmaps
 function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_report_id) {
     var heatmap = new Element(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_report_id);
-
-    console.log(heatmap.conditions[0].data);
 
     heatmap.conditions[0].data[0].constructor == Array ? heatmap.conditions.num_sections =
         heatmap.conditions[0].data[0].length : heatmap.conditions[0].num_sections = 1;

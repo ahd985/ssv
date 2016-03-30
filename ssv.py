@@ -317,7 +317,7 @@ class Line(Element):
     def __init__(self, line_id, line_description, x_series_len, line_report_id=None):
         super(Line, self).__init__(line_id, line_description, x_series_len, line_report_id)
         base_required = ['data']
-        self.Condition.required_inp_by_type.update({'sections_equal': base_required + ['color_scale', 'color_levels']})
+        self.Condition.required_inp_by_type.update({'equal_y': base_required + ['color_scale', 'color_levels']})
         self.conditions = []
 
 # Wrapper for heatmap
