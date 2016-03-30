@@ -9,7 +9,7 @@ import numpy as np
 class SSV:
     svg_namespace = 'http://www.w3.org/2000/svg'
     supported_svg_attribs = ['viewBox', 'xmlns']
-    element_classes = ['cell', 'line', 'heatmap', 'toggle', 'report']
+    element_classes = ['cell', 'line', 'heatmap', 'toggle', 'report', 'table']
     supported_svg = ['path', 'circle', 'rect', 'ellipse']
 
     def __init__(self, x_series, x_series_unit, svg_file_path, title='My Simulation', font_size=12):
@@ -73,6 +73,8 @@ class SSV:
             element_entry = Toggle(element_ids, element_description, len(self._x_series), **kwargs)
         elif element_type == 'report':
             element_entry = Report(element_ids[0], element_description, len(self._x_series), **kwargs)
+        elif element_type == 'table':
+            element_entry = Table(element_ids[0], element_description, len(self._x_series), **kwargs)
         else:
             raise ValueError('element type \'%s\' is not a supported type.' % element_type)
         self._elements[element_type].update({element_id: element_entry for element_id in element_ids})
@@ -212,7 +214,8 @@ class SSV:
 class Element:
     class Condition:
         input_types_allowed = {'type': str, 'report': bool, 'description': str, 'unit': str,
-                               'color_scale': list, 'color_levels': list, 'data': list, 'opacity': (float, int)}
+                               'color_scale': list, 'color_levels': list, 'data': list, 'opacity': (float, int),
+                               'headers': list}
         required_inp_by_type = {'info': ['data', 'description']}
 
         def __init__(self, condition_id, **kwargs):
@@ -336,16 +339,32 @@ class Toggle(Element):
 
 # Wrapper for report
 class Report(Element):
-    def __init__(self, report_id, report_description, x_series_len, show_tabular=False):
+    def __init__(self, report_id, report_description, x_series_len):
         super(Report, self).__init__('', report_description, x_series_len, report_id)
-        base_required = ['data']
+        self.conditions = []
 
-        if not isinstance(show_tabular, bool):
-            raise TypeError('show_tabular must be of type bool.')
-        # AHD - if show_tabular then description must be array
-        self.show_tabular = show_tabular
+# Wrapper for table
+class Table(Element):
+    def __init__(self, report_id, report_description, x_series_len):
+        super(Table, self).__init__('', report_description, x_series_len, report_id)
+        self.Condition.required_inp_by_type.update({'info': ['data', 'headers']})
 
         self.conditions = []
+
+    # Override add_condition class to accept array of strings
+    def add_condition(self, unit='', opacity=1.0, report=True, **kwargs):
+        try:
+            condition_data = np.array(kwargs['data'])
+            if self.x_series_len > condition_data.shape[0] > self.x_series_len:
+                raise TypeError('data input for \'%s\' must be the '
+                                'same length as the ssv x series' % self.description)
+            kwargs['data'] = condition_data.tolist()
+        except KeyError:
+            raise KeyError('\'data\' kwarg not found for condition in %s' % self.description)
+
+        condition_id = '%s_%d' % ('_'.join(self.ids), len(self.conditions))
+        condition = self.Condition(condition_id, unit=unit, opacity=opacity, report=report, **kwargs)
+        self.conditions.append(condition)
 
 # Wrapper for color scale legend
 class ColorScale:

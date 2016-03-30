@@ -63,7 +63,10 @@ function ElementContext() {
                         element.conditions, element.report_id))
                 } else if (element_type == 'report') {
                     this.elements.push(new Report(element.ids, element.description,
-                        element.conditions, element.report_id, element.show_tabular))
+                        element.conditions, element.report_id))
+                } else if (element_type == 'table') {
+                    this.elements.push(new Table(element.ids, element.description,
+                        element.conditions, element.report_id))
                 }
             }
         }
@@ -770,19 +773,96 @@ function Toggle(toggle_ids, toggle_description, toggle_conditions, toggle_report
 }
 
 // Wrapper class for element reports
-function Report(report_ids, report_description, report_conditions, report_id, show_tabular) {
+function Report(report_ids, report_description, report_conditions, report_id) {
     var report = new Element(report_ids, report_description, report_conditions, report_id);
 
-    // If we have tabular (table-like) data overwrite base reporting functions
-    if (show_tabular) {
-        // AHD start here
-        report.initialize_report = function(x) {};
-
-        // Function to update report given index in x-series
-        this.update_report = function(x) {};
-    }
+    report.update = function(x) {
+        if (this.report_id) {this.update_report(x)}
+    };
 
     return report
+}
+
+// Wrapper class for tables
+function Table(report_ids, report_description, report_conditions, report_id) {
+    var table = new Element(report_ids, report_description, report_conditions, report_id);
+
+    // If we have tabular (table-like) data overwrite base element report function
+    table.initialize_report = function () {
+        var sel = d3.select('#' + this.report_id);
+        var parent = d3.select(sel.node().parentNode);
+
+        if (!sel.empty()) {
+            // Get bounding box of placement element
+            // Placement element height is not used - height of legend is ultimately determined by user specified
+            // font size
+            var bbox = sel.node().getBBox();
+            var width = bbox.width;
+            var x = bbox.x;
+            var y = bbox.y;
+            var table_id = 'table_' + this.report_id;
+
+            // Hide placement element
+            sel.style('visibility', 'hidden');
+
+            // Reference font scale from svg attr
+            var font_scale = d3.select('#ssv-svg').attr('font-scale');
+
+            // Append new parent element for table
+            var table = parent.append('g')
+                .attr('transform', 'translate(' + x + ',' + y + ')')
+                .append('foreignObject')
+                .attr('id', 'ssv-table')
+                .attr("width", width)
+                .attr("height", 500)
+                .append('xhtml:table')
+                .attr('id', table_id);
+
+            // Add table header
+            table.append('tr')
+                .selectAll()
+                .data(this.conditions[0].headers)
+                .enter()
+                .append('th')
+                .text(function(d) {return d})
+                .style('font-size', font_scale.toString() + 'em');
+            }
+
+        // Report is initialized - prevent further initialization
+        this.report_initialized = true
+    };
+
+    table.update_report = function(x) {
+        if (!this.report_initialized) {this.initialize_report()}
+
+        var table_id = 'table_' + this.report_id;
+        var font_scale = d3.select('#ssv-svg').attr('font-scale');
+
+        table = d3.select('#' + table_id);
+
+        // Add content
+        row = table.selectAll('.content-row')
+            .data(this.conditions[0].data[x]);
+        row.enter()
+            .append('tr')
+            .attr('class', 'content-row');
+        row.exit().remove();
+
+        cell = row.selectAll('.content-cell')
+            .data(function(d) {return d})
+            .text(function(d) {return d});
+        cell.enter()
+            .append('td')
+            .text(function(d) {return d})
+            .style('font-size', font_scale.toString() + 'em')
+            .attr('class', 'content-cell');
+    };
+
+    table.update = function(x) {
+        if (this.report_id) {this.update_report(x)}
+    };
+
+    return table
 }
 
 $(document).ready(function() {element_context = new ElementContext()});
