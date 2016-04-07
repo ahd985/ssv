@@ -22,7 +22,7 @@ function ElementContext() {
     this.min_speed = 1.0;
     this.speed_step = 1.0;
     // -- Pattern overlay (e.g., water) data provided by Python
-    this.svg_overlays = {% include 'svg-overlays.json' %}
+    this.svg_overlays = {% include 'static/data/ssv-overlays.json' %}
 
     // Initializer of svg pattern overlays (e.g., water pattern overlays).  These are inserted into
     // the svg 'defs' child for reference by svg elements.
@@ -700,10 +700,11 @@ function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_r
             var g = parent.append('g')
                 .attr('transform', 'translate(' + bbox.x + ',' + bbox.y + ')')
                 .append('g');
+            g.data([this.conditions[0].data]);
 
             // Create cross-sectional slice along the x axis
             var x_section = g.selectAll()
-                .data(initial_vals)
+                .data(function(d) {return d[0]})
                 .enter()
                 .append('g')
                 .attr('class', 'x_section');
@@ -728,7 +729,9 @@ function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_r
             var sel = d3.select(this.selectors[isel]);
             var parent = d3.select(sel.node().parentNode);
 
-            var x_section = parent.selectAll('.x_section').data(heatmap.conditions[0].data[x]);
+            var g = parent.select('g').select('g');
+
+            var x_section = g.selectAll('.x_section').data(function(d) {return d[x]});
             x_section.selectAll('.bin')
                 .data(function (d) { return d; })
                 .transition()
@@ -863,4 +866,12 @@ function Table(report_ids, report_description, report_conditions, report_id) {
     return table
 }
 
+// Error catching
+window.onerror=function(msg){
+    d3.select("body").attr("JSError",msg);
+};
+
+// Initialize document
 $(document).ready(function() {element_context = new ElementContext()});
+
+

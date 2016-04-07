@@ -1,12 +1,10 @@
-import unittest
+import os
 
+import pytest
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 
-
-class TestInputs(unittest.TestCase):
-    def build_full_model(self):
-        pass
-
+class UnitTests:
     def build_bad_svg(self):
         pass
 
@@ -26,45 +24,23 @@ class TestInputs(unittest.TestCase):
         pass
 
 
+# System tests
+def test_build_examples():
+    import examples
+    assert all(examples.run())
 
-"""
-  def test_upper(self):
-      self.assertEqual('foo'.upper(), 'FOO')
+@pytest.fixture
+def driver(request):
+    _driver = webdriver.Chrome()
+    def driver_teardown():
+        _driver.quit()
+    request.addfinalizer(driver_teardown)
 
-  def test_isupper(self):
-      self.assertTrue('FOO'.isupper())
-      self.assertFalse('Foo'.isupper())
+    return _driver
 
-  def test_split(self):
-      s = 'hello world'
-      self.assertEqual(s.split(), ['hello', 'world'])
-      # check that s.split fails when the separator is not a string
-      with self.assertRaises(TypeError):
-          s.split(2)
-"""
-"""
-class TestInterface(unittest.TestCase):
-    def setUp(self):
-        self.browser = webdriver.Chrome()
-        self.addCleanup(self.browser.quit)
-
-    def test_page_title(self):
-        self.browser.get('http://www.google.com')
-        self.assertIn('Google', self.browser.title)
-
-    def test_search_in_python_org(self):
-        driver = self.driver
-        driver.get("http://www.python.org")
-        self.assertIn("Python", driver.title)
-        elem = driver.find_element_by_name("q")
-        elem.send_keys("pycon")
-        elem.send_keys(Keys.RETURN)
-        assert "No results found." not in driver.page_source
-
-
-    def tearDown(self):
-        self.browser.close()
-    """
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)
+def test_examples(driver):
+    base_dir = os.path.dirname(os.path.dirname(__file__))
+    for example in ['example_%d' % i for i in range(1, 5)]:
+        path = os.path.join(base_dir, 'examples', example, '%s.html' % example)
+        driver.get("file:///%s" % path)
+        assert driver.find_element(By.XPATH, '//body').get_attribute("JSError") is None

@@ -1,6 +1,7 @@
 import json
 import xml.etree.ElementTree as ET
 import os
+import re
 
 from jinja2 import Environment, PackageLoader
 import numpy as np
@@ -106,9 +107,9 @@ class SSV:
 
     # Render ssv model using javascript, html, and css
     def render_model(self):
-        env = Environment(loader=PackageLoader('ssv', 'templates'))
-        template = env.get_template('ssv.html')
-        element_data = {element_type:[] for element_type in self._elements.keys()}
+        env = Environment(loader=PackageLoader('ssv', ''))
+        template = env.get_template('templates/ssv.html')
+        element_data = {element_type: [] for element_type in self._elements.keys()}
         self.prepare_svg()
 
         for element_type, elements in self._elements.items():
@@ -181,7 +182,7 @@ class SSV:
             if g_elements:
                 for g_element in g_elements:
                     del g_element.attrib['id']
-                    elements_out += self.element_recurse(g_element, element_id)
+                    elements_out += self.find_all_id(g_element, element_id)
 
             # Warn user if input id is not found in svg and delete element_id
             if len(elements_out) < 1:
@@ -210,20 +211,70 @@ class SSV:
 
         return target_elements
 
+
+# Helper function to validate lists and array inputs, including color inputs
+def validate_array(arr, arr_name, arr_type, max_dim, dim_lens=None):
+    try:
+        arr = np.array(arr).astype(arr_type)
+    except ValueError:
+        raise ValueError("Each element is %s must be allowed to be cast as type %s" (arr_name, arr_type))
+
+    if len(arr.shape) != max_dim:
+        raise ValueError("%s should have %d dimensions" % (arr_name, max_dim))
+
+    if not dim_lens is None and hasattr(dim_lens, '__len__'):
+        for i, d in enumerate(dim_lens):
+            if arr.shape[i] != d > 0:
+                raise ValueError("%s should have size %d in dimension %d" % (arr_name, d, i))
+
+# Helper function to validate colors in a given array
+def validate_colors(arr, arr_name):
+    arr = np.array(arr).astype('str')
+
+    f = np.vectorize(lambda x: False if re.search('^#(?:[0-9a-fA-F]{3}){1,2}$', x) is None else True)
+    if np.any(f(arr)):
+        raise ValueError("%s should include only hex colors" % arr_name)
+
 # Inheritable class for all elements
 class Element:
     class Condition:
-        input_types_allowed = {'type': str, 'report': bool, 'description': str, 'unit': str,
-                               'color_scale': list, 'color_levels': list, 'data': list, 'opacity': (float, int),
-                               'headers': list}
-        required_inp_by_type = {'info': ['data', 'description']}
+        input_types_allowed = {
+            'type': str,
+            'report': bool,
+            'description': str,
+            'unit': str,
+            'color_scale': (list, tuple),
+            'color_levels': (list, tuple),
+            'data': (list, tuple),
+            'opacity': (float, int),
+            'headers': (list, tuple)
+        }
+
+        validate_inputs = {
+            'color_scale': lambda x, y: validate_array(x, y, 'str', 1) and validate_colors(x, y),
+            'color_levels': lambda x, y: validate_array(x, y, 'float', 1),
+            'headers': lambda x, y: validate_array(x, y, 'str', 1),
+        }
+
+        required_inp_by_type = {
+            'info': ['data', 'description']
+        }
+
+        def validate_list_of_type(self, l, l_type):
+            return any([True if not isinstance(e, l_type) else False for e in l])
 
         def __init__(self, condition_id, **kwargs):
             self.id = condition_id
             for key, val in kwargs.items():
+                # Check for proper input type
                 if key in self.input_types_allowed and not isinstance(kwargs[key], self.input_types_allowed[key]):
                     raise TypeError('condition input \'%s\' must be of type \'%s\'' %
                                     (key, self.input_types_allowed[key]))
+
+                # Validate data
+                if key in self.validate_inputs:
+                    self.validate_inputs[key](val, key)
+
                 setattr(self, key, val)
 
             if not self.type in self.required_inp_by_type:
