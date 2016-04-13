@@ -44,3 +44,11 @@ def validate_colors(arr, arr_name):
         raise ValueError("%s should include only hex colors" % arr_name)
 
     return arr.tolist()
+
+
+# Helper function to validate single color
+def validate_color(color, var_name):
+    color_arr = [color]
+    validate_colors(color_arr, var_name)
+
+    return color

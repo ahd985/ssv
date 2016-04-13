@@ -1,28 +1,20 @@
 import numpy as np
 
-from ssv.data_validators import validate_array, validate_colors, validate_array_slices
+from ssv.data_validators import validate_array, validate_colors, validate_array_slices, validate_color
+
+
+# Flexible validator wrappers
+# Validators get passed 3 arguments:
+#   1: parameter being validated
+#   2: parameter name
+#   3: length of x_series of element(not always used)
+_validate_color_scale = lambda a, b, c: validate_array(a, b, 'str', 1, 1) if validate_colors(a, b) else None
+_validate_color_levels = lambda a, b, c: validate_array(a, b, 'float', 1, 1)
+_validate_1d_numeric = lambda a, b, c: validate_array(a, b, 'float', 1, 1, c)
 
 
 # Inheritable class for all element subclasses
 class Element:
-    input_types_allowed = {
-        'type': str,
-        'report': bool,
-        'description': str,
-    }
-
-    validate_inputs = {
-        'data': lambda a, b, c, d, e: validate_array(a, b, 'float', c, d, e),
-        'data_dynamic': lambda a, b, c, d, e: validate_array(a, b, 'float', c, d, e),
-        'color_scale': lambda a, b, c, d, e: validate_array(a, b, 'str', 1, 1) and validate_colors(a, b),
-        'color_levels': lambda a, b, c, d, e: validate_array(a, b, 'float', 1, 1),
-        'headers': lambda a, b, c, d, e: validate_array(a, b, 'str', 1, 1),
-    }
-
-    required_inp_by_type = {
-        'info': {'inputs': ['data', 'description'], 'dims': {'min': 1, 'max': 2}}
-    }
-
     def __init__(self, element_ids, element_description, x_series_len, element_report_id):
         self.ids = element_ids
         if not isinstance(element_description, str):
@@ -32,6 +24,26 @@ class Element:
             raise TypeError('\'element_report_id\' for \'%s\' must be a string.' % element_description)
         self.x_series_len = x_series_len
         self.report_id = element_report_id
+
+        self._input_types_allowed = {
+            'type': str,
+            'report': bool,
+            'description': str,
+            'description_dynamic': str,
+            'max_height': (float, int),
+            'min_height': (float, int),
+            'true_color': str,
+            'false_color': str,
+            'overlay': str,
+            'unit_dynamic': str
+        }
+
+        self._required_validation = {
+            'info': {
+                'data': _validate_1d_numeric
+            }
+        }
+
         self.conditions = []
 
     def add_condition_post_hook(self, **kwargs):
@@ -47,28 +59,25 @@ class Element:
         if not isinstance(report, bool):
             raise TypeError("report must be of type boolean")
 
-        if not condition_type in self.required_inp_by_type:
+        if not condition_type in self._required_validation:
             raise ValueError('condition type \'%s\' not supported' % condition_type)
 
-        for required_inp in self.required_inp_by_type[condition_type]['inputs']:
-            if not required_inp in kwargs:
+        for required in self._required_validation[condition_type]:
+            if not required in kwargs:
                 raise AttributeError('condition attribute \'%s\' is required for condition type '
-                                     '\'%s\'' % (required_inp, condition_type))
+                                     '\'%s\'' % (required, condition_type))
 
         for key, val in kwargs.items():
             # Check for proper input type
-            if key in self.input_types_allowed and not isinstance(kwargs[key], self.input_types_allowed[key]):
+            if key in self._input_types_allowed and not isinstance(kwargs[key], self._input_types_allowed[key]):
                 raise TypeError('condition input \'%s\' must be of type \'%s\'' %
-                                (key, self.input_types_allowed[key]))
+                                (key, self._input_types_allowed[key]))
 
             # Validate data
-            if key in self.validate_inputs:
-                if 'dims' in self.required_inp_by_type[condition_type]:
-                    min_max = self.required_inp_by_type[condition_type]['dims']
-                    val = self.validate_inputs[key](val, key, min_max['min'], min_max['max'], self.x_series_len)
-                else:
-                    val = self.validate_inputs[key](val, key)
-            kwargs[key] = val
+            if key in self._required_validation[condition_type] and \
+                    not self._required_validation[condition_type][key] is None:
+                val = self._required_validation[condition_type][key](val, key, self.x_series_len)
+                kwargs[key] = val
 
         # Set condition
         condition_id = '%s_%d' % ('_'.join(self.ids), len(self.conditions))
@@ -90,24 +99,41 @@ class Condition:
 class Cell(Element):
     def __init__(self, cell_id, cell_description, x_series_len, cell_report_id=None):
         super(Cell, self).__init__(cell_id, cell_description, x_series_len, cell_report_id)
-        self.input_types_allowed.update({'max_height': (float, int), 'data_dynamic': list, 'true_color': str,
-                                         'false_color': str, 'overlay': str})
-        base_required = ['data']
-        self.required_inp_by_type.update({'level_static': {'inputs': base_required + ['max_height', 'min_height'],
-                                                           'dims': {'min': 1, 'max': 1}},
-                                          'level_dynamic': {'inputs': base_required + ['max_height', 'min_height',
-                                                                                       'data_dynamic',
-                                                                                       'description_dynamic',
-                                                                                       'color_scale', 'color_levels'],
-                                                            'dims': {'min': 1, 'max': 1}},
-                                          'background': {'inputs': base_required + ['color_scale', 'color_levels'],
-                                                         'dims': {'min': 1, 'max': 1}},
-                                          'logical': {'inputs': base_required + ['true_color', 'false_color'],
-                                                      'dims': {'min': 1, 'max': 1}},
-                                          'zonal_y': {'inputs': base_required + ['max_height', 'min_height',
-                                                                                 'data_dynamic', 'description_dynamic',
-                                                                                 'color_scale', 'color_levels'],
-                                                      'dims': {'min': 2, 'max': None}}})
+        self._required_validation.update({
+            'level_static': {
+                'data': _validate_1d_numeric,
+                'max_height': None,
+                'min_height': None
+            },
+            'level_dynamic': {
+                'data': _validate_1d_numeric,
+                'max_height': None,
+                'min_height': None,
+                'data_dynamic': _validate_1d_numeric,
+                'description_dynamic': None,
+                'color_scale': _validate_color_scale,
+                'color_levels': _validate_color_levels
+            },
+            'background': {
+                'data': _validate_1d_numeric,
+                'color_scale': _validate_color_scale,
+                'color_levels': _validate_color_levels
+            },
+            'logical': {
+                'data': _validate_1d_numeric,
+                'true_color': lambda a, b, c: validate_color(a, b),
+                'false_color': lambda a, b, c: validate_color(a, b)
+            },
+            'zonal_y': {
+                'data': lambda a, b, c: validate_array(a, b, 'float', 2, 2, c),
+                'max_height': None,
+                'min_height': None,
+                'data_dynamic': None,
+                'description_dynamic': None,
+                'color_scale': _validate_color_scale,
+                'color_levels': _validate_color_levels
+            },
+        })
 
     # Overwrite super's add_condition_post_hook function to handle special conditions
     def add_condition_post_hook(self, **kwargs):
@@ -126,25 +152,36 @@ class Cell(Element):
 class Line(Element):
     def __init__(self, line_id, line_description, x_series_len, line_report_id=None):
         super(Line, self).__init__(line_id, line_description, x_series_len, line_report_id)
-        base_required = ['data']
-        self.required_inp_by_type.update({'equal_y': {'inputs': base_required + ['color_scale', 'color_levels'],
-                                                      'dims': {'min': 2, 'max': 2}}})
+        self._required_validation.update({
+            'equal_y': {
+                'data': lambda a, b, c: validate_array(a, b, 'float', 2, 2, c),
+                'color_scale': _validate_color_scale,
+                'color_levels': _validate_color_levels,
+            }
+        })
+
 
 # Wrapper for heatmap
 class Heatmap(Element):
     def __init__(self, heatmap_id, heatmap_description, x_series_len, heatmap_report_id=None):
         super(Heatmap, self).__init__(heatmap_id, heatmap_description, x_series_len, heatmap_report_id)
-        base_required = ['data']
-        self.required_inp_by_type.update({'rect': {'inputs': base_required + ['color_scale', 'color_levels'],
-                                                   'dims': {'min': 3, 'max': 3}}})
+        self._required_validation.update({
+            'rect': {
+                'data': lambda a, b, c: validate_array(a, b, 'float', 3, 3, c),
+                'color_scale': _validate_color_scale,
+                'color_levels': _validate_color_levels
+            }
+        })
 
 # Wrapper for toggle
 class Toggle(Element):
     def __init__(self, toggle_id, toggle_description, x_series_len, toggle_report_id=None):
         super(Toggle, self).__init__(toggle_id, toggle_description, x_series_len, toggle_report_id)
-        base_required = ['data']
-        self.required_inp_by_type.update({'show_hide': {'inputs': base_required,
-                                                        'dims': {'min': 1, 'max': 1}}})
+        self._required_validation.update({
+            'show_hide': {
+                'data': _validate_1d_numeric
+            }
+        })
 
 # Wrapper for report
 class Report(Element):
@@ -156,11 +193,12 @@ class Report(Element):
 class Table(Element):
     def __init__(self, report_id, report_description, x_series_len, data, headers):
         super(Table, self).__init__('', report_description, x_series_len, report_id[0])
-        self.required_inp_by_type.update({'info': {'inputs': ['data', 'headers'],
-                                                   'dims': {'min': 3, 'max': 3}}})
-
-        # Update array validation for string
-        self.validate_inputs.update({'data': lambda a, b, c, d, e: validate_array_slices(a, b, 'str')})
+        self._required_validation.update({
+            'info': {
+                'data': lambda a, b, c: validate_array_slices(a, b, 'str'),
+                'headers': lambda a, b, c: validate_array(a, b, 'str', 1, 1, None)
+            }
+        })
 
         # Add info and remove ability to add additional conditions to element
         self.add_condition('info', data=data, headers=headers)
@@ -169,8 +207,8 @@ class Table(Element):
 # Wrapper for color scale legend
 class ColorScale:
     def __init__(self, color_scale, color_levels, color_scale_desc, color_scale_id):
-        if not isinstance(color_scale, list) or not isinstance(color_levels, list):
-            raise TypeError('color_scale and color_levels must be a list.')
+        validate_colors(color_scale, 'color_scale')
+        validate_array(color_levels, 'color_levels', 'float', 1, 1)
         if not isinstance(color_scale_id, str):
             raise TypeError('color_scale_id must be a string.')
         if not isinstance(color_scale_desc, str):

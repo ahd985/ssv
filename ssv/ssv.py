@@ -108,13 +108,15 @@ class SSV:
 
         for element_type, elements in self._elements.items():
             for element in set(elements.values()):
-                element_dict = element.__dict__.copy()
+                element_dict = {k: v for k, v in element.__dict__.items() if k[0] != '_'}
 
                 if 'conditions' in element_dict:
                     for i in range(len(element_dict['conditions'])):
                         element_dict['conditions'][i] = element_dict['conditions'][i].__dict__
 
                 element_data[element_type].append(element_dict)
+
+        print(element_data)
 
         color_scales_data = [scale.__dict__ for scale in self._color_scales]
 
