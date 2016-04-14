@@ -40,7 +40,7 @@ class Element:
 
         self._required_validation = {
             'info': {
-                'data': _validate_1d_numeric
+                'data': lambda a, b, c: validate_array(a, b, 'float', 1, 2, c)
             }
         }
 
