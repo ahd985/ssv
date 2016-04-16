@@ -1,7 +1,4 @@
 import os
-# Add ssv path
-import sys
-sys.path.append("../../")
 
 import numpy as np
 import pandas as pd
@@ -62,8 +59,9 @@ def run():
                        data_dynamic=data[['Lower Layer Temperature.1','Mid Temp', 'Upper Layer Temperature.1']].values.tolist(), color_scale=gas_color_scale,
                        color_levels=gas_color_levels,
                        max_height=3, description_dynamic='Zone Temperatures', unit_dynamic='C',
-                       min_height=0)
-    node_2.add_condition('info', data=data[['Pressure','Pressure.1','Pressure.2']], description='Pressure', unit='Pa')
+                       min_height=0, section_label='Zone')
+    node_2.add_condition('info', data=data[['Pressure','Pressure.1','Pressure.2']], description='Pressure', unit='Pa',
+                         section_label='Zone')
 
     report = ssv_model.add_element('report', 'all-report')
 

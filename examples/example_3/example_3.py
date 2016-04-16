@@ -1,7 +1,4 @@
 import os
-# Add ssv path
-import sys
-sys.path.append("../../")
 
 import numpy as np
 import scipy.special as special

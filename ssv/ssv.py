@@ -25,7 +25,8 @@ class SSV:
             x_series = np.array(x_series).astype('float')
             if len(x_series.shape) > 1 or len(x_series.shape) < 0:
                 raise TypeError('\'x_series\' input must be 1 dimensional with at least one value.')
-            self._x_series = x_series.tolist()
+            x_series = x_series.tolist()
+            self._x_series = ['%.4e' % i for i in x_series]
         except ValueError:
             raise ValueError('\'x_series\' input must be provided in an array-like numeric format')
 

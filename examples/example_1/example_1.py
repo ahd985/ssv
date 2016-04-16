@@ -1,12 +1,11 @@
 import os
 
-import sys
-sys.path.append("../../")
-from ssv.ssv import SSV
-
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
+
+from ssv.ssv import SSV
+
 
 def run():
     # Load steam tables and build interpolation functions for several features

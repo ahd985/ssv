@@ -80,7 +80,7 @@ function ElementContext() {
 
     // Function to tell all manipulated element classes to update rendering given index of this.x_series
     this.update_elements = function(x) {
-        $('#x-series-val').html(this.x_series[x]);
+        $('#x-series-val').html(num_format(this.x_series[x]));
         for (var element in _context.elements) {
             _context.elements[element].update(x);
         }
@@ -274,6 +274,15 @@ function ElementContext() {
     this.build_color_scales();
 }
 
+// Number formatting function for report output
+function num_format(val) {
+    if (val >= 1000 || val < 0.01) {
+        return d3.format('.2e')(val)
+    } else {
+        return d3.format('.2f')(val)
+    }
+};
+
 // Inheritable parent class of every element type
 function Element(element_ids, element_description, element_conditions, report_id) {
     this.ids = element_ids;
@@ -304,15 +313,6 @@ function Element(element_ids, element_description, element_conditions, report_id
                 .range(color_scale);
         }
     }
-
-    // Number formatting function for report output
-    this.num_format = function(val) {
-        if (val >= 1000 || val < 0.01) {
-            return d3.format('.1e')(val)
-        } else {
-            return d3.format('.2f')(val)
-        }
-    };
 
     // Report initialization function - called if report_id provided and report_initialized == false
     this.initialize_report = function() {
@@ -398,9 +398,10 @@ function Element(element_ids, element_description, element_conditions, report_id
                     .attr('font-style', 'oblique')
                     .text(condition.description);
 
-                // Check if we have a section label property in the condition.  If not, default to 'Zone'.
+                // Check if we have a section label property in the condition.  If not, default to 'Section'.
                 var section_label;
-                'section_label' in condition ? section_label = condition.section_label: section_label = 'Zone';
+                'section_label' in condition && condition.section_label != '' ?
+                    section_label = condition.section_label: section_label = 'Section';
 
                 y_count += y_row;
 
@@ -417,7 +418,7 @@ function Element(element_ids, element_description, element_conditions, report_id
                             .attr('y', y_count + y_text)
                             .attr('fill', zone_color)
                             .style('font-size', report_em.toString() + 'em')
-                            .text('Zone #' + (j + 1));
+                            .text(section_label + ' #' + (j + 1).toString());
                     }
 
                     // Value text
@@ -464,11 +465,11 @@ function Element(element_ids, element_description, element_conditions, report_id
             // Else get value at index x of axis 1
             if (condition.data[0].length !== undefined) {
                 for (var j in condition.data[x]) {
-                    value_texts[0][val_count].innerHTML = this.num_format(condition.data[x][j]);
+                    value_texts[0][val_count].innerHTML = num_format(condition.data[x][j]);
                     val_count += 1
                 }
             } else {
-                value_texts[0][val_count].innerHTML = this.num_format(condition.data[x]);
+                value_texts[0][val_count].innerHTML = num_format(condition.data[x]);
                     val_count += 1
             }
         }

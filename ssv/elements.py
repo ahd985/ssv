@@ -28,6 +28,7 @@ class Element:
         self._input_types_allowed = {
             'type': str,
             'report': bool,
+            'section_label': str,
             'description': str,
             'description_dynamic': str,
             'max_height': (float, int),
@@ -35,7 +36,7 @@ class Element:
             'true_color': str,
             'false_color': str,
             'overlay': str,
-            'unit_dynamic': str
+            'unit_dynamic': str,
         }
 
         self._required_validation = {
@@ -141,11 +142,12 @@ class Cell(Element):
         if kwargs['type'] == 'level_dynamic' or kwargs['type'] == 'zonal_y':
             kwargs_dynamic = {'type': 'info',
                               'data': kwargs['data_dynamic'],
-                              'description': kwargs['description_dynamic']}
+                              'description': kwargs['description_dynamic'],
+                              'section_label': kwargs['section_label'] if 'section_label' in kwargs else '',
+                              'unit': kwargs['unit_dynamic'] if 'unit_dynamic' in kwargs else ''}
 
-            unit = kwargs['unit_dynamic'] if 'unit_dynamic' in kwargs else ''
             condition_id = '%s_%s' % ('_'.join(self.ids), 'dynamic')
-            condition = Condition(condition_id, unit=unit, **kwargs_dynamic)
+            condition = Condition(condition_id, **kwargs_dynamic)
             self.conditions.append(condition)
 
 # Wrapper for line
@@ -191,8 +193,8 @@ class Report(Element):
 
 # Wrapper for table
 class Table(Element):
-    def __init__(self, report_id, report_description, x_series_len, data, headers):
-        super(Table, self).__init__('', report_description, x_series_len, report_id[0])
+    def __init__(self, table_id, table_description, x_series_len, data, headers):
+        super(Table, self).__init__('', table_description, x_series_len, table_id[0])
         self._required_validation.update({
             'info': {
                 'data': lambda a, b, c: validate_array_slices(a, b, 'str'),
