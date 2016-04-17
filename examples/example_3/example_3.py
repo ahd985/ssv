@@ -60,16 +60,23 @@ def run():
                     title="Core Heatmap Example", font_size=10)
 
     core_color_scale = ['#ffffb2','#fecc5c','#fd8d3c','#f03b20','#bd0026']
-    core_color_levels = np.linspace(300,800,5).tolist()
+    core_color_levels = np.linspace(300,800,5)
 
     node = ssv_model.add_element('heatmap', 'core', 'Core')
-    node.add_condition('rect', description='Core Heatmap', unit='K', data=core_temp.tolist(),
+    node.add_condition('rect', description='Core Heatmap', unit='K', data=core_temp,
                        color_scale=core_color_scale, color_levels=core_color_levels)
 
     # Use outer vertical rows of heatmap to represent temperature in vessel wall
     walls = ssv_model.add_element('line', ['wall-left', 'wall-right'], 'Vessel Wall')
-    walls.add_condition('equal_y', description='Vessel Wall Temp', unit='K', data=core_temp[:,:,0].tolist(),
+    walls.add_condition('equal_y', description='Vessel Wall Temp', unit='K', data=core_temp[:,:,0],
                        color_scale=core_color_scale, color_levels=core_color_levels)
+
+    # Track average and max core temperature
+    core_temp_avg = core_temp.mean(axis=2).mean(axis=1)
+    core_temp_max = core_temp.max(axis=2).max(axis=1)
+    report = ssv_model.add_element('report', 'report-1', 'Core Metrics')
+    report.add_condition('info', description='Avg Temp', unit='F', data=core_temp_avg)
+    report.add_condition('info', description='Max Temp', unit='F', data=core_temp_max)
 
     ssv_model.show_color_scale(core_color_scale, core_color_levels, "Core Temperature (K)", "core-color-scale")
 

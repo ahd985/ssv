@@ -168,10 +168,10 @@ def run():
     tank = ssv_model.add_element('cell', 'tank-1', 'Quench Tank', cell_report_id='tank-1-report')
     tank.add_condition('background', description='Vapor Temp', unit='K', data=sim_data['temp'],
                        color_scale=['#fee6ce','#fdae6b','#e6550d'],
-                       color_levels=np.linspace(min(sim_data['temp']), max(sim_data['temp']), 3).tolist())
+                       color_levels=np.linspace(min(sim_data['temp']), max(sim_data['temp']), 3))
     tank.add_condition('level_dynamic', description='Water Level', unit='m', data=sim_data['wtr_lvl'],
                        data_dynamic=sim_data['temp'], color_scale=['#deebf7','#9ecae1','#3182bd'],
-                       color_levels=np.linspace(min(sim_data['temp']), max(sim_data['temp']), 3).tolist(),
+                       color_levels=np.linspace(min(sim_data['temp']), max(sim_data['temp']), 3),
                        max_height=10, description_dynamic='Water Temp', unit_dynamic='K', overlay='water',
                        min_height=0)
     tank.add_condition('info', data=sim_data['press'], description='Press', unit='MPa')
@@ -188,8 +188,8 @@ def run():
     relief_toggle = ssv_model.add_element('toggle', 'relief-toggle', 'Relief Toggle')
     relief_toggle.add_condition('show_hide', data=sim_data['rv'], color='black')
 
-    ssv_model.show_color_scale(['#deebf7','#9ecae1','#3182bd'], np.linspace(min(sim_data['temp']), max(sim_data['temp']), 3).tolist(), "Water Temperature (F)", "color-scale-water")
-    ssv_model.show_color_scale(['#fee6ce','#fdae6b','#e6550d'], np.linspace(min(sim_data['temp']), max(sim_data['temp']), 3).tolist(), "Gas Temperature (F)", "color-scale-gas")
+    ssv_model.show_color_scale(['#deebf7','#9ecae1','#3182bd'], np.linspace(min(sim_data['temp']), max(sim_data['temp']), 3), "Water Temperature (F)", "color-scale-water")
+    ssv_model.show_color_scale(['#fee6ce','#fdae6b','#e6550d'], np.linspace(min(sim_data['temp']), max(sim_data['temp']), 3), "Gas Temperature (F)", "color-scale-gas")
 
     ssv_model.save_visualization(os.path.join('examples', 'example_1', 'example_1'))
 

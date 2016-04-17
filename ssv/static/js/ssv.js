@@ -1,5 +1,4 @@
 // Main function to generate contextual information of ssv setup
-// Called on $(document).ready()
 function ElementContext() {
     // Initialize properties
     _context = this;
@@ -251,8 +250,9 @@ function ElementContext() {
                     .attr('y', (1 + margin) * legend_text_height)
                     .attr('width', function(d,i) {return x(i+1) - x(i)})
                     .attr('height', legend_text_height)
-                    .style('fill', function(d) {return d})
-                    .attr('font-size', header_em.toString() + 'em');;
+                    .attr('fill', function(d) {return d})
+                    .style('fill-opacity', scale.opacity)
+                    .attr('font-size', header_em.toString() + 'em');
 
                 // -- Append value text immediately below the left-most area of every color rect
                 keys.enter().append('text')
@@ -339,6 +339,7 @@ function Element(element_ids, element_description, element_conditions, report_id
             var unit_color = '#FFFFFF';
             var val_color = '#FFEB3B';
             var report_fill = '#616161';
+            var sizing_text = 'Sizing...';
 
             // Create base attributes for report elements
             var base_attr = {'x':0, 'y':0, 'width':width, 'fill':report_fill, 'fill-opacity':'1',
@@ -365,7 +366,7 @@ function Element(element_ids, element_description, element_conditions, report_id
                 .attr('x', width / 2)
                 .attr('fill', header_color)
                 .style('font-size', header_em.toString() + 'em')
-                .text(this.description);
+                .text(sizing_text);
 
             // Resize header and outline based on text height
             title_text_height = title_text.node().getBBox().height;
@@ -375,6 +376,7 @@ function Element(element_ids, element_description, element_conditions, report_id
             title_outline.attr('height', y_count);
             var y_text = report_text_height * (1 + 1*margin);
             var y_row = y_text + report_text_height * margin;
+            title_text.text(this.description);
 
             // Create value output box outlines (backgrounds) and add text boxes
             // This code adds the condition description, value, and unit (if applicable) in a row by row fashion
@@ -785,7 +787,7 @@ function Report(report_ids, report_description, report_conditions, report_id) {
     return report
 }
 
-// Wrapper class for tables
+// Wrapper class for tablular report
 function Table(report_ids, report_description, report_conditions, report_id) {
     var table = new Element(report_ids, report_description, report_conditions, report_id);
 
@@ -872,7 +874,6 @@ window.onerror=function(msg){
     d3.select("body").attr("JSError",msg);
 };
 
-// Initialize document
 $(document).ready(function() {element_context = new ElementContext()});
 
 

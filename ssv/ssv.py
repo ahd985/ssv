@@ -2,8 +2,11 @@ import json
 import xml.etree.ElementTree as ET
 import os
 
-from jinja2 import Environment, PackageLoader
-import numpy as np
+try:
+    from jinja2 import Environment, PackageLoader
+    import numpy as np
+except ImportError:
+    raise ImportError("Missing required packages: jinja2 and/or numpy.")
 
 from . import elements
 
@@ -85,8 +88,8 @@ class SSV:
             if element_id in self._elements[element_type]:
                 del self._elements[element_type][element_id]
 
-    def show_color_scale(self, color_scale, color_levels, color_scale_desc, color_scale_id):
-        scale = elements.ColorScale(color_scale, color_levels, color_scale_desc, color_scale_id)
+    def show_color_scale(self, color_scale, color_levels, color_scale_desc, color_scale_id, opacity=1.0):
+        scale = elements.ColorScale(color_scale, color_levels, color_scale_desc, color_scale_id, opacity)
         self._color_scales.append(scale)
 
     # Save ssv model as .html file
@@ -101,7 +104,7 @@ class SSV:
             f.write(self.render_model())
 
     # Render ssv model using javascript, html, and css
-    def render_model(self):
+    def render_model(self, mode='full'):
         env = Environment(loader=PackageLoader('ssv', ''))
         template = env.get_template(os.path.join('templates', 'ssv.html'))
         element_data = {element_type: [] for element_type in self._elements.keys()}
@@ -117,14 +120,21 @@ class SSV:
 
                 element_data[element_type].append(element_dict)
 
-        print(element_data)
-
         color_scales_data = [scale.__dict__ for scale in self._color_scales]
 
-        return template.render({'title': self._title, 'element_data': json.dumps(element_data),
-                                'x_series': self._x_series, 'color_scales_data': json.dumps(color_scales_data),
-                                'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
-                                'sim_visual': ET.tostring(self._svg_root, 'utf-8', method='xml').decode('utf-8')})
+        # Render static web page for "full" mode
+        if mode == 'full':
+            return template.render({'title': self._title, 'element_data': json.dumps(element_data),
+                                    'x_series': self._x_series, 'color_scales_data': json.dumps(color_scales_data),
+                                    'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
+                                    'sim_visual': ET.tostring(self._svg_root, 'utf-8', method='xml').decode('utf-8')})
+        # Render svg and js only
+        # AHD - implement
+        elif mode == 'partial':
+            return template.render({'title': self._title, 'element_data': json.dumps(element_data),
+                                    'x_series': self._x_series, 'color_scales_data': json.dumps(color_scales_data),
+                                    'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
+                                    'sim_visual': ET.tostring(self._svg_root, 'utf-8', method='xml').decode('utf-8')})
 
     # Function to clean and ready svg for output
     # Cleans svg of troublesome attributes and searches for user-provided element ids to bind data to

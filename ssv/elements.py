@@ -1,5 +1,3 @@
-import numpy as np
-
 from ssv.data_validators import validate_array, validate_colors, validate_array_slices, validate_color
 
 
@@ -96,6 +94,7 @@ class Condition:
         for key, val in kwargs.items():
             setattr(self, key, val)
 
+
 # Wrapper for cell
 class Cell(Element):
     def __init__(self, cell_id, cell_description, x_series_len, cell_report_id=None):
@@ -129,7 +128,7 @@ class Cell(Element):
                 'data': lambda a, b, c: validate_array(a, b, 'float', 2, 2, c),
                 'max_height': None,
                 'min_height': None,
-                'data_dynamic': None,
+                'data_dynamic': lambda a, b, c: validate_array(a, b, 'float', 2, 2, c),
                 'description_dynamic': None,
                 'color_scale': _validate_color_scale,
                 'color_levels': _validate_color_levels
@@ -185,6 +184,7 @@ class Toggle(Element):
             }
         })
 
+
 # Wrapper for report
 class Report(Element):
     def __init__(self, report_id, report_description, x_series_len):
@@ -206,17 +206,21 @@ class Table(Element):
         self.add_condition('info', data=data, headers=headers)
         self.add_condition = None
 
+
 # Wrapper for color scale legend
 class ColorScale:
-    def __init__(self, color_scale, color_levels, color_scale_desc, color_scale_id):
-        validate_colors(color_scale, 'color_scale')
-        validate_array(color_levels, 'color_levels', 'float', 1, 1)
+    def __init__(self, color_scale, color_levels, color_scale_desc, color_scale_id, opacity):
+        color_scale = validate_colors(color_scale, 'color_scale')
+        color_levels = validate_array(color_levels, 'color_levels', 'float', 1, 1)
         if not isinstance(color_scale_id, str):
             raise TypeError('color_scale_id must be a string.')
         if not isinstance(color_scale_desc, str):
             raise TypeError('color_scale_desc must be a string.')
+        if not isinstance(opacity, (int, float)):
+            raise TypeError("opacity must be a float or an int")
 
         self.scale = color_scale
         self.levels = color_levels
         self.desc = color_scale_desc
         self.id = color_scale_id
+        self.opacity = opacity

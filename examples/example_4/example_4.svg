@@ -9,9 +9,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="250.3311mm"
+   width="251.17778mm"
    height="223.0329mm"
-   viewBox="0 0 886.99996 790.27404"
+   viewBox="0 0 890.00001 790.27404"
    id="svg2"
    version="1.1"
    inkscape:version="0.91 r13725"
@@ -30,9 +30,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1"
-     inkscape:cx="668.72923"
-     inkscape:cy="514.86947"
+     inkscape:zoom="0.5"
+     inkscape:cx="146.72923"
+     inkscape:cy="911.84022"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -49,7 +49,7 @@
     <inkscape:grid
        type="xygrid"
        id="grid5845"
-       originx="1"
+       originx="0.99999982"
        originy="-260.72595" />
   </sodipodi:namedview>
   <metadata
@@ -68,7 +68,7 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(1,-1.3622048)">
+     transform="translate(0.99999983,-1.362205)">
     <rect
        style="opacity:1;fill:#8b8b8b;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        id="rect5864"
@@ -799,29 +799,29 @@
        id="cutset-report"
        width="322.46469"
        height="159.46471"
-       x="562.26764"
-       y="202.62985"
+       x="556.26764"
+       y="218.62985"
        ry="2.1275482e-05"
        inkscape:label="#rect6050" />
     <rect
-       style="opacity:1;fill:none;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       style="opacity:1;fill:none;fill-opacity:1;stroke:#000000;stroke-width:2.18927383;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        id="rect6052"
-       width="740"
-       height="150"
-       x="0"
-       y="2.3622048"
-       ry="2.1346899e-05" />
+       width="887.81073"
+       height="149.81071"
+       x="0.094637088"
+       y="2.4568419"
+       ry="2.1319966e-05" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="298"
-       y="41.362206"
+       x="366"
+       y="39.362206"
        id="text6054"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan6056"
-         x="298"
-         y="41.362206">Initiator</tspan></text>
+         x="366"
+         y="39.362206">Initiator</tspan></text>
     <rect
        style="opacity:1;fill:none;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        id="ldhr"
@@ -845,8 +845,8 @@
          style="font-size:22.5px">LDHR</tspan></text>
     <rect
        ry="2.1346899e-05"
-       y="53.362206"
-       x="319"
+       y="51.362206"
+       x="387"
        height="60"
        width="110"
        id="losp"
@@ -855,13 +855,13 @@
     <text
        sodipodi:linespacing="125%"
        id="text6070"
-       y="90.362206"
-       x="341"
+       y="88.362206"
+       x="409"
        style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        xml:space="preserve"><tspan
          style="font-size:22.5px"
-         y="90.362206"
-         x="341"
+         y="88.362206"
+         x="409"
          id="tspan6072"
          sodipodi:role="line">LOSP</tspan></text>
     <rect
@@ -869,20 +869,20 @@
        id="atws"
        width="110"
        height="60"
-       x="581"
+       x="713"
        y="52.362206"
        ry="2.1346899e-05"
        inkscape:label="#rect6074" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="606"
+       x="738"
        y="91.362206"
        id="text6076"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan6078"
-         x="606"
+         x="738"
          y="91.362206"
          style="font-size:22.5px">ATWS</tspan></text>
   </g>
