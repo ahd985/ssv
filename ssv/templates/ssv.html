@@ -7,39 +7,41 @@
     <style> {% include 'static/css/ssv.css' %} </style>
 </head>
 <body>
-  <div class="row full-width">
-    <div class="small-12 large-12 columns sim-title" align="center"><h1>{{ title }}</h1></div>
-  </div>
-  <div class="row full-width">
-    <div class="small-12 large-12 columns sim-visual" align="center">{{ sim_visual }}</div>
-  </div>
-  <div class="row full-width">
-    <div class="small-6 large-1 columns full-height ssv-button sim-control">
-      <a id="speed-button" class="ssv-control radius" align="center" style="display: table">
-        <span id="speed-val" style="display: table-cell;vertical-align: middle;color: white"><b>1x</b></span>
-      </a>
-    </div>
-    <div class="small-6 large-1 columns full-height ssv-button sim-control">
-      <a id="play-button" class="ssv-control" align="center" style="display:block; margin:auto">
-        <span id="play-icon">{% include 'static/svg/fi-play-circle.svg' %}</span>
-        <span id="pause-icon" style="display:none">{% include 'static/svg/fi-pause.svg' %}</span>
-      </a>
-    </div>
-    <div class="small-12 large-8 columns full-height sim-control" style="display: table">
-      <div style="display: table-cell;vertical-align: middle;">
-        <div class="range-slider" data-slider>
-          <span class="range-slider-handle ssv-slider" role="slider" tabindex="0"></span>
-          <span class="range-slider-active-segment"></span>
-          <input type="hidden">
+  <div class="ssv-panel">
+      <div class="row full-width">
+        <div class="small-12 large-12 columns sim-title" align="center"><h1>{{ title }}</h1></div>
+      </div>
+      <div class="row full-width">
+        <div class="small-12 large-12 columns sim-visual" align="center">{{ sim_visual }}</div>
+      </div>
+      <div class="row full-width ssv-control">
+        <div class="small-6 large-1 columns full-height ssv-button sim-control">
+          <a id="speed-button" class="ssv-control radius" align="center" style="display: table">
+            <span id="speed-val" style="display: table-cell;vertical-align: middle;color: white"><b>1x</b></span>
+          </a>
+        </div>
+        <div class="small-6 large-1 columns full-height ssv-button sim-control">
+          <a id="play-button" class="ssv-control" align="center" style="display:block; margin:auto">
+            <span id="play-icon">{% include 'static/svg/fi-play-circle.svg' %}</span>
+            <span id="pause-icon" style="display:none">{% include 'static/svg/fi-pause.svg' %}</span>
+          </a>
+        </div>
+        <div class="small-12 large-8 columns full-height sim-control" style="display: table">
+          <div style="display: table-cell;vertical-align: middle;">
+            <div class="range-slider" data-slider>
+              <span class="range-slider-handle ssv-slider" role="slider" tabindex="0"></span>
+              <span class="range-slider-active-segment"></span>
+              <input type="hidden">
+            </div>
+          </div>
+        </div>
+        <div class="small-12 large-2 columns full-height sim-control" align="center" style="display: table">
+          <div class="ssv-control radius" style="display: table-cell; vertical-align: middle; color: white">
+            <span id="x-series-val"></span>
+            <span><i><b>{{ x_series_unit }}</b></i></span>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="small-12 large-2 columns full-height sim-control" align="center" style="display: table">
-      <div class="ssv-control radius" style="display: table-cell; vertical-align: middle; color: white">
-        <span id="x-series-val"></span>
-        <span><i><b>{{ x_series_unit }}</b></i></span>
-      </div>
-    </div>
   </div>
   <script> {% include 'static/js/d3.min.js' %} </script>
   <script> {% include 'static/js/jquery-2.1.4.min.js' %} </script>
@@ -48,5 +50,11 @@
   <script> {% include 'static/js/foundation.equalizer.js' %} </script>
   <script> {% include 'static/js/foundation.dropdown.js' %} </script>
   <script> {% include 'static/js/ssv.js' %} </script>
+  <script>
+      var x_series = {{ x_series }}
+      var element_data = {{ element_data }}
+      var color_scales_data = {{ color_scales_data }}
+      element_contexts["{{ uuid }}"] = new ElementContext(x_series, element_data, color_scales_data)
+  </script>
 </body>
 </html>

@@ -1,6 +1,7 @@
 import json
 import xml.etree.ElementTree as ET
 import os
+import uuid
 
 try:
     from jinja2 import Environment, PackageLoader
@@ -120,18 +121,19 @@ class SSV:
 
                 element_data[element_type].append(element_dict)
 
-        color_scales_data = [scale.__dict__ for scale in self._color_scales]
+        color_scales_data = [scale.__dict__ for scale in self._color_scales] if len(self._color_scales) > 0 else []
 
         # Render static web page for "full" mode
         if mode == 'full':
             return template.render({'title': self._title, 'element_data': json.dumps(element_data),
+                                    'uuid': uuid.uuid4(),
                                     'x_series': self._x_series, 'color_scales_data': json.dumps(color_scales_data),
                                     'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
                                     'sim_visual': ET.tostring(self._svg_root, 'utf-8', method='xml').decode('utf-8')})
-        # Render svg and js only
-        # AHD - implement
+
+        # Render piecemeal visual
         elif mode == 'partial':
-            return template.render({'title': self._title, 'element_data': json.dumps(element_data),
+            return template.render({'element_data': json.dumps(element_data), 'uuid': uuid.uuid4(),
                                     'x_series': self._x_series, 'color_scales_data': json.dumps(color_scales_data),
                                     'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
                                     'sim_visual': ET.tostring(self._svg_root, 'utf-8', method='xml').decode('utf-8')})

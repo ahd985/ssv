@@ -1,16 +1,12 @@
 // Main function to generate contextual information of ssv setup
-function ElementContext() {
+function ElementContext(x_series, element_data, color_scales_data) {
     // Initialize properties
     _context = this;
     // -- Element_data is the 'y' data representing svg elements that corresponds to the x_series data
-    this.x_series = {{ x_series }};
-    this.element_data = {{ element_data }};
+    this.x_series = x_series;
+    this.element_data = element_data;
     // -- This data provides for rendering graphical color scale legends within the svg
-    {% if color_scales_data %}
-        this.color_scales = {{ color_scales_data }};
-    {% else %}
-        this.color_scales = [];
-    {% endif %}
+    this.color_scales = color_scales_data;
 
     this.elements = [];
     // -- Simulation interface properties - control automatic play, play speed, etc
@@ -874,6 +870,6 @@ window.onerror=function(msg){
     d3.select("body").attr("JSError",msg);
 };
 
-$(document).ready(function() {element_context = new ElementContext()});
+element_contexts = {};
 
 
