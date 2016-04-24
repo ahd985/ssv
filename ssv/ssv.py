@@ -1,3 +1,4 @@
+import itertools
 import json
 import xml.etree.ElementTree as ET
 import os
@@ -52,8 +53,8 @@ class SSV:
         except ET.ParseError:
             raise ET.ParseError('Invalid SVG file.')
 
-        if not isinstance(font_size, int):
-            raise TypeError('\'font_size\' must be provided as an integer.')
+        if not isinstance(font_size, (int, float)):
+            raise TypeError('\'font_size\' must be provided as an integer or a float.')
 
         # Set properties
         self._svg_root = svg_root
@@ -63,23 +64,29 @@ class SSV:
                                                       cls in elements.Element.__subclasses__()]}
         self._svg_out = None
         self._font_size = font_size
-        self._color_scales = []
+        self._reserved_element_ids = set()
 
     def add_element(self, element_type, element_ids, element_description='', **kwargs):
-        if not isinstance(element_ids, (list, str)):
-            raise TypeError('\'element_ids\' input must be a string or a list of strings.')
+        if not isinstance(element_type, str):
+            raise TypeError('\'element_type\' input must be a string')
+        if not isinstance(element_ids, (list, str)) or element_ids == '':
+            raise TypeError('\'element_ids\' input must be a string or a list of strings of greater than 0 len.')
+        if isinstance(element_ids, list) and not all([isinstance(i, str) and i != '' for i in element_ids]):
+            raise TypeError('Not all \'element_ids\' in list are strings with len > 0.')
         if isinstance(element_ids, str):
             element_ids = [element_ids]
 
-        element_entry = None
-        for cls in elements.Element.__subclasses__():
-            if element_type.lower() in cls.__name__.lower():
-                element_entry = cls(element_ids, element_description, len(self._x_series), **kwargs)
-                self._elements[cls.__name__.lower()].update({element_id: element_entry for element_id in element_ids})
-                return element_entry
+        # check for id collision and add to id set
+        if len(self._reserved_element_ids.intersection(set(element_ids))) > 0:
+            raise ValueError('id already exists!')
+        else:
+            self._reserved_element_ids.update(set(element_ids))
 
-        if element_entry is None:
-            raise ValueError('element type \'%s\' is not a supported type.' % element_type)
+        element_cls = elements.Element.create(element_type)
+        element_entry = element_cls(element_ids, element_description, len(self._x_series), **kwargs)
+        self._elements[element_type].update({element_id: element_entry for element_id in element_ids})
+
+        return element_entry
 
     def del_element(self, element_id):
         if not isinstance(element_id, str):
@@ -88,10 +95,6 @@ class SSV:
         for element_type in self._elements:
             if element_id in self._elements[element_type]:
                 del self._elements[element_type][element_id]
-
-    def show_color_scale(self, color_scale, color_levels, color_scale_desc, color_scale_id, opacity=1.0):
-        scale = elements.ColorScale(color_scale, color_levels, color_scale_desc, color_scale_id, opacity)
-        self._color_scales.append(scale)
 
     # Save ssv model as .html file
     def save_visualization(self, file_path):
@@ -121,20 +124,18 @@ class SSV:
 
                 element_data[element_type].append(element_dict)
 
-        color_scales_data = [scale.__dict__ for scale in self._color_scales] if len(self._color_scales) > 0 else []
-
         # Render static web page for "full" mode
         if mode == 'full':
             return template.render({'title': self._title, 'element_data': json.dumps(element_data),
                                     'uuid': uuid.uuid4(),
-                                    'x_series': self._x_series, 'color_scales_data': json.dumps(color_scales_data),
+                                    'x_series': self._x_series,
                                     'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
                                     'sim_visual': ET.tostring(self._svg_root, 'utf-8', method='xml').decode('utf-8')})
 
         # Render piecemeal visual
         elif mode == 'partial':
             return template.render({'element_data': json.dumps(element_data), 'uuid': uuid.uuid4(),
-                                    'x_series': self._x_series, 'color_scales_data': json.dumps(color_scales_data),
+                                    'x_series': self._x_series,
                                     'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
                                     'sim_visual': ET.tostring(self._svg_root, 'utf-8', method='xml').decode('utf-8')})
 
@@ -163,7 +164,6 @@ class SSV:
         elements = {k: v for e in list(self._elements.values()) for k, v in e.items()}
         element_ids = list(elements.keys())
         element_ids += [element.report_id for element in elements.values() if element.report_id is not None]
-        element_ids += [color_scale.id for color_scale in self._color_scales]
 
         # Loop through element ids and see what's in the xml tree under supported svg elements
         for element_id in element_ids:

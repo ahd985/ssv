@@ -188,8 +188,13 @@ def run():
     relief_toggle = ssv_model.add_element('toggle', 'relief-toggle', 'Relief Toggle')
     relief_toggle.add_condition('show_hide', data=sim_data['rv'], color='black')
 
-    ssv_model.show_color_scale(['#deebf7','#9ecae1','#3182bd'], np.linspace(min(sim_data['temp']), max(sim_data['temp']), 3), "Water Temperature (F)", "color-scale-water")
-    ssv_model.show_color_scale(['#fee6ce','#fdae6b','#e6550d'], np.linspace(min(sim_data['temp']), max(sim_data['temp']), 3), "Gas Temperature (F)", "color-scale-gas")
+    ssv_model.add_element('colorscale', 'color-scale-water', 'Water Temperature (F)',
+                          color_scale=['#deebf7', '#9ecae1', '#3182bd'],
+                          color_levels=np.linspace(min(sim_data['temp']), max(sim_data['temp']), 3))
+
+    x = ssv_model.add_element('colorscale', 'color-scale-gas', 'Gas Temperature (F)',
+                          color_scale=['#fee6ce','#fdae6b','#e6550d'],
+                          color_levels=np.linspace(min(sim_data['temp']), max(sim_data['temp']), 3))
 
     ssv_model.save_visualization(os.path.join('examples', 'example_1', 'example_1'))
 

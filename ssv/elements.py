@@ -16,7 +16,7 @@ class Element:
     def __init__(self, element_ids, element_description, x_series_len, element_report_id):
         self.ids = element_ids
         if not isinstance(element_description, str):
-            raise TypeError('\'element_description\' for \'%s\' must be a string.' % element_description)
+            raise TypeError('\'element_description\' must be a string.')
         self.description = element_description
         if not element_report_id is None and not isinstance(element_report_id, str):
             raise TypeError('\'element_report_id\' for \'%s\' must be a string.' % element_description)
@@ -44,6 +44,15 @@ class Element:
         }
 
         self.conditions = []
+
+    @staticmethod
+    def create(cls_name):
+        for cls in Element.__subclasses__():
+            if cls_name.lower() == cls.__name__.lower():
+                return cls
+
+        # If we get to end of function raise error
+        raise ValueError('element type \'%s\' is not a supported type.' % element_type)
 
     def add_condition_post_hook(self, **kwargs):
         pass
@@ -125,10 +134,10 @@ class Cell(Element):
                 'false_color': lambda a, b, c: validate_color(a, b)
             },
             'zonal_y': {
-                'data': lambda a, b, c: validate_array(a, b, 'float', 2, 2, c),
+                'data_2d': lambda a, b, c: validate_array(a, b, 'float', 2, 2, c),
                 'max_height': None,
                 'min_height': None,
-                'data_dynamic': lambda a, b, c: validate_array(a, b, 'float', 2, 2, c),
+                'data_dynamic_2d': lambda a, b, c: validate_array(a, b, 'float', 2, 2, c),
                 'description_dynamic': None,
                 'color_scale': _validate_color_scale,
                 'color_levels': _validate_color_levels
@@ -140,10 +149,13 @@ class Cell(Element):
         # Logic for level_dynamic and zonal_y - Add in special function to handle multi-dimensional data reporting
         if kwargs['type'] == 'level_dynamic' or kwargs['type'] == 'zonal_y':
             kwargs_dynamic = {'type': 'info',
-                              'data': kwargs['data_dynamic'],
                               'description': kwargs['description_dynamic'],
                               'section_label': kwargs['section_label'] if 'section_label' in kwargs else '',
                               'unit': kwargs['unit_dynamic'] if 'unit_dynamic' in kwargs else ''}
+            if kwargs['type'] == 'level_dynamic':
+                kwargs_dynamic['data'] = kwargs['data_dynamic']
+            elif kwargs['type'] == 'zonal_y':
+                kwargs_dynamic['data_2d'] = kwargs['data_dynamic_2d']
 
             condition_id = '%s_%s' % ('_'.join(self.ids), 'dynamic')
             condition = Condition(condition_id, **kwargs_dynamic)
@@ -155,7 +167,7 @@ class Line(Element):
         super(Line, self).__init__(line_id, line_description, x_series_len, line_report_id)
         self._required_validation.update({
             'equal_y': {
-                'data': lambda a, b, c: validate_array(a, b, 'float', 2, 2, c),
+                'data_2d': lambda a, b, c: validate_array(a, b, 'float', 2, 2, c),
                 'color_scale': _validate_color_scale,
                 'color_levels': _validate_color_levels,
             }
@@ -168,7 +180,7 @@ class Heatmap(Element):
         super(Heatmap, self).__init__(heatmap_id, heatmap_description, x_series_len, heatmap_report_id)
         self._required_validation.update({
             'rect': {
-                'data': lambda a, b, c: validate_array(a, b, 'float', 3, 3, c),
+                'data_3d': lambda a, b, c: validate_array(a, b, 'float', 3, 3, c),
                 'color_scale': _validate_color_scale,
                 'color_levels': _validate_color_levels
             }
@@ -193,34 +205,31 @@ class Report(Element):
 
 # Wrapper for table
 class Table(Element):
-    def __init__(self, table_id, table_description, x_series_len, data, headers):
+    def __init__(self, table_id, table_description, x_series_len, tabular_data, headers):
         super(Table, self).__init__('', table_description, x_series_len, table_id[0])
         self._required_validation.update({
-            'info': {
-                'data': lambda a, b, c: validate_array_slices(a, b, 'str'),
+            'tabular-info': {
+                'tabular_data': lambda a, b, c: validate_array_slices(a, b, 'str'),
                 'headers': lambda a, b, c: validate_array(a, b, 'str', 1, 1, None)
             }
         })
 
         # Add info and remove ability to add additional conditions to element
-        self.add_condition('info', data=data, headers=headers)
+        self.add_condition('tabular-info', tabular_data=tabular_data, headers=headers)
         self.add_condition = None
 
 
 # Wrapper for color scale legend
-class ColorScale:
-    def __init__(self, color_scale, color_levels, color_scale_desc, color_scale_id, opacity):
-        color_scale = validate_colors(color_scale, 'color_scale')
-        color_levels = validate_array(color_levels, 'color_levels', 'float', 1, 1)
-        if not isinstance(color_scale_id, str):
-            raise TypeError('color_scale_id must be a string.')
-        if not isinstance(color_scale_desc, str):
-            raise TypeError('color_scale_desc must be a string.')
-        if not isinstance(opacity, (int, float)):
-            raise TypeError("opacity must be a float or an int")
+class ColorScale(Element):
+    def __init__(self, color_scale_id, color_scale_desc, x_series_len, color_scale, color_levels, opacity=1):
+        super(ColorScale, self).__init__('', color_scale_desc, x_series_len, color_scale_id[0])
+        self._required_validation.update({
+            'color-scale': {
+                'color_scale': _validate_color_scale,
+                'color_levels': _validate_color_levels
+            }
+        })
 
-        self.scale = color_scale
-        self.levels = color_levels
-        self.desc = color_scale_desc
-        self.id = color_scale_id
-        self.opacity = opacity
+        # Add color scale and remove ability to add additional conditions to element
+        self.add_condition('color-scale', color_scale=color_scale, color_levels=color_levels, opacity=opacity)
+        self.add_condition = None

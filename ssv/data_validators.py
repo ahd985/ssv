@@ -16,10 +16,11 @@ def validate_array(arr, arr_name, arr_type, min_dim, max_dim=None, dim1_len=None
 
     try:
         arr = np.array(arr).astype(arr_type)
-    except TypeError:
-        raise TypeError("Each element in %s must be allowed to be cast as type %s" % (arr_name, arr_type))
+    except ValueError:
+        raise ValueError("Each element in %s must be allowed to be cast as type %s" % (arr_name, arr_type))
 
-    if min_dim is not None and len(arr.shape) < min_dim or max_dim is not None and len(arr.shape) > max_dim:
+    if min_dim is not None and len([i for i in arr.shape if i > 0]) < min_dim or \
+                            max_dim is not None and len([i for i in arr.shape if i > 0]) > max_dim:
         raise ValueError("%s should have between %d and %d dimensions" % (arr_name, min_dim, max_dim))
 
     if dim1_len is not None and arr.shape[0] != dim1_len:

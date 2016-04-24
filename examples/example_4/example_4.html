@@ -8461,14 +8461,12 @@ void 0===c?d&&"get"in d&&null!==(e=d.get(a,b))?e:(e=n.find.attr(a,b),null==e?voi
   };
 }(jQuery, window, window.document)); </script>
   <script> // Main function to generate contextual information of ssv setup
-function ElementContext(x_series, element_data, color_scales_data) {
+function ElementContext(x_series, element_data) {
     // Initialize properties
     _context = this;
     // -- Element_data is the 'y' data representing svg elements that corresponds to the x_series data
     this.x_series = x_series;
     this.element_data = element_data;
-    // -- This data provides for rendering graphical color scale legends within the svg
-    this.color_scales = color_scales_data;
 
     this.elements = [];
     // -- Simulation interface properties - control automatic play, play speed, etc
@@ -8523,6 +8521,9 @@ function ElementContext(x_series, element_data, color_scales_data) {
                         element.conditions, element.report_id))
                 } else if (element_type == 'table') {
                     this.elements.push(new Table(element.ids, element.description,
+                        element.conditions, element.report_id))
+                } else if (element_type == 'colorscale') {
+                    this.elements.push(new ColorScale(element.ids, element.description,
                         element.conditions, element.report_id))
                 }
             }
@@ -8649,87 +8650,12 @@ function ElementContext(x_series, element_data, color_scales_data) {
         d3.select('#ssv-overlay').call(zoom);
     };
 
-    this.build_color_scales = function() {
-        // Loop through all color scale data
-        for (var i in _context.color_scales) {
-            var scale = _context.color_scales[i];
-            var sel = d3.select('#' + scale.id);
-
-            // If scale selector not empty fill it in with color scale legend
-            if (!sel.empty()) {
-                // Hide original placement element
-                sel.style('visibility', 'hidden');
-
-                // Get bounding box of placement element
-                // Placement element height is not used - height of legend is ultimately determined by user specified
-                // font size
-                var bbox = sel.node().getBBox();
-                var width = bbox.width;
-                var pos_x = bbox.x;
-                var pos_y = bbox.y;
-
-                // Append legend outline to parent of placement element
-                // Set legend font size to font scale property
-                var parent = d3.select(sel.node().parentNode);
-                var legend = parent.append('g').attr('transform', 'translate(' + pos_x + ',' + pos_y + ')')
-                    .append('g').attr('font-size', _context.font_scale + 'em');
-
-                // Calculate discrete color bin scale
-                var color_scale = d3.scale.quantile().domain([d3.min(scale.levels), d3.max(scale.levels)])
-                    .range(scale.scale);
-                var scale_len = color_scale.range().length;
-                var x = d3.scale.linear()
-                    .domain([0, scale_len])
-                    .range([0, width]);
-
-                // Generate legend
-                // 'header_em' represents the color scale title font size
-                // 'label' represents the color scale bin values font size
-                var header_em = 1.5;
-                var label_em = 1;
-                var margin = 0.1;
-
-                // -- Append header text
-                legend_text = legend.append('text')
-                    .text(scale.desc)
-                    .attr('x', (width/2))
-                    .attr('y', '1em')
-                    .attr('text-anchor', 'middle')
-                    .attr('font-size', header_em.toString() + 'em');
-                legend_text_height = legend_text.node().getBBox().height;
-
-                // -- Generate range of colors required for legend
-                var keys = legend.selectAll('rect').data(color_scale.range());
-
-                // -- Append a rect for every color on the legend
-                // -- Rects are same height as header text
-                keys.enter().append('rect')
-                    .attr('x', function(d,i) {return x(i)})
-                    .attr('y', (1 + margin) * legend_text_height)
-                    .attr('width', function(d,i) {return x(i+1) - x(i)})
-                    .attr('height', legend_text_height)
-                    .attr('fill', function(d) {return d})
-                    .style('fill-opacity', scale.opacity)
-                    .attr('font-size', header_em.toString() + 'em');
-
-                // -- Append value text immediately below the left-most area of every color rect
-                keys.enter().append('text')
-                    .text(function(d) {return color_scale.invertExtent(d)[0].toFixed(0)})
-                    .attr('x', function(d,i) {return x(i)})
-                    .attr('y', legend_text_height*(2 + margin + label_em / header_em * (1 + margin)))
-                    .attr('text-anchor', 'middle')
-                    .attr('font-size', label_em.toString() + 'em');
-            }
-        }
-    };
-
     // Call all initialization functions
     this.initialize_overlays();
     this.set_font_scale();
     this.initialize_elements();
     this.initialize_slider();
     this.initialize_pan_zoom();
-    this.build_color_scales();
 }
 
 // Number formatting function for report output
@@ -8757,20 +8683,24 @@ function Element(element_ids, element_description, element_conditions, report_id
     //    temperature and water levels
     this.conditions = element_conditions;
 
+    this.patterns_initialized = false;
     this.report_initialized = false;
 
     // Loop through conditions and check for color scale
     // If color scale exists, use d3 to generate domain and range of scale.
-    for (var i in this.conditions) {
-        condition = this.conditions[i];
-        if ('color_scale' in condition && 'color_levels' in condition) {
-            var color_scale = condition.color_scale;
-            var color_levels = condition.color_levels;
-            condition.color_scale = d3.scale.quantile()
-                .domain([d3.min(color_levels), d3.max(color_levels)])
-                .range(color_scale);
+    this.initialize_color_scales = function() {
+        for (var i in this.conditions) {
+            condition = this.conditions[i];
+            if ('color_scale' in condition && 'color_levels' in condition) {
+                var color_scale = condition.color_scale;
+                var color_levels = condition.color_levels;
+                condition.color_scale = d3.scale.quantile()
+                    .domain([d3.min(color_levels), d3.max(color_levels)])
+                    .range(color_scale);
+            }
         }
-    }
+    };
+    this.initialize_color_scales();
 
     // Report initialization function - called if report_id provided and report_initialized == false
     this.initialize_report = function() {
@@ -8810,17 +8740,17 @@ function Element(element_ids, element_description, element_conditions, report_id
             var font_scale = d3.select('#ssv-svg').attr('font-scale');
 
             // Append new parent element for report
-            var g = parent.append('g')
+            var report = parent.append('g')
                 .attr('transform', 'translate(' + x + ',' + y + ')')
                 .append('g')
                 .attr('id', 'ssv-report')
                 .attr('font-size', font_scale.toString() + 'em');
 
             // Create report title outline
-            var title_outline = g.append('rect').attr(base_attr);
+            var title_outline = report.append('rect').attr(base_attr);
 
             // Create report title text
-            var title_text = g.append('text').attr(base_attr)
+            var title_text = report.append('text').attr(base_attr)
                 .attr('x', width / 2)
                 .attr('fill', header_color)
                 .style('font-size', header_em.toString() + 'em')
@@ -8841,64 +8771,76 @@ function Element(element_ids, element_description, element_conditions, report_id
             for (var i = 0; i < this.conditions.length; i++) {
                 var condition = this.conditions[i];
 
-                // Do we have 2-d data?  If not, data_j_len is 1.
-                condition.data[0].length !== undefined ? data_j_len = condition.data[0].length : data_j_len = 1;
-
-                // Box outline (background)
-                g.append('rect').attr(base_attr)
-                    .attr('y', y_count)
-                    .attr('height', ((data_j_len + 1)*y_row))
-
-                // Condition description text
-                g.append('text').attr(base_attr)
-                    .attr('x', width / 2)
-                    .attr('y', y_count + y_text)
-                    .attr('fill', description_color)
-                    .style('font-size', report_em.toString() + 'em')
-                    .attr('font-style', 'oblique')
-                    .text(condition.description);
-
-                // Check if we have a section label property in the condition.  If not, default to 'Section'.
-                var section_label;
-                'section_label' in condition && condition.section_label != '' ?
-                    section_label = condition.section_label: section_label = 'Section';
-
-                y_count += y_row;
-
-                // Loop through condition data axis #2 and add row for each entry
-                for (var j = 0; j < data_j_len; j++) {
-                    // Do we have a defined second access in the data?  If not, we only need 2 boxes for the section
-                    // (value and unit) else we need 3 (section_label, value, and unit)
-                    data_j_len > 1 ? num_sections = 3 : num_sections = 2;
-
-                    // Add Zone # if data_j_len > 1
-                    if (data_j_len > 1) {
-                        g.append('text').attr(base_attr)
-                            .attr('x', width / (num_sections * 2))
-                            .attr('y', y_count + y_text)
-                            .attr('fill', zone_color)
-                            .style('font-size', report_em.toString() + 'em')
-                            .text(section_label + ' #' + (j + 1).toString());
+                if ("report" in condition && condition.report) {
+                    var condition_data, data_j_len;
+                    if ('data_2d' in condition) {
+                        condition_data = condition.data_2d;
+                        data_j_len = condition_data[0].length
+                    } else {
+                        condition_data = condition.data;
+                        data_j_len = 1
                     }
 
-                    // Value text
-                    g.append('text').attr(base_attr)
-                        .attr('class', 'value-text')
-                        .attr('x', width / (2 * (4 - num_sections)))
-                        .attr('y', y_count + y_text)
-                        .attr('fill', val_color)
-                        .style('font-size', report_em.toString() + 'em');
+                    // Box outline (background)
+                    report.append('rect').attr(base_attr)
+                        .attr('y', y_count)
+                        .attr('height', ((data_j_len + 1)*y_row));
 
-                    // Unit text
-                    g.append('text').attr(base_attr)
-                        .attr('x', (num_sections * 2 - 1) * width / (2 * num_sections))
+                    // Condition description text
+                    report.append('text').attr(base_attr)
+                        .attr('x', width / 2)
                         .attr('y', y_count + y_text)
-                        .attr('fill', unit_color)
+                        .attr('fill', description_color)
                         .style('font-size', report_em.toString() + 'em')
-                        .text(condition.unit);
+                        .attr('font-style', 'oblique')
+                        .text(condition.description);
 
-                    // Increment em_count by ems used per row
+                    // Check if we have a section label property in the condition.  If not, default to 'Section'.
+                    var section_label;
+                    'section_label' in condition && condition.section_label != '' ?
+                        section_label = condition.section_label: section_label = 'Section';
+
                     y_count += y_row;
+
+                    // Loop through condition data axis #2 and add row for each entry
+                    for (var j = 0; j < data_j_len; j++) {
+                        // Do we have a defined second access in the data?  If not, we only need 2 boxes for the section
+                        // (value and unit) else we need 3 (section_label, value, and unit)
+                        data_j_len > 1 ? num_sections = 3 : num_sections = 2;
+
+                        // Add Zone # if data_j_len > 1
+                        if (data_j_len > 1) {
+                            report.append('text').attr(base_attr)
+                                .attr('x', width / (num_sections * 2))
+                                .attr('y', y_count + y_text)
+                                .attr('fill', zone_color)
+                                .style('font-size', report_em.toString() + 'em')
+                                .text(section_label + ' #' + (j + 1).toString());
+                        }
+
+                        // Value text
+                        var datum;
+                        data_j_len > 1 ? datum = condition_data.map(function(i) {return num_format(i[j])}) :
+                            datum = condition_data.map(function(i) {return num_format(i)});
+                        report.append('text').attr(base_attr)
+                            .attr('class', 'value-text')
+                            .datum(datum)
+                            .attr('x', width / (2 * (4 - num_sections)))
+                            .attr('y', y_count + y_text)
+                            .attr('fill', val_color)
+                            .style('font-size', report_em.toString() + 'em');
+
+                        // Unit text
+                        report.append('text').attr(base_attr)
+                            .attr('x', (num_sections * 2 - 1) * width / (2 * num_sections))
+                            .attr('y', y_count + y_text)
+                            .attr('fill', unit_color)
+                            .style('font-size', report_em.toString() + 'em')
+                            .text(condition.unit);
+
+                        // Increment em_count by ems used per row
+                        y_count += y_row;
+                    }
                 }
             }
         }
@@ -8914,25 +8856,72 @@ function Element(element_ids, element_description, element_conditions, report_id
 
         // Get parent of element with report_id and select all value text in report
         var parent = d3.select(d3.select('#' + this.report_id).node().parentNode);
-        var value_texts = parent.selectAll('.value-text');
+        var value_texts = parent.selectAll('.value-text')
+            .text(function(d) {return d[x]});
+    };
 
-        // Update value text
-        var val_count = 0;
-        for (var i=0; i<this.conditions.length; i++) {
-            var condition = this.conditions[i];
-
-            // If axis 2 is defined in data loop over axis 2 values at index x of axis 1
-            // Else get value at index x of axis 1
-            if (condition.data[0].length !== undefined) {
-                for (var j in condition.data[x]) {
-                    value_texts[0][val_count].innerHTML = num_format(condition.data[x][j]);
-                    val_count += 1
-                }
-            } else {
-                value_texts[0][val_count].innerHTML = num_format(condition.data[x]);
-                    val_count += 1
-            }
+    // Function to initialize patterns for element
+    this.initialize_patterns = function(sel, pattern_id, props, prop_data, style_apply) {
+        // Add svg defs section if none exist
+        if (d3.select('svg defs').empty()) {
+            svg.append('defs')
         }
+
+        // Sort prop data
+        prop_data = prop_data.map(function(d) {d.sort(function(a,b) {return -(a[0] - b[0])})});
+        // Denormalize prop data
+        var norm_val = sel.node().getBBox();
+        prop_data = prop_data.map(function(d) {
+            return [Math.max(0, 1 - d[0]) * norm_val].concat(d.slice(1, d.length))
+        });
+
+        // Build pattern and apply initial state
+        var defs = d3.select('svg defs');
+        defs.append('pattern').attr('id', pattern_id)
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('width', '100%')
+            .attr('height', '100%')
+            .attr('patternContentUnits', 'userSpaceOnUse')
+            .datum(prop_data);
+
+        // Set to stroke or fill based on style_apply
+        style_apply == 'fill' ? sel.style('fill', 'url(#' + pattern_id + ')') :
+            sel.style('stroke', 'url(#' + pattern_id + ')');
+
+        // Set initial opacities to 1
+        sel.style('fill-opacity', 1);
+        sel.style('opacity', 1);
+
+        this.patterns_initialized = true;
+    };
+    
+    this.update_pattern = function(x, pattern_id) {
+        var pattern = d3.select('#' + pattern_id);
+
+        var overlay_i = props.indexOf('overlay');
+        var color_i = props.indexOf('color');
+        var opacity_i = props.indexOf('opacity');
+
+        pattern.selectAll()
+            .data(function(d) {return d[x]})
+            .selectAll()
+            .data(function(d) {return d})
+            .enter()
+            .append('rect')
+            .attr('x','0')
+            .attr('y', function(d) {return d[0]})
+            .attr('width','100%')
+            .attr('height', '100%')
+            .style('fill', function(d) {
+                if (overlay_i > 0 && d[overlay_i] in _context.svg_overlays) {
+                    return 'url(#' + d[overlay_i] + ')'
+                } else {
+                    return d[color_i]
+                }
+            })
+            .style('opacity', function(d) {return d[opacity_i]})
+            .transition();
     };
 
     // Function to apply pattern updates to elements
@@ -9037,6 +9026,59 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
             var props = [order_prop, 'color', 'opacity', 'overlay'];
             var prop_data = [];
 
+            /* AHD start here
+            if (!this.patterns_initialized) {
+                var prop_data_all = [];
+
+                for (var i in this.conditions) {
+                    var condition = this.conditions[i];
+
+                    var order_val, color, opacity, overlay;
+                    var max_order = 1.01;
+
+                    'overlay' in condition ? overlay = condition.overlay : overlay = null;
+                    if (condition.type == 'background') {
+                        // background represents a changing cell background color only
+                        // always 100% of the element height
+                        order_val = condition.data.map(function() {return max_order});
+                        opacity = condition.data.map(function() {return condition.opacity});
+                        color = condition.data.map(function(d) {condition.color_scale(d)});
+                        prop_data.push([order_val, color, opacity, overlay])
+                    } else if (condition.type == 'level_static') {
+                        // level_static represents a changing level in a cell that does not change color
+                        order_val = Math.min((condition.data[x] - condition.min_height) /
+                            (condition.max_height - condition.min_height), 1);
+                        color = condition.color;
+                        prop_data.push([order_val, color, opacity, overlay])
+                    } else if (condition.type == 'level_dynamic') {
+                        // level_dynamic represents a changing level in a cell that changes color
+                        order_val = Math.min((condition.data[x] - condition.min_height) /
+                            (condition.max_height - condition.min_height), 1);
+                        color = condition.color_scale(condition.data_dynamic[x]);
+                        prop_data.push([order_val, color, opacity, overlay])
+                    } else if (condition.type == 'logical') {
+                        // logical represents a filled cell that alternates between two colors
+                        // always 100% of element height
+                        order_val = max_order;
+
+                        condition.data[x] ? color = condition.true_color : color = condition.false_color;
+                        prop_data.push([order_val, color, opacity, overlay])
+                    } else if (condition.type == 'zonal_y') {
+                        // zonal_y represents a zonal model in the y direction
+                        // number of zones dictated by len of 2nd axis
+                        for (var j in condition.data_2d[x]) {
+                            order_val = Math.min((condition.data_2d[x][j] - condition.min_height) /
+                                (condition.max_height - condition.min_height), 1);
+                            color = condition.color_scale(condition.data_dynamic_2d[x][j]);
+                            prop_data.push([order_val, color, opacity, overlay])
+                        }
+                    }
+                }
+
+                this.initialize_patterns(sel, pattern_id, props, prop_data_all, 'fill')
+            }
+            */
+
             for (var i in this.conditions) {
                 var condition = this.conditions[i];
 
@@ -9072,10 +9114,10 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
                 } else if (condition.type == 'zonal_y') {
                     // zonal_y represents a zonal model in the y direction
                     // number of zones dictated by len of 2nd axis
-                    for (var j in condition.data[x]) {
-                        order_val = Math.min((condition.data[x][j] - condition.min_height) /
+                    for (var j in condition.data_2d[x]) {
+                        order_val = Math.min((condition.data_2d[x][j] - condition.min_height) /
                             (condition.max_height - condition.min_height), 1);
-                        color = condition.color_scale(condition.data_dynamic[x][j]);
+                        color = condition.color_scale(condition.data_dynamic_2d[x][j]);
                         prop_data.push([order_val, color, opacity, overlay])
                     }
                 }
@@ -9093,12 +9135,6 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
 // Wrapper class for line (or open path) elements
 function Line(line_ids, line_description, line_conditions, line_report_id) {
     var line = new Element(line_ids, line_description, line_conditions, line_report_id);
-
-    for (var i in line.conditions) {
-        condition = line.conditions[i];
-        condition.data[0].constructor == Array ? condition.num_sections = condition.data[0].length :
-            condition.num_sections = 1;
-    }
 
     line.update = function(x) {
         for (var isel in this.selectors) {
@@ -9120,11 +9156,11 @@ function Line(line_ids, line_description, line_conditions, line_report_id) {
                 if (condition.type == 'equal_y') {
                     // equal_y represents an open path element with equally sized patterns along the y axis
                     // number of y regions dictated by len of 2nd axis
-                    for (var j=1; j<=condition.num_sections; j++) {
+                    for (var j=1; j<=condition.data_2d[0].length; j++) {
                         order_val = j / condition.num_sections;
                         var color_level;
-                        condition.data[0].constructor == Array ? color_level = condition.data[x][j-1] :
-                            color_level = condition.data[x];
+                        condition.data_2d[0].constructor == Array ? color_level = condition.data_2d[x][j-1] :
+                            color_level = condition.data_2d[x];
                         color = condition.color_scale(color_level);
                         prop_data.push([order_val, color, opacity, overlay])
                     }
@@ -9144,11 +9180,11 @@ function Line(line_ids, line_description, line_conditions, line_report_id) {
 function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_report_id) {
     var heatmap = new Element(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_report_id);
 
-    heatmap.conditions[0].data[0].constructor == Array ? heatmap.conditions.num_sections =
-        heatmap.conditions[0].data[0].length : heatmap.conditions[0].num_sections = 1;
+    heatmap.conditions[0].data_3d[0].constructor == Array ? heatmap.conditions.num_sections =
+        heatmap.conditions[0].data_3d[0].length : heatmap.conditions[0].num_sections = 1;
 
     heatmap.initialize = function() {
-        var initial_vals = this.conditions[0].data[0];
+        var initial_vals = this.conditions[0].data_3d[0];
         for (var isel in this.selectors) {
             var sel = d3.select(this.selectors[isel]);
             var parent = d3.select(sel.node().parentNode);
@@ -9161,7 +9197,7 @@ function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_r
             var g = parent.append('g')
                 .attr('transform', 'translate(' + bbox.x + ',' + bbox.y + ')')
                 .append('g');
-            g.data([this.conditions[0].data]);
+            g.data([this.conditions[0].data_3d]);
 
             // Create cross-sectional slice along the x axis
             var x_section = g.selectAll()
@@ -9304,7 +9340,7 @@ function Table(report_ids, report_description, report_conditions, report_id) {
 
         // Add content
         row = table.selectAll('.content-row')
-            .data(this.conditions[0].data[x]);
+            .data(this.conditions[0].tabular_data[x]);
         row.enter()
             .append('tr')
             .attr('class', 'content-row');
@@ -9327,6 +9363,97 @@ function Table(report_ids, report_description, report_conditions, report_id) {
     return table
 }
 
+// Wrapper class for color scale
+function ColorScale(color_scale_ids, color_scale_description, color_scale_conditions, report_id) {
+    var color_scale = new Element(color_scale_ids, color_scale_description, color_scale_conditions, report_id);
+
+    // Overwrite base element report function to show color scale
+    color_scale.initialize_report = function () {
+        var sel = d3.select('#' + this.report_id);
+        var parent = d3.select(sel.node().parentNode);
+        
+        var font_scale = d3.select('#ssv-svg').attr('font-scale');
+
+        // If scale selector not empty fill it in with color scale legend
+        if (!sel.empty()) {
+            // Hide original placement element
+            sel.style('visibility', 'hidden');
+
+            // Get bounding box of placement element
+            // Placement element height is not used - height of legend is ultimately determined by user specified
+            // font size
+            var bbox = sel.node().getBBox();
+            var width = bbox.width;
+            var pos_x = bbox.x;
+            var pos_y = bbox.y;
+
+            // Append legend outline to parent of placement element
+            // Set legend font size to font scale property
+            var parent = d3.select(sel.node().parentNode);
+            var legend = parent.append('g').attr('transform', 'translate(' + pos_x + ',' + pos_y + ')')
+                .append('g').attr('font-size', font_scale + 'em');
+
+            // Calculate discrete color bin scale
+            var color_scale = this.conditions[0].color_scale;
+            var scale_len = color_scale.range().length;
+            var x = d3.scale.linear()
+                .domain([0, scale_len])
+                .range([0, width]);
+
+            // Generate legend
+            // 'header_em' represents the color scale title font size
+            // 'label' represents the color scale bin values font size
+            var header_em = 1.5;
+            var label_em = 1;
+            var margin = 0.1;
+
+            // -- Append header text
+            legend_text = legend.append('text')
+                .text(this.description)
+                .attr('x', (width/2))
+                .attr('y', '1em')
+                .attr('text-anchor', 'middle')
+                .attr('font-size', header_em.toString() + 'em');
+            legend_text_height = legend_text.node().getBBox().height;
+
+            // -- Generate range of colors required for legend
+            var keys = legend.selectAll('rect').data(color_scale.range());
+
+            // -- Append a rect for every color on the legend
+            // -- Rects are same height as header text
+            keys.enter().append('rect')
+                .attr('x', function(d,i) {return x(i)})
+                .attr('y', (1 + margin) * legend_text_height)
+                .attr('width', function(d,i) {return x(i+1) - x(i)})
+                .attr('height', legend_text_height)
+                .attr('fill', function(d) {return d})
+                .style('fill-opacity', this.conditions[0].opacity)
+                .attr('font-size', header_em.toString() + 'em');
+
+            // -- Append value text immediately below the left-most area of every color rect
+            keys.enter().append('text')
+                .text(function(d) {return color_scale.invertExtent(d)[0].toFixed(0)})
+                .attr('x', function(d,i) {return x(i)})
+                .attr('y', legend_text_height*(2 + margin + label_em / header_em * (1 + margin)))
+                .attr('text-anchor', 'middle')
+                .attr('font-size', label_em.toString() + 'em');
+        }
+
+        // Report is initialized - prevent further initialization
+        this.report_initialized = true
+    };
+
+    color_scale.update_report = function(x) {
+        if (!this.report_initialized) {this.initialize_report()}
+    };
+
+    color_scale.update = function(x) {
+        if (this.report_id) {this.update_report(x)}
+    };
+
+    return color_scale
+}
+
 // Error catching
 window.onerror=function(msg){
     d3.select("body").attr("JSError",msg);
@@ -9337,9 +9464,8 @@ element_contexts = {};
  </script>
   <script>
       var x_series = ['3.6000e-13', '1.0000e-09', '4.0000e-17', '1.0000e-08']
-      var element_data = {"heatmap": [], "report": [], "table": [{"description": "", "add_condition": null, "x_series_len": 4, "report_id": "cutset-report", "conditions": [{"id": "_0", "data": [[["%LDHR", "Loss of Decay Heat Removal", "0.01"], ["ACB-A-F", "Failure of AC Bus A", "0.003"], ["ACB-B-F", "Failure of AC Bus B", "0.003"], ["RCIC-F", "Failure of Reactor Core Isolation Cooling", "0.004"], ["HPCI-F", "Failure of High Pressure Cooland Injection", "0.001"]], [["%ATWS", "Anticipated Transient Without SCRAM", "0.01"], ["SLC-F", "Failure of Standby Liquid Coolant", "0.001"], ["RHR-F", "Failure of Residual Heat Removal", "0.0001"]], [["%LOSP", "Loss of Offsite Power", "0.001"], ["EDG-A-F", "Failure of Emergency Diesel Generator A", "0.0001"], ["EDG-B-F", "Failure of Emergency Diesel Generator B", "0.0001"], ["RCIC-F", "Failure of Reactor Core Isolation Cooling", "0.004"], ["HPCI-F", "Failure of High Pressure Cooland Injection", "0.001"]], [["%LDHR", "Loss of Decay Heat Removal", "0.01"], ["DCB-A-F", "Failure of DC Bus A", "0.02"], ["DCB-B-F", "Failure of DC Bus B", "0.02"], ["LPCI-A-F", "Failure of Low Pressure Coolant Injection A", "0.05"], ["LPCI-B-F", "Failure of Low Pressure Coolant Injection B", "0.05"]]], "opacity": 1.0, "type": "info", "headers": ["Basic Event", "Description", "Frequency"], "report": true, "unit": ""}], "ids": ""}], "line": [], "toggle": [], "cell": [{"x_series_len": 4, "description": "", "conditions": [{"true_color": "#F44336", "data": [1.0, 0.0, 1.0, 0.0], "false_color": "#FFFFFF", "id": "rcic_0", "type": "logical", "opacity": 1.0, "unit": "", "report": true}], "report_id": null, "ids": ["rcic"]}, {"x_series_len": 4, "description": "", "conditions": [{"true_color": "#F44336", "data": [0.0, 0.0, 0.0, 1.0], "false_color": "#FFFFFF", "id": "lpci-a_0", "type": "logical", "opacity": 1.0, "unit": "", "report": true}], "report_id": null, "ids": ["lpci-a"]}, {"x_series_len": 4, "description": "", "conditions": [{"true_color": "#F44336", "data": [0.0, 0.0, 0.0, 0.0], "false_color": "#FFFFFF", "id": "xfmr_0", "type": "logical", "opacity": 1.0, "unit": "", "report": true}], "report_id": null, "ids": ["xfmr"]}, {"x_series_len": 4, "description": "", "conditions": [{"true_color": "#F44336", "data": [0.0, 1.0, 0.0, 0.0], "false_color": "#FFFFFF", "id": "rhr_0", "type": "logical", "opacity": 1.0, "unit": "", "report": true}], "report_id": null, "ids": ["rhr"]}, {"x_series_len": 4, "description": "", "conditions": [{"true_color": "#F44336", "data": [0.0, 0.0, 0.0, 1.0], "false_color": "#FFFFFF", "id": "dcb-b_0", "type": "logical", "opacity": 1.0, "unit": "", "report": true}], "report_id": null, "ids": ["dcb-b"]}, {"x_series_len": 4, "description": "", "conditions": [{"true_color": "#F44336", "data": [0.0, 1.0, 0.0, 0.0], "false_color": "#FFFFFF", "id": "atws_0", "type": "logical", "opacity": 1.0, "unit": "", "report": true}], "report_id": null, "ids": ["atws"]}, {"x_series_len": 4, "description": "", "conditions": [{"true_color": "#F44336", "data": [1.0, 0.0, 0.0, 1.0], "false_color": "#FFFFFF", "id": "ldhr_0", "type": "logical", "opacity": 1.0, "unit": "", "report": true}], "report_id": null, "ids": ["ldhr"]}, {"x_series_len": 4, "description": "", "conditions": [{"true_color": "#F44336", "data": [1.0, 0.0, 0.0, 0.0], "false_color": "#FFFFFF", "id": "acb-b_0", "type": "logical", "opacity": 1.0, "unit": "", "report": true}], "report_id": null, "ids": ["acb-b"]}, {"x_series_len": 4, "description": "", "conditions": [{"true_color": "#F44336", "data": [0.0, 0.0, 1.0, 0.0], "false_color": "#FFFFFF", "id": "edg-a_0", "type": "logical", "opacity": 1.0, "unit": "", "report": true}], "report_id": null, "ids": ["edg-a"]}, {"x_series_len": 4, "description": "", "conditions": [{"true_color": "#F44336", "data": [0.0, 0.0, 1.0, 0.0], "false_color": "#FFFFFF", "id": "losp_0", "type": "logical", "opacity": 1.0, "unit": "", "report": true}], "report_id": null, "ids": ["losp"]}, {"x_series_len": 4, "description": "", "conditions": [{"true_color": "#F44336", "data": [0.0, 0.0, 0.0, 1.0], "false_color": "#FFFFFF", "id": "dcb-a_0", "type": "logical", "opacity": 1.0, "unit": "", "report": true}], "report_id": null, "ids": ["dcb-a"]}, {"x_series_len": 4, "description": "", "conditions": [{"true_color": "#F44336", "data": [0.0, 0.0, 1.0, 0.0], "false_color": "#FFFFFF", "id": "edg-b_0", "type": "logical", "opacity": 1.0, "unit": "", "report": true}], "report_id": null, "ids": ["edg-b"]}, {"x_series_len": 4, "description": "", "conditions": [{"true_color": "#F44336", "data": [0.0, 1.0, 0.0, 0.0], "false_color": "#FFFFFF", "id": "slc_0", "type": "logical", "opacity": 1.0, "unit": "", "report": true}], "report_id": null, "ids": ["slc"]}, {"x_series_len": 4, "description": "", "conditions": [{"true_color": "#F44336", "data": [0.0, 0.0, 0.0, 1.0], "false_color": "#FFFFFF", "id": "lpci-b_0", "type": "logical", "opacity": 1.0, "unit": "", "report": true}], "report_id": null, "ids": ["lpci-b"]}, {"x_series_len": 4, "description": "", "conditions": [{"true_color": "#F44336", "data": [1.0, 0.0, 1.0, 0.0], "false_color": "#FFFFFF", "id": "hpci_0", "type": "logical", "opacity": 1.0, "unit": "", "report": true}], "report_id": null, "ids": ["hpci"]}, {"x_series_len": 4, "description": "", "conditions": [{"true_color": "#F44336", "data": [1.0, 0.0, 0.0, 0.0], "false_color": "#FFFFFF", "id": "acb-a_0", "type": "logical", "opacity": 1.0, "unit": "", "report": true}], "report_id": null, "ids": ["acb-a"]}]}
-      var color_scales_data = []
-      element_contexts["5176eedf-890d-4061-9c6a-f49aaefaa513"] = new ElementContext(x_series, element_data, color_scales_data)
+      var element_data = {"report": [], "toggle": [], "table": [{"report_id": "cutset-report", "ids": "", "conditions": [{"id": "_0", "unit": "", "tabular_data": [[["%LDHR", "Loss of Decay Heat Removal", "0.01"], ["ACB-A-F", "Failure of AC Bus A", "0.003"], ["ACB-B-F", "Failure of AC Bus B", "0.003"], ["RCIC-F", "Failure of Reactor Core Isolation Cooling", "0.004"], ["HPCI-F", "Failure of High Pressure Cooland Injection", "0.001"]], [["%ATWS", "Anticipated Transient Without SCRAM", "0.01"], ["SLC-F", "Failure of Standby Liquid Coolant", "0.001"], ["RHR-F", "Failure of Residual Heat Removal", "0.0001"]], [["%LOSP", "Loss of Offsite Power", "0.001"], ["EDG-A-F", "Failure of Emergency Diesel Generator A", "0.0001"], ["EDG-B-F", "Failure of Emergency Diesel Generator B", "0.0001"], ["RCIC-F", "Failure of Reactor Core Isolation Cooling", "0.004"], ["HPCI-F", "Failure of High Pressure Cooland Injection", "0.001"]], [["%LDHR", "Loss of Decay Heat Removal", "0.01"], ["DCB-A-F", "Failure of DC Bus A", "0.02"], ["DCB-B-F", "Failure of DC Bus B", "0.02"], ["LPCI-A-F", "Failure of Low Pressure Coolant Injection A", "0.05"], ["LPCI-B-F", "Failure of Low Pressure Coolant Injection B", "0.05"]]], "headers": ["Basic Event", "Description"], "report": true, "type": "tabular-info", "opacity": 1.0}], "description": "", "x_series_len": 4, "add_condition": null}], "line": [], "colorscale": [], "heatmap": [], "cell": [{"x_series_len": 4, "report_id": null, "ids": ["hpci"], "conditions": [{"false_color": "#FFFFFF", "id": "hpci_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [1.0, 0.0, 1.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["dcb-b"], "conditions": [{"false_color": "#FFFFFF", "id": "dcb-b_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 0.0, 0.0, 1.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["rcic"], "conditions": [{"false_color": "#FFFFFF", "id": "rcic_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [1.0, 0.0, 1.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["atws"], "conditions": [{"false_color": "#FFFFFF", "id": "atws_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 1.0, 0.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["lpci-b"], "conditions": [{"false_color": "#FFFFFF", "id": "lpci-b_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 0.0, 0.0, 1.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["acb-b"], "conditions": [{"false_color": "#FFFFFF", "id": "acb-b_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [1.0, 0.0, 0.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["ldhr"], "conditions": [{"false_color": "#FFFFFF", "id": "ldhr_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [1.0, 0.0, 0.0, 1.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["losp"], "conditions": [{"false_color": "#FFFFFF", "id": "losp_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 0.0, 1.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["lpci-a"], "conditions": [{"false_color": "#FFFFFF", "id": "lpci-a_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 0.0, 0.0, 1.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["edg-a"], "conditions": [{"false_color": "#FFFFFF", "id": "edg-a_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 0.0, 1.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["acb-a"], "conditions": [{"false_color": "#FFFFFF", "id": "acb-a_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [1.0, 0.0, 0.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["slc"], "conditions": [{"false_color": "#FFFFFF", "id": "slc_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 1.0, 0.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["rhr"], "conditions": [{"false_color": "#FFFFFF", "id": "rhr_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 1.0, 0.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["xfmr"], "conditions": [{"false_color": "#FFFFFF", "id": "xfmr_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 0.0, 0.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["edg-b"], "conditions": [{"false_color": "#FFFFFF", "id": "edg-b_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 0.0, 1.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["dcb-a"], "conditions": [{"false_color": "#FFFFFF", "id": "dcb-a_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 0.0, 0.0, 1.0], "opacity": 1.0}], "description": ""}]}
+      element_contexts["06e2e878-0368-4f80-a307-841701d49267"] = new ElementContext(x_series, element_data)
   </script>
 </body>
 </html>

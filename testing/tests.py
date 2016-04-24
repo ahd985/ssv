@@ -10,19 +10,26 @@ from selenium.webdriver.common.by import By
 
 from ssv.ssv import SSV
 from ssv.data_validators import validate_array, validate_colors, validate_array_slices, validate_color
-from ssv.elements import Cell, Line, Heatmap, Toggle, Report, Table, ColorScale
+from testing.data import data_generator
+from ssv.elements import Element, ColorScale
+
+
+def get_subclass_from_name(cls, name):
+    for sub_cls in cls.__subclasses__():
+        if sub_cls.__name__.lower() == name.lower():
+            return sub_cls
 
 
 class TestDataValidators:
-    @pytest.fixture(scope='class', params=[(10, 0, 0), (10, 10, 0), (10, 10, 10)])
+    @pytest.fixture(scope='class', params=[[10], [10, 10], [10, 10, 10]])
     def arr_num(self, request):
         return np.random.rand(*request.param)
 
-    @pytest.fixture(scope='class', params=[(10, 0), (10, 10)])
+    @pytest.fixture(scope='class', params=[[10], [10, 10]])
     def arr_str(self, request):
         hex_chars = list(string.ascii_uppercase[:6]) + [str(i) for i in range(10)]
-        hex_row = ['#' + ''.join([random.choice(hex_chars) for i in range(6)]) for j in range(len(request.param))]
-        if request.param[1] > 0:
+        hex_row = ['#' + ''.join([random.choice(hex_chars) for i in range(6)]) for j in range(request.param[0])]
+        if len(request.param) > 1 and request.param[1] > 0:
             hex_arr = [hex_row for i in range(len(request.param))]
         else:
             hex_arr = hex_row
@@ -89,10 +96,52 @@ class TestDataValidators:
     def test_validate_color(self):
         validate_color('#FFFFFF', 'test_data')
 
+
 class TestElements:
-    @pytest.fixture(scope='class', params=[])
-    def arr_num(self, request):
-        return np.random.rand(*request.param)
+    @pytest.fixture(scope='class', params=[cls for cls in Element.__subclasses__()])
+    def element_input_valid(self, request):
+        return request.param, data_generator.get_element_input(True, request.param.__name__)
+
+    @pytest.fixture(scope='class', params=[cls for cls in Element.__subclasses__()])
+    def element_input_invalid(self, request):
+        return request.param, data_generator.get_element_input(False, request.param.__name__)
+
+    def test_valid_element_inputs(self, element_input_valid):
+        cls, arg_combos = element_input_valid
+        for args in arg_combos:
+            cls(*args)
+
+    def test_invalid_element_inputs(self, element_input_invalid):
+        cls, arg_combos_by_error = element_input_invalid
+        for error_name, arg_combos in arg_combos_by_error.items():
+            error_cls = get_subclass_from_name(Exception, error_name)
+            for args in arg_combos:
+                with pytest.raises(error_cls):
+                    cls(*args)
+
+    condition_test_classes = [cls for cls in Element.__subclasses__() if cls.__name__ not in ['Table', 'ColorScale']]
+
+    @pytest.mark.parametrize("cls", condition_test_classes)
+    def test_valid_condition_inputs(self, cls):
+        cls_args = data_generator.get_element_input(True, cls.__name__)[0]
+        element = cls(*cls_args)
+        for condition_type, condition_inputs in element._required_validation.items():
+            condition_kwarg_combos = \
+                data_generator.get_condition_input(True, list(condition_inputs.keys()))
+            for condition_kwargs in condition_kwarg_combos:
+                cls(*cls_args).add_condition(condition_type, **condition_kwargs)
+
+    @pytest.mark.parametrize("cls", condition_test_classes)
+    def test_invalid_condition_inputs(self, cls):
+        cls_args = data_generator.get_element_input(True, cls.__name__)[0]
+        element = cls(*cls_args)
+        for condition_type, condition_inputs in element._required_validation.items():
+            condition_kwarg_combos_by_error = data_generator.get_condition_input(False, list(condition_inputs.keys()))
+            for error_name, condition_kwarg_combos in condition_kwarg_combos_by_error.items():
+                error_cls = get_subclass_from_name(Exception, error_name)
+                for condition_kwargs in condition_kwarg_combos:
+                    with pytest.raises(error_cls):
+                        cls(*cls_args).add_condition(condition_type, **condition_kwargs)
 
 
 class TestSSV:

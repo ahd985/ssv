@@ -40,6 +40,10 @@ def run():
     ssv_model = SSV(cutset_freqs, 'per year', os.path.join('examples', 'example_4', 'example_4.svg'),
                     title="Cutset Visualization", font_size=6)
 
+    # Add tablular data
+    ssv_model.add_element('table', 'cutset-report', tabular_data=report,
+                          headers=['Basic Event', 'Description'])
+
     # Wire up svg elements
     svg_id = ''
     for eq in be_list:
@@ -50,9 +54,6 @@ def run():
 
         el = ssv_model.add_element('cell', svg_id.lower())
         el.add_condition('logical', data=be_map[eq], true_color='#F44336', false_color='#FFFFFF')
-
-    ssv_model.add_element('table', 'cutset-report', data=report,
-                          headers=['Basic Event', 'Description', 'Frequency'])
 
     ssv_model.save_visualization(os.path.join('examples', 'example_4', 'example_4'))
 

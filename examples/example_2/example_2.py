@@ -27,8 +27,8 @@ def run():
         data['Layer Height Upper, Comp %d' % i] = 3.0
         node = ssv_model.add_element('cell', 'node-%d' % i, 'Node %d' % i, cell_report_id='node-%d-report' % i)
         node.add_condition('zonal_y', description='Zone Heights', unit='m',
-                           data=data[['Layer Height, Comp %d' % i, 'Layer Height Upper, Comp %d' % i]],
-                           data_dynamic=data[
+                           data_2d=data[['Layer Height, Comp %d' % i, 'Layer Height Upper, Comp %d' % i]],
+                           data_dynamic_2d=data[
                                ['Lower Layer Temperature, Comp %d' % i,
                                 'Upper Layer Temperature, Comp %d' % i]],
                            color_scale=gas_color_scale,
@@ -49,7 +49,9 @@ def run():
     fire_2.add_condition('show_hide', data=data['HRR, Wood_Wall'])
 
     # Show gas color scale
-    ssv_model.show_color_scale(gas_color_scale, gas_color_levels, "Gas Temperature (C)", "color-scale")
+    ssv_model.add_element('colorscale', 'color-scale', 'Gas Temperature (C)',
+                          color_scale=gas_color_scale,
+                          color_levels=gas_color_levels)
 
     ssv_model.save_visualization(os.path.join('examples', 'example_2', 'example_2'))
 
