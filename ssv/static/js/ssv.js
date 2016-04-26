@@ -27,7 +27,7 @@ function ElementContext(x_series, element_data) {
         for (var i in _context.svg_overlays) {
             d3.select('svg defs').html(d3.select('svg defs').html() + _context.svg_overlays[i])
         }
-    }
+    };
 
     // Function to calculate scale of svg view box to parent svg div
     // This is required to scale user input font size correctly
@@ -67,11 +67,15 @@ function ElementContext(x_series, element_data) {
             }
         }
 
-        // Delete this.element_data to reduce file size
-        delete this.element_data;
-
         // Draw elements at x index of 0
         this.update_elements(0);
+
+        // Delete extra data
+        delete this.element_data;
+        // We can delete conditions since the data are now bound to the DOM.
+        this.elements.map(function(d) {
+            if ('conditions' in d) {delete d.conditions}
+        })
     };
 
     // Function to tell all manipulated element classes to update rendering given index of this.x_series
@@ -87,8 +91,10 @@ function ElementContext(x_series, element_data) {
         $('.range-slider').attr('data-options', 'initial: 0; start: 0; end: ' + (this.x_series.length - 1).toString());
         $(document).foundation();
         $('[data-slider]').on('change.fndtn.slider', function(){
-            _context.current_x = Math.round($('.range-slider').attr('data-slider'));
-            _context.update_elements(_context.current_x);
+            setTimeout(function() {
+                _context.current_x = Math.round($('.range-slider').attr('data-slider'));
+                _context.update_elements(_context.current_x);
+            }, 200);
         });
 
         // Clicking on play button automates the forward run of the x_series
@@ -399,29 +405,62 @@ function Element(element_ids, element_description, element_conditions, report_id
     };
 
     // Function to initialize patterns for element
-    this.initialize_patterns = function(sel, pattern_id, props, prop_data, style_apply) {
+    this.initialize_pattern = function(sel, pattern_id, prop_data, style_apply) {
         // Add svg defs section if none exist
         if (d3.select('svg defs').empty()) {
             svg.append('defs')
         }
 
-        // Sort prop data
-        prop_data = prop_data.map(function(d) {d.sort(function(a,b) {return -(a[0] - b[0])})});
-        // Denormalize prop data
-        var norm_val = sel.node().getBBox();
-        prop_data = prop_data.map(function(d) {
-            return [Math.max(0, 1 - d[0]) * norm_val].concat(d.slice(1, d.length))
+        // Sort prop data and denormalize order prop
+        var norm_val = sel.node().getBBox().height;
+        if (prop_data[0].length > 1) {
+            prop_data = prop_data.map(function(t) {return t.sort(function(a,b) {return -(a[0] - b[0])})});
+        }
+        prop_data = prop_data.map(function(t) {
+            return t.map(function(d) {
+                var order = Math.max(0, 1 - d[0]) * norm_val;
+                return [order].concat(d.slice(1, d.length))
+            })
         });
 
         // Build pattern and apply initial state
         var defs = d3.select('svg defs');
-        defs.append('pattern').attr('id', pattern_id)
+        var pattern = defs.append('pattern')
+            .attr('id', pattern_id)
             .attr('x', 0)
             .attr('y', 0)
             .attr('width', '100%')
             .attr('height', '100%')
             .attr('patternContentUnits', 'userSpaceOnUse')
             .datum(prop_data);
+
+        pattern_data = pattern.selectAll()
+            .data(function(t) {return t[0]})
+            .enter();
+
+        pattern_data[0].map(function() {
+            // Add base pattern
+            pattern.append('rect')
+                .attr('id', 'base')
+                .attr('x','0')
+                .attr('width','100%')
+                .attr('height', '100%');
+
+            // Add transition zones
+            pattern.append('rect')
+                .attr('id', 'transition')
+                .attr('x','0')
+                .attr('width','100%')
+                .attr('height','1px')
+                .attr('fill', '#FFFFFF');
+
+            // Add overlays
+            pattern.append('rect')
+                .attr('id', 'overlay')
+                .attr('x','0')
+                .attr('width', '100%')
+                .attr('height', '100%');
+        });
 
         // Set to stroke or fill based on style_apply
         style_apply == 'fill' ? sel.style('fill', 'url(#' + pattern_id + ')') :
@@ -430,124 +469,34 @@ function Element(element_ids, element_description, element_conditions, report_id
         // Set initial opacities to 1
         sel.style('fill-opacity', 1);
         sel.style('opacity', 1);
-
-        this.patterns_initialized = true;
     };
     
-    this.update_pattern = function(x, pattern_id) {
+    this.update_pattern = function(x, sel, pattern_id) {
         var pattern = d3.select('#' + pattern_id);
+        var max_order = sel.node().getBBox().height;
 
-        var overlay_i = props.indexOf('overlay');
-        var color_i = props.indexOf('color');
-        var opacity_i = props.indexOf('opacity');
-
-        pattern.selectAll()
-            .data(function(d) {return d[x]})
-            .selectAll()
-            .data(function(d) {return d})
-            .enter()
-            .append('rect')
-            .attr('x','0')
+        // Update base pattern
+        pattern.selectAll('#base')
+            .data(function(t) {return t[x]})
+            .transition()
             .attr('y', function(d) {return d[0]})
-            .attr('width','100%')
-            .attr('height', '100%')
-            .style('fill', function(d) {
-                if (overlay_i > 0 && d[overlay_i] in _context.svg_overlays) {
-                    return 'url(#' + d[overlay_i] + ')'
-                } else {
-                    return d[color_i]
-                }
-            })
-            .style('opacity', function(d) {return d[opacity_i]})
-            .transition();
-    };
+            .style('fill', function(d) {return d[1]})
+            .style('opacity', function(d) {return d[2]});
 
-    // Function to apply pattern updates to elements
-    this.update_pattern = function(sel, pattern_id, props, prop_data, style_apply) {
-        var pattern = d3.select('#' + pattern_id);
+        // Update transition zones
+        pattern.selectAll('#transition')
+            .data(function(t) {return t[x]})
+            .transition()
+            .attr('y', function(d) {if (d[0] < max_order) {return d[0]} else {return '-1%' }})
+            .style('opacity', function(d) {return d[2]});
 
-        // Initialize pattern reference if pattern_id not found
-        if (pattern.empty()) {
-            // Add svg defs section if none exist
-            if (d3.select('svg defs').empty()) {
-                svg.append('defs')
-            }
-
-            // Build pattern and apply initial state
-            var defs = d3.select('svg defs');
-            defs.append('pattern').attr('id', pattern_id)
-                .attr('x', 0)
-                .attr('y', 0)
-                .attr('width', '100%')
-                .attr('height', '100%')
-                .attr('patternContentUnits', 'userSpaceOnUse');
-
-            // Set to stroke or fill based on style_apply
-            style_apply == 'fill' ? sel.style('fill', 'url(#' + pattern_id + ')') :
-                sel.style('stroke', 'url(#' + pattern_id + ')');
-
-            // Set initial opacities to 1
-            sel.style('fill-opacity', 1);
-            sel.style('opacity',1);
-        }
-
-        // Descending sort props based on first property (order prop)
-        prop_data = prop_data.sort(function(a,b) {return -(a[0] - b[0])});
-
-        var bbox = sel.node().getBBox();
-        var overlay_i = props.indexOf('overlay');
-        var color_i = props.indexOf('color');
-        var opacity_i = props.indexOf('opacity');
-
-        for (var i in prop_data) {
-            var rect_id = 'rect_' + i.toString();
-            var pattern_rect = pattern.select('#' + rect_id);
-
-            if (pattern_rect.empty()) {
-                pattern.append('rect').attr('id', rect_id);
-
-                // Add transition rect
-                pattern.append('rect').attr('id', rect_id + '_trans')
-                    .attr('fill', '#FFFFFF')
-                    .attr('x',0)
-                    .attr('height','1px')
-                    .attr('width','100%');
-
-                // Check for pattern overlays
-                if (overlay_i > 0 && prop_data[i][overlay_i] in _context.svg_overlays) {
-                    pattern.append('rect').attr('id', rect_id + '_' + prop_data[i][overlay_i])
-                        .attr('fill', 'url(#' + prop_data[i][overlay_i] + ')')
-                        .attr('x',0)
-                        .attr('height','100%')
-                        .attr('width','100%');
-                }
-            }
-            var pattern_rect = pattern.select('#' + rect_id);
-
-            // Update levels
-            pattern_rect.transition()
-                .attr('x','0')
-                .attr('y', Math.max(0, 1 - prop_data[i][0]) * bbox.height)
-                .attr('width','100%')
-                .attr('height', '100%')
-                .style('fill', prop_data[i][color_i])
-                .style('opacity', prop_data[i][opacity_i]);
-
-            // Update transitions
-            if (prop_data[i][0] < 1.0) {
-                pattern.select('#' + rect_id + '_trans').transition()
-                    .attr('y',Math.max(0, 1 - prop_data[i][0]) * bbox.height);
-            } else {
-                pattern.select('#' + rect_id + '_trans').transition()
-                    .attr('y', '-1%');
-            }
-
-            // Update pattern overlays
-            if (overlay_i > 0 && prop_data[i][overlay_i] in _context.svg_overlays) {
-                var pattern_overlay = pattern.select('#' + rect_id + '_' + prop_data[i][overlay_i]);
-                pattern_overlay.transition().attr('y', Math.max(0, 1 - prop_data[i][0]) * bbox.height);
-            }
-        }
+        // Update overlays
+        pattern.selectAll('#overlay')
+            .data(function(t) {return t[x]})
+            .transition()
+            .attr('fill', function(d) {if(d[3] == null) {return 'none'} else {return 'url(#' + d[3] + ')'}})
+            .attr('y', function(d) {return d[0]})
+            .style('opacity', function(d) {return d[2]});
     }
 }
 
@@ -562,11 +511,9 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
 
             var order_prop = 'y';
             var props = [order_prop, 'color', 'opacity', 'overlay'];
-            var prop_data = [];
 
-            /* AHD start here
             if (!this.patterns_initialized) {
-                var prop_data_all = [];
+                var prop_data = [];
 
                 for (var i in this.conditions) {
                     var condition = this.conditions[i];
@@ -578,92 +525,57 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
                     if (condition.type == 'background') {
                         // background represents a changing cell background color only
                         // always 100% of the element height
-                        order_val = condition.data.map(function() {return max_order});
-                        opacity = condition.data.map(function() {return condition.opacity});
-                        color = condition.data.map(function(d) {condition.color_scale(d)});
-                        prop_data.push([order_val, color, opacity, overlay])
+                        prop_data.push(condition.data.map(function(d) {
+                            return [max_order, condition.color_scale(d), condition.opacity, overlay]
+                        }));
                     } else if (condition.type == 'level_static') {
                         // level_static represents a changing level in a cell that does not change color
-                        order_val = Math.min((condition.data[x] - condition.min_height) /
-                            (condition.max_height - condition.min_height), 1);
-                        color = condition.color;
-                        prop_data.push([order_val, color, opacity, overlay])
+                        prop_data.push(condition.data.map(function(d) {
+                            var order_val = (Math.min((d - condition.min_height) /
+                                (condition.max_height - condition.min_height)), 1);
+                            return [order_val, condition.color, condition.opacity, overlay]
+                        }));
                     } else if (condition.type == 'level_dynamic') {
                         // level_dynamic represents a changing level in a cell that changes color
-                        order_val = Math.min((condition.data[x] - condition.min_height) /
-                            (condition.max_height - condition.min_height), 1);
-                        color = condition.color_scale(condition.data_dynamic[x]);
-                        prop_data.push([order_val, color, opacity, overlay])
+                        prop_data.push(condition.data.map(function(d, j) {
+                            var order_val = Math.min((d - condition.min_height) /
+                                (condition.max_height - condition.min_height), 1);
+                            var color = condition.color_scale(condition.data_dynamic[j]);
+                            return [order_val, color, condition.opacity, overlay]
+                        }));
                     } else if (condition.type == 'logical') {
                         // logical represents a filled cell that alternates between two colors
                         // always 100% of element height
-                        order_val = max_order;
-
-                        condition.data[x] ? color = condition.true_color : color = condition.false_color;
-                        prop_data.push([order_val, color, opacity, overlay])
+                        prop_data.push(condition.data.map(function(d) {
+                            var color;
+                            d ? color = condition.true_color : color = condition.false_color;
+                            return [max_order, color, condition.opacity, overlay]
+                        }));
                     } else if (condition.type == 'zonal_y') {
                         // zonal_y represents a zonal model in the y direction
                         // number of zones dictated by len of 2nd axis
-                        for (var j in condition.data_2d[x]) {
-                            order_val = Math.min((condition.data_2d[x][j] - condition.min_height) /
-                                (condition.max_height - condition.min_height), 1);
-                            color = condition.color_scale(condition.data_dynamic_2d[x][j]);
-                            prop_data.push([order_val, color, opacity, overlay])
-                        }
+                        var prop_data_slice = [];
+                        prop_data_slice = prop_data_slice.concat(condition.data_2d.map(function(arr, j) {
+                            return arr.map(function(d, k) {
+                                var order_val = Math.min((d - condition.min_height) /
+                                    (condition.max_height - condition.min_height), 1);
+                                var color = condition.color_scale(condition.data_dynamic_2d[j][k]);
+                                return [order_val, color, condition.opacity, overlay]
+                            })
+                        }));
+                        prop_data = prop_data.concat(d3.zip.apply(this, prop_data_slice));
                     }
                 }
 
-                this.initialize_patterns(sel, pattern_id, props, prop_data_all, 'fill')
-            }
-            */
-
-            for (var i in this.conditions) {
-                var condition = this.conditions[i];
-
-                var order_val, color, opacity, overlay;
-                var max_order = 1.01;
-                opacity = condition.opacity;
-                'overlay' in condition ? overlay = condition.overlay : overlay = null;
-                if (condition.type == 'background') {
-                    // background represents a changing cell background color only
-                    // always 100% of the element height
-                    order_val = max_order;
-                    color = condition.color_scale(condition.data[x]);
-                    prop_data.push([order_val, color, opacity, overlay])
-                } else if (condition.type == 'level_static') {
-                    // level_static represents a changing level in a cell that does not change color
-                    order_val = Math.min((condition.data[x] - condition.min_height) /
-                        (condition.max_height - condition.min_height), 1);
-                    color = condition.color;
-                    prop_data.push([order_val, color, opacity, overlay])
-                } else if (condition.type == 'level_dynamic') {
-                    // level_dynamic represents a changing level in a cell that changes color
-                    order_val = Math.min((condition.data[x] - condition.min_height) /
-                        (condition.max_height - condition.min_height), 1);
-                    color = condition.color_scale(condition.data_dynamic[x]);
-                    prop_data.push([order_val, color, opacity, overlay])
-                } else if (condition.type == 'logical') {
-                    // logical represents a filled cell that alternates between two colors
-                    // always 100% of element height
-                    order_val = max_order;
-
-                    condition.data[x] ? color = condition.true_color : color = condition.false_color;
-                    prop_data.push([order_val, color, opacity, overlay])
-                } else if (condition.type == 'zonal_y') {
-                    // zonal_y represents a zonal model in the y direction
-                    // number of zones dictated by len of 2nd axis
-                    for (var j in condition.data_2d[x]) {
-                        order_val = Math.min((condition.data_2d[x][j] - condition.min_height) /
-                            (condition.max_height - condition.min_height), 1);
-                        color = condition.color_scale(condition.data_dynamic_2d[x][j]);
-                        prop_data.push([order_val, color, opacity, overlay])
-                    }
-                }
+                // Zip data
+                prop_data = d3.zip.apply(this, prop_data);
+                this.initialize_pattern(sel, pattern_id, prop_data, 'fill');
             }
 
-            this.update_pattern(sel, pattern_id, props, prop_data, 'fill');
+            this.update_pattern(x, sel, pattern_id);
         };
 
+        this.patterns_initialized = true;
         if (this.report_id) {this.update_report(x)}
     };
 
@@ -683,31 +595,40 @@ function Line(line_ids, line_description, line_conditions, line_report_id) {
             var props = [order_prop, 'color', 'opacity', 'overlay'];
             var prop_data = [];
 
-            for (var i in this.conditions) {
-                var condition = this.conditions[i];
+            if (!this.patterns_initialized) {
+                for (var i in this.conditions) {
+                    var condition = this.conditions[i];
 
-                var order_val, color, opacity, overlay;
-                var max_order = 1.01;
-                opacity = condition.opacity;
-                overlay = null;
+                    var order_val, color, opacity, overlay;
+                    var max_order = 1.01;
+                    opacity = condition.opacity;
+                    overlay = null;
 
-                if (condition.type == 'equal_y') {
-                    // equal_y represents an open path element with equally sized patterns along the y axis
-                    // number of y regions dictated by len of 2nd axis
-                    for (var j=1; j<=condition.data_2d[0].length; j++) {
-                        order_val = j / condition.num_sections;
-                        var color_level;
-                        condition.data_2d[0].constructor == Array ? color_level = condition.data_2d[x][j-1] :
-                            color_level = condition.data_2d[x];
-                        color = condition.color_scale(color_level);
-                        prop_data.push([order_val, color, opacity, overlay])
+                    if (condition.type == 'equal_y') {
+                        // equal_y represents an open path element with equally sized patterns along the y axis
+                        // number of y regions dictated by len of 2nd axis
+                        var prop_data_slice = [];
+                        prop_data_slice = prop_data_slice.concat(condition.data_2d.map(function(arr, j) {
+                            return arr.map(function(d, k) {
+                                var order_val = k / arr.length;
+                                var color = condition.color_scale(d);
+                                return [order_val, color, condition.opacity, overlay]
+                            })
+                        }));
+
+                        prop_data = prop_data.concat(d3.zip.apply(this, prop_data_slice));
                     }
                 }
-            }
 
-            this.update_pattern(sel, pattern_id, props, prop_data, 'stroke');
+                // Zip data
+                prop_data = d3.zip.apply(this, prop_data);
+                this.initialize_pattern(sel, pattern_id, prop_data, 'stroke')
+            };
+
+            this.update_pattern(x, sel, pattern_id);
         };
 
+        this.patterns_initialized = true;
         if (this.report_id) {this.update_report(x)}
     };
 
@@ -723,6 +644,7 @@ function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_r
 
     heatmap.initialize = function() {
         var initial_vals = this.conditions[0].data_3d[0];
+
         for (var isel in this.selectors) {
             var sel = d3.select(this.selectors[isel]);
             var parent = d3.select(sel.node().parentNode);
@@ -735,7 +657,17 @@ function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_r
             var g = parent.append('g')
                 .attr('transform', 'translate(' + bbox.x + ',' + bbox.y + ')')
                 .append('g');
-            g.data([this.conditions[0].data_3d]);
+
+            // go through data and apply color scale
+            var scale = this.conditions[0].color_scale;
+            var data = this.conditions[0].data_3d.map(function(arr_2d) {
+                return arr_2d.map(function(arr) {
+                    return arr.map(function(d) {
+                        return scale(d)
+                    });
+                });
+            });
+            g.data([data]);
 
             // Create cross-sectional slice along the x axis
             var x_section = g.selectAll()
@@ -751,7 +683,7 @@ function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_r
                 .attr('class', 'bin')
                 .attr('x', function (d, i) {return x(i)})
                 .attr('width', function (d, i) {return  x(i + 1) - x(i)})
-                .style('fill', function (d) {return heatmap.conditions[0].color_scale(d)})
+                .style('fill', function (d) {return d})
                 .style('fill-opacity', function (d) {return heatmap.conditions[0].opacity})
                 .attr('height', bbox.height / (initial_vals.length));
 
@@ -770,7 +702,7 @@ function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_r
             x_section.selectAll('.bin')
                 .data(function (d) { return d; })
                 .transition()
-                .style('fill', function(d) { return heatmap.conditions[0].color_scale(d); });
+                .style('fill', function(d) {return d});
         }
 
         if (this.report_id) {this.update_report(x)}
@@ -785,23 +717,26 @@ function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_r
 function Toggle(toggle_ids, toggle_description, toggle_conditions, toggle_report_id) {
     var toggle = new Element(toggle_ids, toggle_description, toggle_conditions, toggle_report_id);
 
+    toggle.data_initialized = false;
     toggle.update = function(x) {
         for (var isel in this.selectors) {
             var sel = d3.selectAll(this.selectors[isel]);
 
-            for (var i in this.conditions) {
-                var condition = this.conditions[i];
-
-                if (condition.type == 'show_hide') {
-                    if (condition.data[x] == true || condition.data[x] > 0) {
-                        sel.transition().attr('opacity',1)
-                    } else {
-                        sel.transition().attr('opacity',0)
-                    }
+            if (!this.data_initialized) {
+                if (this.conditions[0].type == 'show_hide') {
+                    sel.datum(this.conditions[0].data)
                 }
+            }
+
+            var data = sel.datum();
+            if (data[x] || data[x] > 0) {
+                sel.transition().attr('opacity',1)
+            } else {
+                sel.transition().attr('opacity',0)
             }
         };
 
+        this.data_initialized = true;
         if (this.report_id) {this.update_report(x)}
     };
 
@@ -852,7 +787,8 @@ function Table(report_ids, report_description, report_conditions, report_id) {
                 .attr("width", width)
                 .attr("height", 500)
                 .append('xhtml:table')
-                .attr('id', table_id);
+                .attr('id', table_id)
+                .datum(this.conditions[0].tabular_data);
 
             // Add table header
             table.append('tr')
@@ -878,7 +814,7 @@ function Table(report_ids, report_description, report_conditions, report_id) {
 
         // Add content
         row = table.selectAll('.content-row')
-            .data(this.conditions[0].tabular_data[x]);
+            .data(function(d) {return d[x]});
         row.enter()
             .append('tr')
             .attr('class', 'content-row');
