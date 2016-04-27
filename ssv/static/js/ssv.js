@@ -1,6 +1,5 @@
 // Main function to generate contextual information of ssv setup
 function ElementContext(uuid, x_series, element_data, svg_overlays) {
-    _context = this;
     // Initialize properties
     this.uuid = uuid;
     // -- Element_data is the 'y' data representing svg elements that corresponds to the x_series data
@@ -9,12 +8,23 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
 
     this.elements = [];
     // -- Simulation interface properties - control automatic play, play speed, etc
-    this.play_enabled = false;
-    this.current_x = 0;
-    this.play_speed = 1.0;
-    this.max_speed = 5.0;
-    this.min_speed = 1.0;
-    this.speed_step = 1.0;
+    this.controls = {
+        // control state information
+        play_enabled: false,
+        current_x: 0,
+        play_speed: 1.0,
+        max_speed: 5.0,
+        min_speed: 1.0,
+        speed_step: 1.0,
+        // control selectors
+        play_selector: '#' + this.uuid + ' #play-button',
+        slider_selector: '#' + this.uuid + ' .range-slider',
+        speed_selector: '#' + this.uuid + ' #speed-button',
+        x_val_selector: '#' + this.uuid + ' #x-series-val',
+        pause_icon_selector: '#' + this.uuid + ' #pause-icon',
+        play_icon_selector: '#' + this.uuid + ' #play-icon',
+    };
+
     // -- Pattern overlay (e.g., water) data provided by Python
     this.svg_overlays = svg_overlays;
 
@@ -35,7 +45,7 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
     this.set_font_scale = function() {
         var font_scale = parseFloat(d3.select('#ssv-svg').attr('viewBox').split(' ')[3]) /
             d3.select('.sim-visual').node().getBoundingClientRect().height;
-        this.font_scale = font_scale
+        this.font_scale = font_scale;
         d3.select('#ssv-svg').attr('font-scale', font_scale)
     };
 
@@ -81,68 +91,77 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
 
     // Function to tell all manipulated element classes to update rendering given index of this.x_series
     this.update_elements = function(x) {
-        $('#x-series-val').html(num_format(this.x_series[x]));
-        for (var element in _context.elements) {
-            _context.elements[element].update(x);
+        $(this.controls.x_val_selector).html(num_format(this.x_series[x]));
+        for (var element in this.elements) {
+            this.elements[element].update(x);
         }
     };
 
-    // Initializer function of slider for ssv control bar using Foundation
+    // Initialize controls for ssv control bar
     this.initialize_controls = function() {
-        $('.range-slider').attr('data-options', 'initial: 0; start: 0; end: ' + (this.x_series.length - 1).toString());
+        $(this.controls.slider_selector)
+            .attr('data-options', 'initial: 0; start: 0; end: ' + (this.x_series.length - 1).toString())
+            .attr('ssv-id', this.uuid);
         $(document).foundation();
         $('[data-slider]').on('change.fndtn.slider', function(){
+            var context = element_contexts[d3.select(this).attr('ssv-id')];
             setTimeout(function() {
-                _context.current_x = Math.round($('.range-slider').attr('data-slider'));
-                _context.update_elements(_context.current_x);
+                context.controls.current_x = Math.round($(context.controls.slider_selector).attr('data-slider'));
+                context.update_elements(context.controls.current_x);
             }, 200);
         });
 
         // Clicking on play button automates the forward run of the x_series
-        $('#play-button').click(function() {
-            if (_context.play_enabled) {
-                _context.play_enabled = false;
-                $('#pause-icon').attr('style', 'display:none');
-                $('#play-icon').attr('style', '');
-            } else {
-                _context.play_enabled = true;
-                $('#pause-icon').attr('style', '');
-                $('#play-icon').attr('style', 'display:none');
-                if (_context.current_x == _context.x_series.length - 1) {
-                    _context.current_x = 0;
-                    $('.range-slider').foundation('slider', 'set_value', _context.current_x);
+        $(this.controls.play_selector)
+            .attr('ssv-id', this.uuid)
+            .click(function() {
+                var context = element_contexts[d3.select(this).attr('ssv-id')];
+                if (context.controls.play_enabled) {
+                    context.controls.play_enabled = false;
+                    $(context.controls.pause_icon_selector).attr('style', 'display:none');
+                    $(context.controls.play_icon_selector).attr('style', '');
+                } else {
+                    context.controls.play_enabled = true;
+                    $(context.controls.pause_icon_selector).attr('style', '');
+                    $(context.controls.play_icon_selector).attr('style', 'display:none');
+                    if (context.controls.current_x == context.x_series.length - 1) {
+                        context.controls.current_x = 0;
+                        $('.range-slider').foundation('slider', 'set_value', context.controls.current_x);
+                    }
+                    context.x_series_forward()
                 }
-                _context.x_series_forward()
-            }
         });
 
         // Clicking on the speed button changes the speed of play
-        $('#speed-button').click(function() {
-            if (_context.play_speed == _context.max_speed) {
-                _context.play_speed = _context.min_speed
-            } else {
-                _context.play_speed += _context.speed_step
-            }
-            $('#speed-val').html(_context.play_speed.toString() + 'x')
+        $(this.controls.speed_selector).attr('ssv-id', this.uuid)
+            .click(function() {
+                var context = element_contexts[d3.select(this).attr('ssv-id')];
+                if (context.controls.play_speed == context.controls.max_speed) {
+                    context.controls.play_speed = context.controls.min_speed
+                } else {
+                    context.controls.play_speed += context.controls.speed_step
+                }
+            $(context.controls.speed_selector).html(context.controls.play_speed.toString() + 'x')
         })
     };
 
     // Function to auto update elements based on current x_series position and selected play speed
     this.x_series_forward = function () {
+        var context = this;
         window.setTimeout(function() {
-            if (_context.play_enabled && _context.current_x < _context.x_series.length) {
-                _context.current_x += 1;
-                $('.range-slider').foundation('slider', 'set_value', _context.current_x);
-                _context.update_elements(_context.current_x);
+            if (context.controls.play_enabled && context.controls.current_x < context.x_series.length) {
+                context.controls.current_x += 1;
+                $(context.controls.slider_selector).foundation('slider', 'set_value', context.controls.current_x);
+                context.update_elements(context.controls.current_x);
 
 
-                if (_context.current_x < _context.x_series.length - 1) {
-                    _context.x_series_forward()
+                if (context.controls.current_x < context.x_series.length - 1) {
+                    context.x_series_forward()
                 } else {
-                    $('#play-button').trigger('click')
+                    $(context.controls.play_icon_selector).trigger('click')
                 }
             }
-        }, 1000 / this. play_speed);
+        }, 1000 / this.controls.play_speed);
     };
 
     // Initializer of pan and zoom functionality
@@ -934,8 +953,9 @@ window.onerror=function(msg){
     d3.select("body").attr("JSError",msg);
 };
 
+element_contexts = {};
 function add_element_context(uuid, x_series, element_data, svg_overlays) {
-    return new ElementContext(uuid, x_series, element_data, svg_overlays)
+    element_contexts[uuid] = new ElementContext(uuid, x_series, element_data, svg_overlays)
 }
 
 
