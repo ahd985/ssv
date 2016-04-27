@@ -1,7 +1,8 @@
 // Main function to generate contextual information of ssv setup
-function ElementContext(x_series, element_data) {
-    // Initialize properties
+function ElementContext(uuid, x_series, element_data, svg_overlays) {
     _context = this;
+    // Initialize properties
+    this.uuid = uuid;
     // -- Element_data is the 'y' data representing svg elements that corresponds to the x_series data
     this.x_series = x_series;
     this.element_data = element_data;
@@ -15,7 +16,7 @@ function ElementContext(x_series, element_data) {
     this.min_speed = 1.0;
     this.speed_step = 1.0;
     // -- Pattern overlay (e.g., water) data provided by Python
-    this.svg_overlays = {% include 'static/data/ssv-overlays.json' %}
+    this.svg_overlays = svg_overlays;
 
     // Initializer of svg pattern overlays (e.g., water pattern overlays).  These are inserted into
     // the svg 'defs' child for reference by svg elements.
@@ -24,18 +25,18 @@ function ElementContext(x_series, element_data) {
             svg.append('defs')
         }
 
-        for (var i in _context.svg_overlays) {
-            d3.select('svg defs').html(d3.select('svg defs').html() + _context.svg_overlays[i])
+        for (var i in this.svg_overlays) {
+            d3.select('svg defs').html(d3.select('svg defs').html() + this.svg_overlays[i])
         }
     };
 
     // Function to calculate scale of svg view box to parent svg div
     // This is required to scale user input font size correctly
     this.set_font_scale = function() {
-        _context.font_scale = parseFloat(d3.select('#ssv-svg').attr('viewBox').split(' ')[3]) /
+        var font_scale = parseFloat(d3.select('#ssv-svg').attr('viewBox').split(' ')[3]) /
             d3.select('.sim-visual').node().getBoundingClientRect().height;
-
-        d3.select('#ssv-svg').attr('font-scale', _context.font_scale)
+        this.font_scale = font_scale
+        d3.select('#ssv-svg').attr('font-scale', font_scale)
     };
 
     this.initialize_elements = function() {
@@ -87,7 +88,7 @@ function ElementContext(x_series, element_data) {
     };
 
     // Initializer function of slider for ssv control bar using Foundation
-    this.initialize_slider = function() {
+    this.initialize_controls = function() {
         $('.range-slider').attr('data-options', 'initial: 0; start: 0; end: ' + (this.x_series.length - 1).toString());
         $(document).foundation();
         $('[data-slider]').on('change.fndtn.slider', function(){
@@ -198,7 +199,7 @@ function ElementContext(x_series, element_data) {
     this.initialize_overlays();
     this.set_font_scale();
     this.initialize_elements();
-    this.initialize_slider();
+    this.initialize_controls();
     this.initialize_pan_zoom();
 }
 
@@ -933,6 +934,8 @@ window.onerror=function(msg){
     d3.select("body").attr("JSError",msg);
 };
 
-element_contexts = {};
+function add_element_context(uuid, x_series, element_data, svg_overlays) {
+    return new ElementContext(uuid, x_series, element_data, svg_overlays)
+}
 
 

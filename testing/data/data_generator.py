@@ -1,4 +1,5 @@
 from collections import defaultdict
+import copy
 import itertools
 
 import numpy as np
@@ -61,20 +62,20 @@ def get_condition_input(valid, condition_inputs):
         'section_label': {'valid': ['Section', ''], 'invalid': {'TypeError': [1, True]}},
         'description': {'valid': ['Description', ''], 'invalid': {'TypeError': [1, True]}},
         'description_dynamic': {'valid': ['Description', ''], 'invalid': {'TypeError': [1, True]}},
-        'max_height': {'valid': [10], 'invalid': {}},
-        'min_height': {'valid': [10], 'invalid': {}},
+        'max_height': {'valid': [10], 'invalid': {'TypeError': ['XX']}},
+        'min_height': {'valid': [10], 'invalid': {'TypeError': ['XX']}},
         'true_color': {'valid': ['#FFFFFF', '#FFF'], 'invalid': {'ValueError': ['#ZZZ', 'RGB(1,1,1)']}},
         'false_color': {'valid': ['#FFFFFF', '#FFF'], 'invalid': {'ValueError': ['#ZZZ', 'RGB(1,1,1)']}},
         'overlay': {'valid': ['water'], 'invalid': {'TypeError': [1, True]}},
         'unit_dynamic': {'valid': ['unit', ''], 'invalid': {'TypeError': [1, True]}},
-        'color_levels': {'valid': [[100, 200]], 'invalid': {}},
-        'color_scale': {'valid': [['#DDDDDD', '#DDDDDD']], 'invalid': {}},
-        'data': {'valid': [[100] * 10], 'invalid': {}},
-        'data_2d': {'valid': [[[100] * 10] * 10], 'invalid': {}},
-        'data_3d': {'valid': [[[[100] * 10] * 10] * 10], 'invalid': {}},
-        'data_dynamic': {'valid': [[100] * 10], 'invalid': {}},
-        'data_dynamic_2d': {'valid': [[[100] * 10] * 10], 'invalid': {}},
-        'headers': {'valid': [['xxx','xxx']], 'invalid': {}}
+        'color_levels': {'valid': [[100, 200]], 'invalid': {'ValueError': ['XX']}},
+        'color_scale': {'valid': [['#DDDDDD', '#DDDDDD']], 'invalid': {'ValueError': ['XX']}},
+        'data': {'valid': [[100] * 10], 'invalid': {'ValueError': [['xx'] * 8]}},
+        'data_2d': {'valid': [[[100] * 10] * 10], 'invalid': {'ValueError': [['xx'] * 8]}},
+        'data_3d': {'valid': [[[[100] * 10] * 10] * 10], 'invalid': {'ValueError': [['xx'] * 8]}},
+        'data_dynamic': {'valid': [[100] * 10], 'invalid': {'ValueError': [['xx'] * 8]}},
+        'data_dynamic_2d': {'valid': [[[100] * 10] * 10], 'invalid': {'ValueError': [['xx'] * 8]}},
+        'headers': {'valid': [['xxx','xxx']], 'invalid': {'ValueError': ['XX']}}
     }
 
     kwargs = {k: condition_kwargs[k]['valid'] for k in condition_inputs}
@@ -83,21 +84,21 @@ def get_condition_input(valid, condition_inputs):
     kwarg_names = list(kwargs.keys())
     for k in kwarg_names:
         condition_kwarg_combos += [[(k, v) for v in kwargs[k]]]
-    condition_kwarg_combos = list(itertools.product(*condition_kwarg_combos))
-    condition_kwarg_combos = [dict(d) for d in condition_kwarg_combos]
+    condition_kwarg_combos = [dict(d) for d in itertools.product(*condition_kwarg_combos)]
 
     if valid:
         return condition_kwarg_combos
     else:
         # Tuple of valid base arguments
         valid_kwargs = [[(k, v)] for k, v in condition_kwarg_combos[0].items()]
+        kwarg_names = [t[0][0] for t in valid_kwargs]
         invalid_kwargs = defaultdict(list)
 
         # Loop through each kwarg and create error by type input
         for i, k in enumerate(kwarg_names):
-            kwarg_combo = valid_kwargs.copy()
+            kwarg_combo = copy.deepcopy(valid_kwargs)
             for k_error, v in condition_kwargs[k]['invalid'].items():
-                kwarg_combo[i] = [(k, p) for p in v]
-                invalid_kwargs[k_error] += [dict(d) for d in list(itertools.product(*kwarg_combo))]
+                kwarg_combo[i] = ((k, p) for p in v)
+                invalid_kwargs[k_error] += [dict(d) for d in itertools.product(*kwarg_combo)]
 
         return invalid_kwargs

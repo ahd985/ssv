@@ -6663,7 +6663,7 @@ h1 {
  </style>
 </head>
 <body>
-  <div class="ssv-panel">
+  <div class="ssv-panel" id="s6d429d5d-738c-489f-9425-f01a2abdeb4a">
       <div class="row full-width">
         <div class="small-12 large-12 columns sim-title" align="center"><h1>Cutset Visualization</h1></div>
       </div>
@@ -8461,9 +8461,10 @@ void 0===c?d&&"get"in d&&null!==(e=d.get(a,b))?e:(e=n.find.attr(a,b),null==e?voi
   };
 }(jQuery, window, window.document)); </script>
   <script> // Main function to generate contextual information of ssv setup
-function ElementContext(x_series, element_data) {
-    // Initialize properties
+function ElementContext(uuid, x_series, element_data, svg_overlays) {
     _context = this;
+    // Initialize properties
+    this.uuid = uuid;
     // -- Element_data is the 'y' data representing svg elements that corresponds to the x_series data
     this.x_series = x_series;
     this.element_data = element_data;
@@ -8477,7 +8478,7 @@ function ElementContext(x_series, element_data) {
     this.min_speed = 1.0;
     this.speed_step = 1.0;
     // -- Pattern overlay (e.g., water) data provided by Python
-    this.svg_overlays = {"water":"<pattern id=\"water\" x=\"10px\" y=\"2px\" width=\"8px\" height=\"10px\" patternUnits=\"userSpaceOnUse\"><circle cx=\"4px\" cy=\"-1px\" r=\"4px\" fill=\"none\" stroke=\"white\" stroke-width=\"-1px\"/></pattern>"}
+    this.svg_overlays = svg_overlays;
 
     // Initializer of svg pattern overlays (e.g., water pattern overlays).  These are inserted into
     // the svg 'defs' child for reference by svg elements.
@@ -8486,18 +8487,18 @@ function ElementContext(x_series, element_data) {
             svg.append('defs')
         }
 
-        for (var i in _context.svg_overlays) {
-            d3.select('svg defs').html(d3.select('svg defs').html() + _context.svg_overlays[i])
+        for (var i in this.svg_overlays) {
+            d3.select('svg defs').html(d3.select('svg defs').html() + this.svg_overlays[i])
         }
-    }
+    };
 
     // Function to calculate scale of svg view box to parent svg div
     // This is required to scale user input font size correctly
     this.set_font_scale = function() {
-        _context.font_scale = parseFloat(d3.select('#ssv-svg').attr('viewBox').split(' ')[3]) /
+        var font_scale = parseFloat(d3.select('#ssv-svg').attr('viewBox').split(' ')[3]) /
             d3.select('.sim-visual').node().getBoundingClientRect().height;
-
-        d3.select('#ssv-svg').attr('font-scale', _context.font_scale)
+        this.font_scale = font_scale
+        d3.select('#ssv-svg').attr('font-scale', font_scale)
     };
 
     this.initialize_elements = function() {
@@ -8529,11 +8530,15 @@ function ElementContext(x_series, element_data) {
             }
         }
 
-        // Delete this.element_data to reduce file size
-        delete this.element_data;
-
         // Draw elements at x index of 0
         this.update_elements(0);
+
+        // Delete extra data
+        delete this.element_data;
+        // We can delete conditions since the data are now bound to the DOM.
+        this.elements.map(function(d) {
+            if ('conditions' in d) {delete d.conditions}
+        })
     };
 
     // Function to tell all manipulated element classes to update rendering given index of this.x_series
@@ -8545,12 +8550,14 @@ function ElementContext(x_series, element_data) {
     };
 
     // Initializer function of slider for ssv control bar using Foundation
-    this.initialize_slider = function() {
+    this.initialize_controls = function() {
         $('.range-slider').attr('data-options', 'initial: 0; start: 0; end: ' + (this.x_series.length - 1).toString());
         $(document).foundation();
         $('[data-slider]').on('change.fndtn.slider', function(){
-            _context.current_x = Math.round($('.range-slider').attr('data-slider'));
-            _context.update_elements(_context.current_x);
+            setTimeout(function() {
+                _context.current_x = Math.round($('.range-slider').attr('data-slider'));
+                _context.update_elements(_context.current_x);
+            }, 200);
         });
 
         // Clicking on play button automates the forward run of the x_series
@@ -8654,7 +8661,7 @@ function ElementContext(x_series, element_data) {
     this.initialize_overlays();
     this.set_font_scale();
     this.initialize_elements();
-    this.initialize_slider();
+    this.initialize_controls();
     this.initialize_pan_zoom();
 }
 
@@ -8861,29 +8868,62 @@ function Element(element_ids, element_description, element_conditions, report_id
     };
 
     // Function to initialize patterns for element
-    this.initialize_patterns = function(sel, pattern_id, props, prop_data, style_apply) {
+    this.initialize_pattern = function(sel, pattern_id, prop_data, style_apply) {
         // Add svg defs section if none exist
         if (d3.select('svg defs').empty()) {
             svg.append('defs')
         }
 
-        // Sort prop data
-        prop_data = prop_data.map(function(d) {d.sort(function(a,b) {return -(a[0] - b[0])})});
-        // Denormalize prop data
-        var norm_val = sel.node().getBBox();
-        prop_data = prop_data.map(function(d) {
-            return [Math.max(0, 1 - d[0]) * norm_val].concat(d.slice(1, d.length))
+        // Sort prop data and denormalize order prop
+        var norm_val = sel.node().getBBox().height;
+        if (prop_data[0].length > 1) {
+            prop_data = prop_data.map(function(t) {return t.sort(function(a,b) {return -(a[0] - b[0])})});
+        }
+        prop_data = prop_data.map(function(t) {
+            return t.map(function(d) {
+                var order = Math.max(0, 1 - d[0]) * norm_val;
+                return [order].concat(d.slice(1, d.length))
+            })
         });
 
         // Build pattern and apply initial state
         var defs = d3.select('svg defs');
-        defs.append('pattern').attr('id', pattern_id)
+        var pattern = defs.append('pattern')
+            .attr('id', pattern_id)
             .attr('x', 0)
             .attr('y', 0)
             .attr('width', '100%')
             .attr('height', '100%')
             .attr('patternContentUnits', 'userSpaceOnUse')
             .datum(prop_data);
+
+        pattern_data = pattern.selectAll()
+            .data(function(t) {return t[0]})
+            .enter();
+
+        pattern_data[0].map(function() {
+            // Add base pattern
+            pattern.append('rect')
+                .attr('id', 'base')
+                .attr('x','0')
+                .attr('width','100%')
+                .attr('height', '100%');
+
+            // Add transition zones
+            pattern.append('rect')
+                .attr('id', 'transition')
+                .attr('x','0')
+                .attr('width','100%')
+                .attr('height','1px')
+                .attr('fill', '#FFFFFF');
+
+            // Add overlays
+            pattern.append('rect')
+                .attr('id', 'overlay')
+                .attr('x','0')
+                .attr('width', '100%')
+                .attr('height', '100%');
+        });
 
         // Set to stroke or fill based on style_apply
         style_apply == 'fill' ? sel.style('fill', 'url(#' + pattern_id + ')') :
@@ -8892,124 +8932,34 @@ function Element(element_ids, element_description, element_conditions, report_id
         // Set initial opacities to 1
         sel.style('fill-opacity', 1);
         sel.style('opacity', 1);
-
-        this.patterns_initialized = true;
     };
     
-    this.update_pattern = function(x, pattern_id) {
+    this.update_pattern = function(x, sel, pattern_id) {
         var pattern = d3.select('#' + pattern_id);
+        var max_order = sel.node().getBBox().height;
 
-        var overlay_i = props.indexOf('overlay');
-        var color_i = props.indexOf('color');
-        var opacity_i = props.indexOf('opacity');
-
-        pattern.selectAll()
-            .data(function(d) {return d[x]})
-            .selectAll()
-            .data(function(d) {return d})
-            .enter()
-            .append('rect')
-            .attr('x','0')
+        // Update base pattern
+        pattern.selectAll('#base')
+            .data(function(t) {return t[x]})
+            .transition()
             .attr('y', function(d) {return d[0]})
-            .attr('width','100%')
-            .attr('height', '100%')
-            .style('fill', function(d) {
-                if (overlay_i > 0 && d[overlay_i] in _context.svg_overlays) {
-                    return 'url(#' + d[overlay_i] + ')'
-                } else {
-                    return d[color_i]
-                }
-            })
-            .style('opacity', function(d) {return d[opacity_i]})
-            .transition();
-    };
+            .style('fill', function(d) {return d[1]})
+            .style('opacity', function(d) {return d[2]});
 
-    // Function to apply pattern updates to elements
-    this.update_pattern = function(sel, pattern_id, props, prop_data, style_apply) {
-        var pattern = d3.select('#' + pattern_id);
+        // Update transition zones
+        pattern.selectAll('#transition')
+            .data(function(t) {return t[x]})
+            .transition()
+            .attr('y', function(d) {if (d[0] < max_order) {return d[0]} else {return '-1%' }})
+            .style('opacity', function(d) {return d[2]});
 
-        // Initialize pattern reference if pattern_id not found
-        if (pattern.empty()) {
-            // Add svg defs section if none exist
-            if (d3.select('svg defs').empty()) {
-                svg.append('defs')
-            }
-
-            // Build pattern and apply initial state
-            var defs = d3.select('svg defs');
-            defs.append('pattern').attr('id', pattern_id)
-                .attr('x', 0)
-                .attr('y', 0)
-                .attr('width', '100%')
-                .attr('height', '100%')
-                .attr('patternContentUnits', 'userSpaceOnUse');
-
-            // Set to stroke or fill based on style_apply
-            style_apply == 'fill' ? sel.style('fill', 'url(#' + pattern_id + ')') :
-                sel.style('stroke', 'url(#' + pattern_id + ')');
-
-            // Set initial opacities to 1
-            sel.style('fill-opacity', 1);
-            sel.style('opacity',1);
-        }
-
-        // Descending sort props based on first property (order prop)
-        prop_data = prop_data.sort(function(a,b) {return -(a[0] - b[0])});
-
-        var bbox = sel.node().getBBox();
-        var overlay_i = props.indexOf('overlay');
-        var color_i = props.indexOf('color');
-        var opacity_i = props.indexOf('opacity');
-
-        for (var i in prop_data) {
-            var rect_id = 'rect_' + i.toString();
-            var pattern_rect = pattern.select('#' + rect_id);
-
-            if (pattern_rect.empty()) {
-                pattern.append('rect').attr('id', rect_id);
-
-                // Add transition rect
-                pattern.append('rect').attr('id', rect_id + '_trans')
-                    .attr('fill', '#FFFFFF')
-                    .attr('x',0)
-                    .attr('height','1px')
-                    .attr('width','100%');
-
-                // Check for pattern overlays
-                if (overlay_i > 0 && prop_data[i][overlay_i] in _context.svg_overlays) {
-                    pattern.append('rect').attr('id', rect_id + '_' + prop_data[i][overlay_i])
-                        .attr('fill', 'url(#' + prop_data[i][overlay_i] + ')')
-                        .attr('x',0)
-                        .attr('height','100%')
-                        .attr('width','100%');
-                }
-            }
-            var pattern_rect = pattern.select('#' + rect_id);
-
-            // Update levels
-            pattern_rect.transition()
-                .attr('x','0')
-                .attr('y', Math.max(0, 1 - prop_data[i][0]) * bbox.height)
-                .attr('width','100%')
-                .attr('height', '100%')
-                .style('fill', prop_data[i][color_i])
-                .style('opacity', prop_data[i][opacity_i]);
-
-            // Update transitions
-            if (prop_data[i][0] < 1.0) {
-                pattern.select('#' + rect_id + '_trans').transition()
-                    .attr('y',Math.max(0, 1 - prop_data[i][0]) * bbox.height);
-            } else {
-                pattern.select('#' + rect_id + '_trans').transition()
-                    .attr('y', '-1%');
-            }
-
-            // Update pattern overlays
-            if (overlay_i > 0 && prop_data[i][overlay_i] in _context.svg_overlays) {
-                var pattern_overlay = pattern.select('#' + rect_id + '_' + prop_data[i][overlay_i]);
-                pattern_overlay.transition().attr('y', Math.max(0, 1 - prop_data[i][0]) * bbox.height);
-            }
-        }
+        // Update overlays
+        pattern.selectAll('#overlay')
+            .data(function(t) {return t[x]})
+            .transition()
+            .attr('fill', function(d) {if(d[3] == null) {return 'none'} else {return 'url(#' + d[3] + ')'}})
+            .attr('y', function(d) {return d[0]})
+            .style('opacity', function(d) {return d[2]});
     }
 }
 
@@ -9024,11 +8974,9 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
 
             var order_prop = 'y';
             var props = [order_prop, 'color', 'opacity', 'overlay'];
-            var prop_data = [];
 
-            /* AHD start here
             if (!this.patterns_initialized) {
-                var prop_data_all = [];
+                var prop_data = [];
 
                 for (var i in this.conditions) {
                     var condition = this.conditions[i];
@@ -9040,92 +8988,57 @@ function Cell(cell_ids, cell_description, cell_conditions, cell_report_id) {
                     if (condition.type == 'background') {
                         // background represents a changing cell background color only
                         // always 100% of the element height
-                        order_val = condition.data.map(function() {return max_order});
-                        opacity = condition.data.map(function() {return condition.opacity});
-                        color = condition.data.map(function(d) {condition.color_scale(d)});
-                        prop_data.push([order_val, color, opacity, overlay])
+                        prop_data.push(condition.data.map(function(d) {
+                            return [max_order, condition.color_scale(d), condition.opacity, overlay]
+                        }));
                     } else if (condition.type == 'level_static') {
                         // level_static represents a changing level in a cell that does not change color
-                        order_val = Math.min((condition.data[x] - condition.min_height) /
-                            (condition.max_height - condition.min_height), 1);
-                        color = condition.color;
-                        prop_data.push([order_val, color, opacity, overlay])
+                        prop_data.push(condition.data.map(function(d) {
+                            var order_val = (Math.min((d - condition.min_height) /
+                                (condition.max_height - condition.min_height)), 1);
+                            return [order_val, condition.color, condition.opacity, overlay]
+                        }));
                     } else if (condition.type == 'level_dynamic') {
                         // level_dynamic represents a changing level in a cell that changes color
-                        order_val = Math.min((condition.data[x] - condition.min_height) /
-                            (condition.max_height - condition.min_height), 1);
-                        color = condition.color_scale(condition.data_dynamic[x]);
-                        prop_data.push([order_val, color, opacity, overlay])
+                        prop_data.push(condition.data.map(function(d, j) {
+                            var order_val = Math.min((d - condition.min_height) /
+                                (condition.max_height - condition.min_height), 1);
+                            var color = condition.color_scale(condition.data_dynamic[j]);
+                            return [order_val, color, condition.opacity, overlay]
+                        }));
                     } else if (condition.type == 'logical') {
                         // logical represents a filled cell that alternates between two colors
                         // always 100% of element height
-                        order_val = max_order;
-
-                        condition.data[x] ? color = condition.true_color : color = condition.false_color;
-                        prop_data.push([order_val, color, opacity, overlay])
+                        prop_data.push(condition.data.map(function(d) {
+                            var color;
+                            d ? color = condition.true_color : color = condition.false_color;
+                            return [max_order, color, condition.opacity, overlay]
+                        }));
                     } else if (condition.type == 'zonal_y') {
                         // zonal_y represents a zonal model in the y direction
                         // number of zones dictated by len of 2nd axis
-                        for (var j in condition.data_2d[x]) {
-                            order_val = Math.min((condition.data_2d[x][j] - condition.min_height) /
-                                (condition.max_height - condition.min_height), 1);
-                            color = condition.color_scale(condition.data_dynamic_2d[x][j]);
-                            prop_data.push([order_val, color, opacity, overlay])
-                        }
+                        var prop_data_slice = [];
+                        prop_data_slice = prop_data_slice.concat(condition.data_2d.map(function(arr, j) {
+                            return arr.map(function(d, k) {
+                                var order_val = Math.min((d - condition.min_height) /
+                                    (condition.max_height - condition.min_height), 1);
+                                var color = condition.color_scale(condition.data_dynamic_2d[j][k]);
+                                return [order_val, color, condition.opacity, overlay]
+                            })
+                        }));
+                        prop_data = prop_data.concat(d3.zip.apply(this, prop_data_slice));
                     }
                 }
 
-                this.initialize_patterns(sel, pattern_id, props, prop_data_all, 'fill')
-            }
-            */
-
-            for (var i in this.conditions) {
-                var condition = this.conditions[i];
-
-                var order_val, color, opacity, overlay;
-                var max_order = 1.01;
-                opacity = condition.opacity;
-                'overlay' in condition ? overlay = condition.overlay : overlay = null;
-                if (condition.type == 'background') {
-                    // background represents a changing cell background color only
-                    // always 100% of the element height
-                    order_val = max_order;
-                    color = condition.color_scale(condition.data[x]);
-                    prop_data.push([order_val, color, opacity, overlay])
-                } else if (condition.type == 'level_static') {
-                    // level_static represents a changing level in a cell that does not change color
-                    order_val = Math.min((condition.data[x] - condition.min_height) /
-                        (condition.max_height - condition.min_height), 1);
-                    color = condition.color;
-                    prop_data.push([order_val, color, opacity, overlay])
-                } else if (condition.type == 'level_dynamic') {
-                    // level_dynamic represents a changing level in a cell that changes color
-                    order_val = Math.min((condition.data[x] - condition.min_height) /
-                        (condition.max_height - condition.min_height), 1);
-                    color = condition.color_scale(condition.data_dynamic[x]);
-                    prop_data.push([order_val, color, opacity, overlay])
-                } else if (condition.type == 'logical') {
-                    // logical represents a filled cell that alternates between two colors
-                    // always 100% of element height
-                    order_val = max_order;
-
-                    condition.data[x] ? color = condition.true_color : color = condition.false_color;
-                    prop_data.push([order_val, color, opacity, overlay])
-                } else if (condition.type == 'zonal_y') {
-                    // zonal_y represents a zonal model in the y direction
-                    // number of zones dictated by len of 2nd axis
-                    for (var j in condition.data_2d[x]) {
-                        order_val = Math.min((condition.data_2d[x][j] - condition.min_height) /
-                            (condition.max_height - condition.min_height), 1);
-                        color = condition.color_scale(condition.data_dynamic_2d[x][j]);
-                        prop_data.push([order_val, color, opacity, overlay])
-                    }
-                }
+                // Zip data
+                prop_data = d3.zip.apply(this, prop_data);
+                this.initialize_pattern(sel, pattern_id, prop_data, 'fill');
             }
 
-            this.update_pattern(sel, pattern_id, props, prop_data, 'fill');
+            this.update_pattern(x, sel, pattern_id);
         };
 
+        this.patterns_initialized = true;
         if (this.report_id) {this.update_report(x)}
     };
 
@@ -9145,31 +9058,40 @@ function Line(line_ids, line_description, line_conditions, line_report_id) {
             var props = [order_prop, 'color', 'opacity', 'overlay'];
             var prop_data = [];
 
-            for (var i in this.conditions) {
-                var condition = this.conditions[i];
+            if (!this.patterns_initialized) {
+                for (var i in this.conditions) {
+                    var condition = this.conditions[i];
 
-                var order_val, color, opacity, overlay;
-                var max_order = 1.01;
-                opacity = condition.opacity;
-                overlay = null;
+                    var order_val, color, opacity, overlay;
+                    var max_order = 1.01;
+                    opacity = condition.opacity;
+                    overlay = null;
 
-                if (condition.type == 'equal_y') {
-                    // equal_y represents an open path element with equally sized patterns along the y axis
-                    // number of y regions dictated by len of 2nd axis
-                    for (var j=1; j<=condition.data_2d[0].length; j++) {
-                        order_val = j / condition.num_sections;
-                        var color_level;
-                        condition.data_2d[0].constructor == Array ? color_level = condition.data_2d[x][j-1] :
-                            color_level = condition.data_2d[x];
-                        color = condition.color_scale(color_level);
-                        prop_data.push([order_val, color, opacity, overlay])
+                    if (condition.type == 'equal_y') {
+                        // equal_y represents an open path element with equally sized patterns along the y axis
+                        // number of y regions dictated by len of 2nd axis
+                        var prop_data_slice = [];
+                        prop_data_slice = prop_data_slice.concat(condition.data_2d.map(function(arr, j) {
+                            return arr.map(function(d, k) {
+                                var order_val = k / arr.length;
+                                var color = condition.color_scale(d);
+                                return [order_val, color, condition.opacity, overlay]
+                            })
+                        }));
+
+                        prop_data = prop_data.concat(d3.zip.apply(this, prop_data_slice));
                     }
                 }
-            }
 
-            this.update_pattern(sel, pattern_id, props, prop_data, 'stroke');
+                // Zip data
+                prop_data = d3.zip.apply(this, prop_data);
+                this.initialize_pattern(sel, pattern_id, prop_data, 'stroke')
+            };
+
+            this.update_pattern(x, sel, pattern_id);
         };
 
+        this.patterns_initialized = true;
         if (this.report_id) {this.update_report(x)}
     };
 
@@ -9185,6 +9107,7 @@ function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_r
 
     heatmap.initialize = function() {
         var initial_vals = this.conditions[0].data_3d[0];
+
         for (var isel in this.selectors) {
             var sel = d3.select(this.selectors[isel]);
             var parent = d3.select(sel.node().parentNode);
@@ -9197,7 +9120,17 @@ function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_r
             var g = parent.append('g')
                 .attr('transform', 'translate(' + bbox.x + ',' + bbox.y + ')')
                 .append('g');
-            g.data([this.conditions[0].data_3d]);
+
+            // go through data and apply color scale
+            var scale = this.conditions[0].color_scale;
+            var data = this.conditions[0].data_3d.map(function(arr_2d) {
+                return arr_2d.map(function(arr) {
+                    return arr.map(function(d) {
+                        return scale(d)
+                    });
+                });
+            });
+            g.data([data]);
 
             // Create cross-sectional slice along the x axis
             var x_section = g.selectAll()
@@ -9213,7 +9146,7 @@ function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_r
                 .attr('class', 'bin')
                 .attr('x', function (d, i) {return x(i)})
                 .attr('width', function (d, i) {return  x(i + 1) - x(i)})
-                .style('fill', function (d) {return heatmap.conditions[0].color_scale(d)})
+                .style('fill', function (d) {return d})
                 .style('fill-opacity', function (d) {return heatmap.conditions[0].opacity})
                 .attr('height', bbox.height / (initial_vals.length));
 
@@ -9232,7 +9165,7 @@ function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_r
             x_section.selectAll('.bin')
                 .data(function (d) { return d; })
                 .transition()
-                .style('fill', function(d) { return heatmap.conditions[0].color_scale(d); });
+                .style('fill', function(d) {return d});
         }
 
         if (this.report_id) {this.update_report(x)}
@@ -9247,23 +9180,26 @@ function Heatmap(heatmap_ids, heatmap_description, heatmap_conditions, heatmap_r
 function Toggle(toggle_ids, toggle_description, toggle_conditions, toggle_report_id) {
     var toggle = new Element(toggle_ids, toggle_description, toggle_conditions, toggle_report_id);
 
+    toggle.data_initialized = false;
     toggle.update = function(x) {
         for (var isel in this.selectors) {
             var sel = d3.selectAll(this.selectors[isel]);
 
-            for (var i in this.conditions) {
-                var condition = this.conditions[i];
-
-                if (condition.type == 'show_hide') {
-                    if (condition.data[x] == true || condition.data[x] > 0) {
-                        sel.transition().attr('opacity',1)
-                    } else {
-                        sel.transition().attr('opacity',0)
-                    }
+            if (!this.data_initialized) {
+                if (this.conditions[0].type == 'show_hide') {
+                    sel.datum(this.conditions[0].data)
                 }
+            }
+
+            var data = sel.datum();
+            if (data[x] || data[x] > 0) {
+                sel.transition().attr('opacity',1)
+            } else {
+                sel.transition().attr('opacity',0)
             }
         };
 
+        this.data_initialized = true;
         if (this.report_id) {this.update_report(x)}
     };
 
@@ -9314,7 +9250,8 @@ function Table(report_ids, report_description, report_conditions, report_id) {
                 .attr("width", width)
                 .attr("height", 500)
                 .append('xhtml:table')
-                .attr('id', table_id);
+                .attr('id', table_id)
+                .datum(this.conditions[0].tabular_data);
 
             // Add table header
             table.append('tr')
@@ -9340,7 +9277,7 @@ function Table(report_ids, report_description, report_conditions, report_id) {
 
         // Add content
         row = table.selectAll('.content-row')
-            .data(this.conditions[0].tabular_data[x]);
+            .data(function(d) {return d[x]});
         row.enter()
             .append('tr')
             .attr('class', 'content-row');
@@ -9459,13 +9396,17 @@ window.onerror=function(msg){
     d3.select("body").attr("JSError",msg);
 };
 
-element_contexts = {};
+function add_element_context(uuid, x_series, element_data, svg_overlays) {
+    return new ElementContext(uuid, x_series, element_data, svg_overlays)
+}
 
  </script>
   <script>
-      var x_series = ['3.6000e-13', '1.0000e-09', '4.0000e-17', '1.0000e-08']
-      var element_data = {"report": [], "toggle": [], "table": [{"report_id": "cutset-report", "ids": "", "conditions": [{"id": "_0", "unit": "", "tabular_data": [[["%LDHR", "Loss of Decay Heat Removal", "0.01"], ["ACB-A-F", "Failure of AC Bus A", "0.003"], ["ACB-B-F", "Failure of AC Bus B", "0.003"], ["RCIC-F", "Failure of Reactor Core Isolation Cooling", "0.004"], ["HPCI-F", "Failure of High Pressure Cooland Injection", "0.001"]], [["%ATWS", "Anticipated Transient Without SCRAM", "0.01"], ["SLC-F", "Failure of Standby Liquid Coolant", "0.001"], ["RHR-F", "Failure of Residual Heat Removal", "0.0001"]], [["%LOSP", "Loss of Offsite Power", "0.001"], ["EDG-A-F", "Failure of Emergency Diesel Generator A", "0.0001"], ["EDG-B-F", "Failure of Emergency Diesel Generator B", "0.0001"], ["RCIC-F", "Failure of Reactor Core Isolation Cooling", "0.004"], ["HPCI-F", "Failure of High Pressure Cooland Injection", "0.001"]], [["%LDHR", "Loss of Decay Heat Removal", "0.01"], ["DCB-A-F", "Failure of DC Bus A", "0.02"], ["DCB-B-F", "Failure of DC Bus B", "0.02"], ["LPCI-A-F", "Failure of Low Pressure Coolant Injection A", "0.05"], ["LPCI-B-F", "Failure of Low Pressure Coolant Injection B", "0.05"]]], "headers": ["Basic Event", "Description"], "report": true, "type": "tabular-info", "opacity": 1.0}], "description": "", "x_series_len": 4, "add_condition": null}], "line": [], "colorscale": [], "heatmap": [], "cell": [{"x_series_len": 4, "report_id": null, "ids": ["hpci"], "conditions": [{"false_color": "#FFFFFF", "id": "hpci_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [1.0, 0.0, 1.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["dcb-b"], "conditions": [{"false_color": "#FFFFFF", "id": "dcb-b_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 0.0, 0.0, 1.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["rcic"], "conditions": [{"false_color": "#FFFFFF", "id": "rcic_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [1.0, 0.0, 1.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["atws"], "conditions": [{"false_color": "#FFFFFF", "id": "atws_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 1.0, 0.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["lpci-b"], "conditions": [{"false_color": "#FFFFFF", "id": "lpci-b_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 0.0, 0.0, 1.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["acb-b"], "conditions": [{"false_color": "#FFFFFF", "id": "acb-b_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [1.0, 0.0, 0.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["ldhr"], "conditions": [{"false_color": "#FFFFFF", "id": "ldhr_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [1.0, 0.0, 0.0, 1.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["losp"], "conditions": [{"false_color": "#FFFFFF", "id": "losp_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 0.0, 1.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["lpci-a"], "conditions": [{"false_color": "#FFFFFF", "id": "lpci-a_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 0.0, 0.0, 1.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["edg-a"], "conditions": [{"false_color": "#FFFFFF", "id": "edg-a_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 0.0, 1.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["acb-a"], "conditions": [{"false_color": "#FFFFFF", "id": "acb-a_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [1.0, 0.0, 0.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["slc"], "conditions": [{"false_color": "#FFFFFF", "id": "slc_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 1.0, 0.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["rhr"], "conditions": [{"false_color": "#FFFFFF", "id": "rhr_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 1.0, 0.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["xfmr"], "conditions": [{"false_color": "#FFFFFF", "id": "xfmr_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 0.0, 0.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["edg-b"], "conditions": [{"false_color": "#FFFFFF", "id": "edg-b_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 0.0, 1.0, 0.0], "opacity": 1.0}], "description": ""}, {"x_series_len": 4, "report_id": null, "ids": ["dcb-a"], "conditions": [{"false_color": "#FFFFFF", "id": "dcb-a_0", "unit": "", "true_color": "#F44336", "report": true, "type": "logical", "data": [0.0, 0.0, 0.0, 1.0], "opacity": 1.0}], "description": ""}]}
-      element_contexts["06e2e878-0368-4f80-a307-841701d49267"] = new ElementContext(x_series, element_data)
+      var uuid = "s6d429d5d-738c-489f-9425-f01a2abdeb4a";
+      var x_series = ['3.6000e-13', '1.0000e-09', '4.0000e-17', '1.0000e-08'];
+      var element_data = {"cell": [{"conditions": [{"true_color": "#F44336", "data": [0.0, 1.0, 0.0, 0.0], "false_color": "#FFFFFF", "opacity": 1.0, "report": true, "unit": "", "type": "logical", "id": "rhr_0"}], "report_id": null, "x_series_len": 4, "description": "", "ids": ["rhr"]}, {"conditions": [{"true_color": "#F44336", "data": [0.0, 0.0, 1.0, 0.0], "false_color": "#FFFFFF", "opacity": 1.0, "report": true, "unit": "", "type": "logical", "id": "edg-b_0"}], "report_id": null, "x_series_len": 4, "description": "", "ids": ["edg-b"]}, {"conditions": [{"true_color": "#F44336", "data": [0.0, 1.0, 0.0, 0.0], "false_color": "#FFFFFF", "opacity": 1.0, "report": true, "unit": "", "type": "logical", "id": "slc_0"}], "report_id": null, "x_series_len": 4, "description": "", "ids": ["slc"]}, {"conditions": [{"true_color": "#F44336", "data": [1.0, 0.0, 1.0, 0.0], "false_color": "#FFFFFF", "opacity": 1.0, "report": true, "unit": "", "type": "logical", "id": "hpci_0"}], "report_id": null, "x_series_len": 4, "description": "", "ids": ["hpci"]}, {"conditions": [{"true_color": "#F44336", "data": [0.0, 0.0, 0.0, 1.0], "false_color": "#FFFFFF", "opacity": 1.0, "report": true, "unit": "", "type": "logical", "id": "dcb-a_0"}], "report_id": null, "x_series_len": 4, "description": "", "ids": ["dcb-a"]}, {"conditions": [{"true_color": "#F44336", "data": [0.0, 0.0, 0.0, 1.0], "false_color": "#FFFFFF", "opacity": 1.0, "report": true, "unit": "", "type": "logical", "id": "lpci-b_0"}], "report_id": null, "x_series_len": 4, "description": "", "ids": ["lpci-b"]}, {"conditions": [{"true_color": "#F44336", "data": [0.0, 0.0, 0.0, 1.0], "false_color": "#FFFFFF", "opacity": 1.0, "report": true, "unit": "", "type": "logical", "id": "lpci-a_0"}], "report_id": null, "x_series_len": 4, "description": "", "ids": ["lpci-a"]}, {"conditions": [{"true_color": "#F44336", "data": [0.0, 0.0, 0.0, 1.0], "false_color": "#FFFFFF", "opacity": 1.0, "report": true, "unit": "", "type": "logical", "id": "dcb-b_0"}], "report_id": null, "x_series_len": 4, "description": "", "ids": ["dcb-b"]}, {"conditions": [{"true_color": "#F44336", "data": [1.0, 0.0, 0.0, 1.0], "false_color": "#FFFFFF", "opacity": 1.0, "report": true, "unit": "", "type": "logical", "id": "ldhr_0"}], "report_id": null, "x_series_len": 4, "description": "", "ids": ["ldhr"]}, {"conditions": [{"true_color": "#F44336", "data": [0.0, 0.0, 1.0, 0.0], "false_color": "#FFFFFF", "opacity": 1.0, "report": true, "unit": "", "type": "logical", "id": "edg-a_0"}], "report_id": null, "x_series_len": 4, "description": "", "ids": ["edg-a"]}, {"conditions": [{"true_color": "#F44336", "data": [0.0, 1.0, 0.0, 0.0], "false_color": "#FFFFFF", "opacity": 1.0, "report": true, "unit": "", "type": "logical", "id": "atws_0"}], "report_id": null, "x_series_len": 4, "description": "", "ids": ["atws"]}, {"conditions": [{"true_color": "#F44336", "data": [1.0, 0.0, 0.0, 0.0], "false_color": "#FFFFFF", "opacity": 1.0, "report": true, "unit": "", "type": "logical", "id": "acb-b_0"}], "report_id": null, "x_series_len": 4, "description": "", "ids": ["acb-b"]}, {"conditions": [{"true_color": "#F44336", "data": [1.0, 0.0, 0.0, 0.0], "false_color": "#FFFFFF", "opacity": 1.0, "report": true, "unit": "", "type": "logical", "id": "acb-a_0"}], "report_id": null, "x_series_len": 4, "description": "", "ids": ["acb-a"]}, {"conditions": [{"true_color": "#F44336", "data": [1.0, 0.0, 1.0, 0.0], "false_color": "#FFFFFF", "opacity": 1.0, "report": true, "unit": "", "type": "logical", "id": "rcic_0"}], "report_id": null, "x_series_len": 4, "description": "", "ids": ["rcic"]}, {"conditions": [{"true_color": "#F44336", "data": [0.0, 0.0, 1.0, 0.0], "false_color": "#FFFFFF", "opacity": 1.0, "report": true, "unit": "", "type": "logical", "id": "losp_0"}], "report_id": null, "x_series_len": 4, "description": "", "ids": ["losp"]}, {"conditions": [{"true_color": "#F44336", "data": [0.0, 0.0, 0.0, 0.0], "false_color": "#FFFFFF", "opacity": 1.0, "report": true, "unit": "", "type": "logical", "id": "xfmr_0"}], "report_id": null, "x_series_len": 4, "description": "", "ids": ["xfmr"]}], "toggle": [], "table": [{"report_id": "cutset-report", "x_series_len": 4, "add_condition": null, "conditions": [{"type": "tabular-info", "opacity": 1.0, "headers": ["Basic Event", "Description"], "tabular_data": [[["%LDHR", "Loss of Decay Heat Removal", "0.01"], ["ACB-A-F", "Failure of AC Bus A", "0.003"], ["ACB-B-F", "Failure of AC Bus B", "0.003"], ["RCIC-F", "Failure of Reactor Core Isolation Cooling", "0.004"], ["HPCI-F", "Failure of High Pressure Cooland Injection", "0.001"]], [["%ATWS", "Anticipated Transient Without SCRAM", "0.01"], ["SLC-F", "Failure of Standby Liquid Coolant", "0.001"], ["RHR-F", "Failure of Residual Heat Removal", "0.0001"]], [["%LOSP", "Loss of Offsite Power", "0.001"], ["EDG-A-F", "Failure of Emergency Diesel Generator A", "0.0001"], ["EDG-B-F", "Failure of Emergency Diesel Generator B", "0.0001"], ["RCIC-F", "Failure of Reactor Core Isolation Cooling", "0.004"], ["HPCI-F", "Failure of High Pressure Cooland Injection", "0.001"]], [["%LDHR", "Loss of Decay Heat Removal", "0.01"], ["DCB-A-F", "Failure of DC Bus A", "0.02"], ["DCB-B-F", "Failure of DC Bus B", "0.02"], ["LPCI-A-F", "Failure of Low Pressure Coolant Injection A", "0.05"], ["LPCI-B-F", "Failure of Low Pressure Coolant Injection B", "0.05"]]], "report": true, "unit": "", "id": "_0"}], "description": "", "ids": ""}], "report": [], "colorscale": [], "heatmap": [], "line": []};
+      var svg_overlays = {"water": "<pattern id=\"water\" x=\"10px\" y=\"2px\" width=\"8px\" height=\"10px\" patternUnits=\"userSpaceOnUse\"><circle cx=\"4px\" cy=\"-1px\" r=\"4px\" fill=\"none\" stroke=\"white\" stroke-width=\"-1px\"/></pattern>"};
+      add_element_context(uuid, x_series, element_data, svg_overlays);
   </script>
 </body>
 </html>

@@ -161,7 +161,7 @@ def run():
            downstream_height, steam_flow, discharge_press, time_step, end_time)
 
     # Initiate and hook up SSV model
-    ssv_model = SSV(sim_data['time'], 'seconds', os.path.join('examples', 'example_1', 'example_1.svg'),
+    ssv_model = SSV.create_vis(sim_data['time'], 'seconds', os.path.join('examples', 'example_1', 'example_1.svg'),
                         title="Steam Quench Tank Simulation", font_size=10)
 
     # Wire up svg elements

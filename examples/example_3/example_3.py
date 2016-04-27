@@ -56,7 +56,7 @@ def run():
     core_temp = core_temp.transpose((2,1,0))
 
     # Initiate and hook up SSV model
-    ssv_model = SSV(t, 'hours', os.path.join('examples', 'example_3', 'example_3.svg'),
+    ssv_model = SSV.create_vis(t, 'hours', os.path.join('examples', 'example_3', 'example_3.svg'),
                     title="Core Heatmap Example", font_size=10)
 
     core_color_scale = ['#ffffb2','#fecc5c','#fd8d3c','#f03b20','#bd0026']

@@ -15,7 +15,7 @@ def run():
     data.columns = [', '.join(col) if i > 0 else col[0] for i, col in enumerate(data.columns)]
 
     # Initiate and hook up SSV model
-    ssv_model = SSV(data['Time'], 'seconds', os.path.join('examples', 'example_2', 'example_2.svg'),
+    ssv_model = SSV.create_vis(data['Time'], 'seconds', os.path.join('examples', 'example_2', 'example_2.svg'),
                     title="CFAST Example", font_size=6)
 
     gas_color_scale = ['#fd8d3c','#fc4e2a','#e31a1c','#bd0026','#800026']

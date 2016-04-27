@@ -13,8 +13,14 @@ except ImportError:
 from . import elements
 
 
-# Main class
 class SSV:
+    @staticmethod
+    def create_vis(*args, **kwargs):
+        return Vis(*args, **kwargs)
+
+
+# Main Visualization Class
+class Vis:
     _svg_namespace = 'http://www.w3.org/2000/svg'
     _supported_svg_attribs = ['viewBox', 'xmlns']
     _supported_svg = ['path', 'circle', 'rect', 'ellipse']
@@ -62,6 +68,8 @@ class SSV:
         self._x_series_unit = x_series_unit
         self._elements = {element: {} for element in [cls.__name__.lower() for
                                                       cls in elements.Element.__subclasses__()]}
+        with open(os.path.join('ssv', 'static', 'data', 'ssv-overlays.json')) as f:
+            self._svg_overlays = json.load(f)
         self._svg_out = None
         self._font_size = font_size
         self._reserved_element_ids = set()
@@ -127,17 +135,20 @@ class SSV:
         # Render static web page for "full" mode
         if mode == 'full':
             return template.render({'title': self._title, 'element_data': json.dumps(element_data),
-                                    'uuid': uuid.uuid4(),
+                                    'uuid': 's' + str(uuid.uuid4()), 'svg_overlays': json.dumps(self._svg_overlays),
                                     'x_series': self._x_series,
                                     'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
                                     'sim_visual': ET.tostring(self._svg_root, 'utf-8', method='xml').decode('utf-8')})
 
-        # Render piecemeal visual
-        elif mode == 'partial':
+        # Render html
+        elif mode == 'html':
             return template.render({'element_data': json.dumps(element_data), 'uuid': uuid.uuid4(),
                                     'x_series': self._x_series,
                                     'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
                                     'sim_visual': ET.tostring(self._svg_root, 'utf-8', method='xml').decode('utf-8')})
+
+        else:
+            raise ValueError('inout for \'mode\' is not recognizable')
 
     # Function to clean and ready svg for output
     # Cleans svg of troublesome attributes and searches for user-provided element ids to bind data to

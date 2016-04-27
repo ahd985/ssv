@@ -1,6 +1,8 @@
+import itertools
 import os
 import random
 import string
+import time
 import xml.etree.ElementTree as ET
 
 import numpy as np
@@ -119,9 +121,9 @@ class TestElements:
                 with pytest.raises(error_cls):
                     cls(*args)
 
-    condition_test_classes = [cls for cls in Element.__subclasses__() if cls.__name__ not in ['Table', 'ColorScale']]
+    _condition_test_classes = [cls for cls in Element.__subclasses__() if cls.__name__ not in ['Table', 'ColorScale']]
 
-    @pytest.mark.parametrize("cls", condition_test_classes)
+    @pytest.mark.parametrize("cls", _condition_test_classes)
     def test_valid_condition_inputs(self, cls):
         cls_args = data_generator.get_element_input(True, cls.__name__)[0]
         element = cls(*cls_args)
@@ -131,7 +133,7 @@ class TestElements:
             for condition_kwargs in condition_kwarg_combos:
                 cls(*cls_args).add_condition(condition_type, **condition_kwargs)
 
-    @pytest.mark.parametrize("cls", condition_test_classes)
+    @pytest.mark.parametrize("cls", _condition_test_classes)
     def test_invalid_condition_inputs(self, cls):
         cls_args = data_generator.get_element_input(True, cls.__name__)[0]
         element = cls(*cls_args)
@@ -145,24 +147,55 @@ class TestElements:
 
 
 class TestSSV:
-    def test_bad_svg(self):
+    _good_svg_path = os.path.join('testing', 'data', 'good_svg.svg')
+    _bad_svg_path = os.path.join('testing', 'data', 'bad_svg.svg')
+    _valid_inputs = [[[1, 2, 3]], ['x'], [_good_svg_path], ['My Simulation'], [10]]
+
+    def test_valid_instantiation(self):
+        for args in list(itertools.product(*self._valid_inputs)):
+            SSV.create_vis(*args)
+
+    def test_invalid_instantiation(self):
+        # x_series
+        with pytest.raises(ValueError):
+            invalid_arg_combos = [[args[0]] for args in self._valid_inputs]
+            invalid_arg_combos[0] = [['x', 'y', 'z']]
+            for invalid_args in list(itertools.product(*invalid_arg_combos)):
+                SSV.create_vis(*invalid_args)
+        # x_series_unit
+        with pytest.raises(TypeError):
+            invalid_arg_combos = [[args[0]] for args in self._valid_inputs]
+            invalid_arg_combos[1] = [1, True]
+            for invalid_args in itertools.product(*invalid_arg_combos):
+                SSV.create_vis(*invalid_args)
+        # svg_path
+        with pytest.raises(FileNotFoundError):
+            invalid_arg_combos = [[args[0]] for args in self._valid_inputs]
+            invalid_arg_combos[2] = ['C:']
+            for invalid_args in itertools.product(*invalid_arg_combos):
+                SSV.create_vis(*invalid_args)
+        # title
+        with pytest.raises(TypeError):
+            invalid_arg_combos = [[args[0]] for args in self._valid_inputs]
+            invalid_arg_combos[3] = [1, True]
+            for invalid_args in itertools.product(*invalid_arg_combos):
+                SSV.create_vis(*invalid_args)
+        # font_size
+        with pytest.raises(TypeError):
+            invalid_arg_combos = [[args[0]] for args in self._valid_inputs]
+            invalid_arg_combos[4] = ['x']
+            for invalid_args in itertools.product(*invalid_arg_combos):
+                SSV.create_vis(*invalid_args)
+
+    def test_bad_svg_(self):
         with pytest.raises(ET.ParseError):
-            SSV([0], 'Title', os.path.join('testing', 'data', 'bad_svg.svg'))
+            SSV.create_vis([0], 'Title', os.path.join('testing', 'data', 'bad_svg.svg'))
 
-    def element_name_collision(self):
-        pass
-
-    def incompatible_svg(self):
-        pass
-
-    def ssv_bad_initialization(self):
-        pass
-
-    def element_bad_initialization(self):
-        pass
-
-    def condition_bad_initialization(self):
-        pass
+    def test_element_id_collision(self):
+        with pytest.raises(ValueError):
+            vis = SSV.create_vis(*[i[0] for i in self._valid_inputs])
+            vis.add_element('cell', 'id_1')
+            vis.add_element('heatmap', 'id_1')
 
 
 class TestSystem:
@@ -185,4 +218,12 @@ class TestSystem:
         for example in ['example_%d' % i for i in range(1, 5)]:
             path = os.path.join(base_dir, 'examples', example, '%s.html' % example)
             driver.get("file:///%s" % path)
+
+            # Wait a few seconds - this can be improved
+            time.sleep(1)
+
+            driver.find_element_by_id('play-button').click()
+
+            # Wait a few seconds - this can be improved
+            time.sleep(1)
             assert driver.find_element(By.XPATH, '//body').get_attribute("JSError") is None

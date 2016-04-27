@@ -7,7 +7,7 @@
     <style> {% include 'static/css/ssv.css' %} </style>
 </head>
 <body>
-  <div class="ssv-panel">
+  <div class="ssv-panel" id="{{ uuid }}">
       <div class="row full-width">
         <div class="small-12 large-12 columns sim-title" align="center"><h1>{{ title }}</h1></div>
       </div>
@@ -51,9 +51,11 @@
   <script> {% include 'static/js/foundation.dropdown.js' %} </script>
   <script> {% include 'static/js/ssv.js' %} </script>
   <script>
-      var x_series = {{ x_series }}
-      var element_data = {{ element_data }}
-      element_contexts["{{ uuid }}"] = new ElementContext(x_series, element_data)
+      var uuid = "{{ uuid }}";
+      var x_series = {{ x_series }};
+      var element_data = {{ element_data }};
+      var svg_overlays = {{ svg_overlays }};
+      add_element_context(uuid, x_series, element_data, svg_overlays);
   </script>
 </body>
 </html>
