@@ -102,13 +102,22 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
         $(this.controls.slider_selector)
             .attr('data-options', 'initial: 0; start: 0; end: ' + (this.x_series.length - 1).toString())
             .attr('ssv-id', this.uuid);
-        $(document).foundation();
-        $('[data-slider]').on('change.fndtn.slider', function(){
-            var context = element_contexts[d3.select(this).attr('ssv-id')];
-            setTimeout(function() {
-                context.controls.current_x = Math.round($(context.controls.slider_selector).attr('data-slider'));
-                context.update_elements(context.controls.current_x);
-            }, 200);
+
+        var context = this;
+        $(function() {
+            $(context.controls.slider_selector).slider({
+                value:0,
+                min: 0,
+                max: (context.x_series.length - 1),
+                step: 1,
+                slide: function(event, ui) {
+                    var context = element_contexts[d3.select(this).attr('ssv-id')];
+                    setTimeout(function() {
+                        context.controls.current_x = ui.value;
+                        context.update_elements(ui.value);
+                    }, 200);
+                }
+            });
         });
 
         // Clicking on play button automates the forward run of the x_series
@@ -141,7 +150,7 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
                 } else {
                     context.controls.play_speed += context.controls.speed_step
                 }
-            $(context.controls.speed_selector).html(context.controls.play_speed.toString() + 'x')
+            $(context.controls.speed_selector + ' span').html(context.controls.play_speed.toString() + 'x')
         })
     };
 
@@ -151,7 +160,7 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
         window.setTimeout(function() {
             if (context.controls.play_enabled && context.controls.current_x < context.x_series.length) {
                 context.controls.current_x += 1;
-                $(context.controls.slider_selector).foundation('slider', 'set_value', context.controls.current_x);
+                $(context.controls.slider_selector).slider('value', context.controls.current_x);
                 context.update_elements(context.controls.current_x);
 
 
@@ -807,11 +816,12 @@ function Table(report_ids, report_description, report_conditions, report_id) {
                 .attr("width", width)
                 .attr("height", 500)
                 .append('xhtml:table')
+                .attr('class', 'table')
                 .attr('id', table_id)
                 .datum(this.conditions[0].tabular_data);
 
             // Add table header
-            table.append('tr')
+            table.append('thead').append('tr')
                 .selectAll()
                 .data(this.conditions[0].headers)
                 .enter()
@@ -819,6 +829,9 @@ function Table(report_ids, report_description, report_conditions, report_id) {
                 .text(function(d) {return d})
                 .style('font-size', font_scale.toString() + 'em');
             }
+
+            // Add tbody
+            table.append('tbody');
 
         // Report is initialized - prevent further initialization
         this.report_initialized = true
@@ -830,7 +843,7 @@ function Table(report_ids, report_description, report_conditions, report_id) {
         var table_id = 'table_' + this.report_id;
         var font_scale = d3.select('#ssv-svg').attr('font-scale');
 
-        table = d3.select('#' + table_id);
+        table = d3.select('#' + table_id + ' tbody');
 
         // Add content
         row = table.selectAll('.content-row')

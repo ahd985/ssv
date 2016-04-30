@@ -1,26 +1,27 @@
-<div class="full-width sim-visual">
-    <div class="small-12 large-12 columns sim-visual" align="center">{{ sim_visual }}</div>
-</div>
-<div class="full-width sim-control">
-    <div class="small-10 large-10 columns full-height sim-control" style="display: table">
-        <div style="display: table-cell;vertical-align: middle;">
-            <div class="range-slider" data-slider>
-                <span class="range-slider-handle ssv-slider" role="slider" tabindex="0"></span>
-                <span class="range-slider-active-segment"></span>
-                <input type="hidden">
-            </div>
-        </div>
+<style> {% include 'static/css/ssv.css' %} </style>
+<div class="ssv-panel" id="{{ uuid }}" style="height: {{ height }}px; width: 100%;">
+  <div class="row" style="height:90%;width:100%;margin-left:auto;margin-right:auto;max-width: initial;">
+    <div class="col-sm-12 sim-visual" align="center" style="height:100%">{{ sim_visual }}</div>
+  </div>
+  <div class="row" style="height:10%;width:100%;margin-left:auto;margin-right:auto;max-width: initial;">
+    <div class="col-sm-8 full-height" style="display: table">
+      <div style="display: table-cell;vertical-align: middle;">
+        <div class="range-slider ssv-slider"></div>
+      </div>
     </div>
-    <div class="small-2 large-2 columns full-height sim-control" align="center" style="display: table">
-        <div class="ssv-control radius" style="display: table-cell; vertical-align: middle; color: white">
-            <span id="x-series-val"></span>
-            <span><i><b>{{ x_series_unit }}</b></i></span>
-        </div>
+    <div class="col-sm-4 full-height" align="center" style="display: table">
+      <div style="display: table-cell; vertical-align: middle">
+        <span id="x-series-val"></span>
+        <span><i><b>{{ x_series_unit }}</b></i></span>
+      </div>
     </div>
+  </div>
 </div>
 <script>
-  x_series = {{ x_series }}
-  element_data = {{ element_data }}
-  color_scales_data = {{ color_scales_data }}
-  element_contexts["{{ uuid }}"] = new ElementContext(x_series, element_data, color_scales_data)
+  var uuid = "{{ uuid }}";
+  var x_series = {{ x_series }};
+  var element_data = {{ element_data }};
+  var svg_overlays = {{ svg_overlays }};
+  add_element_context(uuid, x_series, element_data, svg_overlays);
 </script>
+

@@ -68,11 +68,15 @@ class Vis:
         self._x_series_unit = x_series_unit
         self._elements = {element: {} for element in [cls.__name__.lower() for
                                                       cls in elements.Element.__subclasses__()]}
-        with open(os.path.join('ssv', 'static', 'data', 'ssv-overlays.json')) as f:
-            self._svg_overlays = json.load(f)
+
+        self._svg_overlays = {"water":"<pattern id=\"water\" x=\"10px\" y=\"2px\" width=\"8px\" "
+                                      "height=\"10px\" patternUnits=\"userSpaceOnUse\"><circle "
+                                      "cx=\"4px\" cy=\"-1px\" r=\"4px\" fill=\"none\" stroke=\"white\" "
+                                      "stroke-width=\"-1px\"/></pattern>"}
         self._svg_out = None
         self._font_size = font_size
         self._reserved_element_ids = set()
+        self._rendered = False
 
     def add_element(self, element_type, element_ids, element_description='', **kwargs):
         if not isinstance(element_type, str):
@@ -106,8 +110,6 @@ class Vis:
 
     # Save ssv model as .html file
     def save_visualization(self, file_path):
-        if not isinstance(file_path, str):
-            raise TypeError('\'file_path\' input must be a string.')
         ext = '.html'
         if len(file_path) < len(ext) or not ext == file_path[-len(ext)] and os.path.basename(file_path) != '':
             file_path += ext
@@ -116,9 +118,11 @@ class Vis:
             f.write(self.render_model())
 
     # Render ssv model using javascript, html, and css
-    def render_model(self, mode='full'):
+    def render_model(self, mode='full', height=500):
+        if not isinstance(height, (int, float)) or height < 0:
+            raise TypeError('Input for visualization height must be a number greater than 0')
+
         env = Environment(loader=PackageLoader('ssv', ''))
-        template = env.get_template(os.path.join('templates', 'ssv.html'))
         element_data = {element_type: [] for element_type in self._elements.keys()}
         self._prepare_svg()
 
@@ -134,6 +138,7 @@ class Vis:
 
         # Render static web page for "full" mode
         if mode == 'full':
+            template = env.get_template(os.path.join('templates', 'ssv.html'))
             return template.render({'title': self._title, 'element_data': json.dumps(element_data),
                                     'uuid': 's' + str(uuid.uuid4()), 'svg_overlays': json.dumps(self._svg_overlays),
                                     'x_series': self._x_series,
@@ -142,8 +147,10 @@ class Vis:
 
         # Render html
         elif mode == 'html':
+            template = env.get_template(os.path.join('templates', 'ssv_partial.html'))
             return template.render({'element_data': json.dumps(element_data), 'uuid': uuid.uuid4(),
-                                    'x_series': self._x_series,
+                                    'x_series': self._x_series, 'svg_overlays': json.dumps(self._svg_overlays),
+                                    'height': height,
                                     'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
                                     'sim_visual': ET.tostring(self._svg_root, 'utf-8', method='xml').decode('utf-8')})
 

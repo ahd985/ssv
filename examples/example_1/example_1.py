@@ -94,7 +94,7 @@ def run():
         for t in np.arange(1, end_time+time_step, time_step):
             # Check if current time span is within or includes any steam_flow entry
             # and calculate integrated enthalpy addition
-            time_mask = ((steam_flow[0] >= t) & (steam_flow[0] < t + time_step))            | ((steam_flow[0] < t) & (steam_flow[1] > t))
+            time_mask = ((steam_flow[0] >= t) & (steam_flow[0] < t + time_step)) | ((steam_flow[0] < t) & (steam_flow[1] > t))
             start_times = steam_flow[0][time_mask]
             start_times[start_times < t] = t
             end_times = steam_flow[1][time_mask]
