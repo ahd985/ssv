@@ -148,7 +148,7 @@ class Vis:
         # Render html
         elif mode == 'html':
             template = env.get_template(os.path.join('templates', 'ssv_partial.html'))
-            return template.render({'element_data': json.dumps(element_data), 'uuid': uuid.uuid4(),
+            return template.render({'element_data': json.dumps(element_data), 'uuid': 's' + str(uuid.uuid4()),
                                     'x_series': self._x_series, 'svg_overlays': json.dumps(self._svg_overlays),
                                     'height': height,
                                     'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
@@ -231,7 +231,7 @@ class Vis:
             tag = self._namespace_strip(sub_element.tag)
 
             if tag == 'g':
-                target_elements += self.search_id(sub_element, name_id)
+                target_elements += self._find_all_id(sub_element, name_id)
             elif tag in self._supported_svg:
                 sub_element.attrib['id'] = name_id
                 target_elements.append(sub_element)

@@ -151,7 +151,8 @@ class Cell(Element):
             kwargs_dynamic = {'type': 'info',
                               'description': kwargs['description_dynamic'],
                               'section_label': kwargs['section_label'] if 'section_label' in kwargs else '',
-                              'unit': kwargs['unit_dynamic'] if 'unit_dynamic' in kwargs else ''}
+                              'unit': kwargs['unit_dynamic'] if 'unit_dynamic' in kwargs else '',
+                              'report': True}
             if kwargs['type'] == 'level_dynamic':
                 kwargs_dynamic['data'] = kwargs['data_dynamic']
             elif kwargs['type'] == 'zonal_y':
