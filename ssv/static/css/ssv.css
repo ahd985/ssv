@@ -51,7 +51,6 @@ svg {
 }
 
 .sim-visual {
-    font-size: {{ font_size }}px;
     height:80vh;
     padding:2%;
 }

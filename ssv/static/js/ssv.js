@@ -706,7 +706,9 @@ function Heatmap(uuid, heatmap_ids, heatmap_description, heatmap_conditions, hea
                 .data(function(d) {return d[0]})
                 .enter()
                 .append('g')
-                .attr('class', 'x_section');
+                .attr('class', 'x_section')
+                .attr('stroke', 'black')
+                .attr('stroke-width','1px');
 
             // Add a color bin for every y slot across the axis
             x_section.selectAll('.bin')
@@ -901,7 +903,10 @@ function ColorScale(uuid, color_scale_ids, color_scale_description, color_scale_
             // Set legend font size to font scale property
             var parent = d3.select(sel.node().parentNode);
             var legend = parent.append('g').attr('transform', 'translate(' + pos_x + ',' + pos_y + ')')
-                .append('g').attr('font-size', font_scale + 'em');
+                .append('g')
+                .attr('font-size', font_scale + 'em')
+                .attr('stroke', 'black')
+                .attr('stroke-width','1px');
 
             // Calculate discrete color bin scale
             var color_scale = this.conditions[0].color_scale;

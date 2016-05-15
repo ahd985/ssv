@@ -13,7 +13,8 @@
         <div class="col-sm-12 col-md-12 sim-title" align="center"><h1 style="color:white">{{ title }}</h1></div>
       </div>
       <div class="row full-width">
-        <div class="col-sm-12 col-md-12 sim-visual" align="center">{{ sim_visual }}</div>
+        <div class="col-sm-12 col-md-12 sim-visual"
+             align="center" style="font-size:{{ font_size }}px">{{ sim_visual }}</div>
       </div>
       <div class="row full-width ssv-control">
         <div class="col-sm-6 col-md-1 full-height ssv-button sim-control">
@@ -47,8 +48,8 @@
   <script>
       var uuid = "{{ uuid }}";
       var x_series = {{ x_series }};
-      var element_data = {{ element_data }};
       var svg_overlays = {{ svg_overlays }};
+      var element_data = {{ element_data }};
       add_element_context(uuid, x_series, element_data, svg_overlays);
   </script>
 </body>

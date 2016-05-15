@@ -1,6 +1,6 @@
 # Simplified Simulation Visualization
 
-This package evolved from the need to present complex simulation results to general audiences without paying thousands of dollars.
+This package evolved from the need to present complex simulation results in a simplified format.
 
 ## Instructions
 
