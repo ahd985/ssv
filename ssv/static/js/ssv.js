@@ -2,7 +2,10 @@
 function ElementContext(uuid, x_series, element_data, svg_overlays) {
     // Initialize properties
     this.uuid = uuid;
-    this.svg_selector = '#' + this.uuid + ' svg';
+    this.svg_selector = '#' + this.uuid + ' #ssv-svg';
+    this.svg_div_selector = '#' + this.uuid + ' .sim-visual';
+    this.svg_zoom_selector = '#' + this.uuid + ' #zoom-container';
+    this.svg_overlay_selector = '#' + this.uuid + ' #svg-overlay';
     // -- Element_data is the 'y' data representing svg elements that corresponds to the x_series data
     this.x_series = x_series;
     this.element_data = element_data;
@@ -37,18 +40,18 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
             svg.append('defs')
         }
 
-        for (var i in this.svg_overlays) {
-            svg.select('defs').html(svg.select('defs').html() + this.svg_overlays[i])
+        for (var k in this.svg_overlays) {
+            svg.select('defs').html(svg.select('defs').html() + this.svg_overlays[k])
         }
     };
 
     // Function to calculate scale of svg view box to parent svg div
     // This is required to scale user input font size correctly
     this.set_font_scale = function() {
-        var font_scale = parseFloat(d3.select('#' + this.uuid + ' #ssv-svg').attr('viewBox').split(' ')[3]) /
-            d3.select('#' + this.uuid + ' .sim-visual').node().getBoundingClientRect().height;
+        var font_scale = parseFloat(d3.select(this.svg_selector).attr('viewBox').split(' ')[3]) /
+            d3.select(this.svg_div_selector).node().getBoundingClientRect().height;
         this.font_scale = font_scale;
-        d3.select('#' + this.uuid + ' #ssv-svg').attr('font-scale', font_scale)
+        d3.select(this.svg_selector).attr('font-scale', font_scale)
     };
 
     this.initialize_elements = function() {
@@ -178,7 +181,7 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
     // Initializer of pan and zoom functionality
     this.initialize_pan_zoom = function() {
         // Add border to svg to outline zoom/pan zone
-        var ssv_svg = d3.select('#' + this.uuid + ' #ssv-svg');
+        var ssv_svg = d3.select(this.svg_selector);
         ssv_svg.append('rect')
             .attr('height', '100%')
             .attr('width', '100%')
@@ -194,20 +197,20 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
         var y1 = parseFloat(viewbox[1]);
         var y2 = parseFloat(viewbox[3]);
 
-        var div_bbox = d3.select('#' + this.uuid + ' .sim-visual').node().getBoundingClientRect();
+        var div_bbox = d3.select(this.svg_div_selector).node().getBoundingClientRect();
 
         var max_width = (x2 - x1);
         var max_height = (y2 - y1);
 
         // Apply overlay to control zoom/pan;
-        var ssv_overlay = d3.select('#' + this.uuid + ' #ssv-overlay')
+        var ssv_overlay = d3.select(this.svg_overlay_selector)
             .attr('y', svg_bbox.y)
             .attr('height', svg_bbox.height)
             .attr('x', svg_bbox.x)
             .attr('width', svg_bbox.width);
 
         // Apply zoom/pan features and pan limit
-        var zoom_container = d3.select('#' + this.uuid + ' #zoom-container');
+        var zoom_container = d3.select(this.svg_zoom_selector);
         var zoom = d3.behavior.zoom()
             .scale(1)
             .scaleExtent([1, 8])
@@ -222,7 +225,7 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
                 zoom_container.attr('transform', 'translate(' + [tx,ty] + ')scale(' + scale + ')')
             });
 
-        d3.select('#' + this.uuid + ' #ssv-overlay').call(zoom);
+        d3.select(this.svg_overlay_selector).call(zoom);
     };
 
     // Call all initialization functions
@@ -245,14 +248,16 @@ function num_format(val) {
 // Inheritable parent class of every element type
 function Element(uuid, element_ids, element_description, element_conditions, report_id) {
     this.uuid = uuid;
+    this.svg_selector = '#' + this.uuid + ' #ssv-svg';
     this.ids = element_ids;
     // -- Build list of selectors from ids
     this.selectors = [];
     for (var i in this.ids) {
         this.selectors.push('#' + this.uuid + ' #' + this.ids[i])
-    }
+    };
     // -- Report id represents id of placement element for element report - Optional property
     this.report_id = report_id;
+    this.report_selector = '#' + this.uuid + ' #' +  this.report_id;
     // -- Element description is printed at top of optional report
     this.description = element_description;
     // -- Array of element conditions - data types that describe simulation characteristics such as
@@ -265,22 +270,21 @@ function Element(uuid, element_ids, element_description, element_conditions, rep
     // Loop through conditions and check for color scale
     // If color scale exists, use d3 to generate domain and range of scale.
     this.initialize_color_scales = function() {
-        for (var i in this.conditions) {
-            condition = this.conditions[i];
+        this.conditions.map(function(condition) {
             if ('color_scale' in condition && 'color_levels' in condition) {
                 var color_scale = condition.color_scale;
                 var color_levels = condition.color_levels;
                 condition.color_scale = d3.scale.quantile()
                     .domain([d3.min(color_levels), d3.max(color_levels)])
                     .range(color_scale);
-            }
-        }
+            };
+        });
     };
     this.initialize_color_scales();
 
     // Report initialization function - called if report_id provided and report_initialized == false
     this.initialize_report = function() {
-        var sel = d3.select('#' + this.uuid + ' #' +  this.report_id);
+        var sel = d3.select(this.report_selector);
         var parent = d3.select(sel.node().parentNode);
 
         if (!sel.empty()) {
@@ -313,7 +317,7 @@ function Element(uuid, element_ids, element_description, element_conditions, rep
             sel.style('visibility', 'hidden');
 
             // Reference font scale from svg attr
-            var font_scale = d3.select('#' + this.uuid + ' #ssv-svg').attr('font-scale');
+            var font_scale = d3.select(this.svg_selector).attr('font-scale');
 
             // Append new parent element for report
             var report = parent.append('g')
@@ -431,7 +435,7 @@ function Element(uuid, element_ids, element_description, element_conditions, rep
         if (!this.report_initialized) {this.initialize_report()}
 
         // Get parent of element with report_id and select all value text in report
-        var parent = d3.select(d3.select('#' + this.uuid + ' #' + this.report_id).node().parentNode);
+        var parent = d3.select(d3.select(this.report_selector).node().parentNode);
         var value_texts = parent.selectAll('.value-text')
             .text(function(d) {return d[x]});
     };
@@ -439,7 +443,8 @@ function Element(uuid, element_ids, element_description, element_conditions, rep
     // Function to initialize patterns for element
     this.initialize_pattern = function(sel, pattern_id, prop_data, style_apply) {
         // Add svg defs section if none exist
-        if (d3.select('#' + this.uuid + ' svg defs').empty()) {
+        var svg = d3.select(this.svg_selector);
+        if (svg.select('defs').empty()) {
             svg.append('defs')
         }
 
@@ -537,19 +542,18 @@ function Cell(uuid, cell_ids, cell_description, cell_conditions, cell_report_id)
     var cell = new Element(uuid, cell_ids, cell_description, cell_conditions, cell_report_id);
 
     cell.update = function(x) {
-        for (var isel in this.selectors) {
-            var sel = d3.select(this.selectors[isel]);
-            var pattern_id = 'pattern_' + this.ids[isel];
+        var _cell = this;
+        _cell.selectors.map(function(d, i) {
+            var sel = d3.select(d);
+            var pattern_id = 'pattern_' + _cell.ids[i];
 
             var order_prop = 'y';
             var props = [order_prop, 'color', 'opacity', 'overlay'];
 
-            if (!this.patterns_initialized) {
+            if (!_cell.patterns_initialized) {
                 var prop_data = [];
 
-                for (var i in this.conditions) {
-                    var condition = this.conditions[i];
-
+                _cell.conditions.map(function(condition) {
                     var order_val, color, opacity, overlay;
                     var max_order = 1.01;
 
@@ -597,18 +601,18 @@ function Cell(uuid, cell_ids, cell_description, cell_conditions, cell_report_id)
                         }));
                         prop_data = prop_data.concat(d3.zip.apply(this, prop_data_slice));
                     }
-                }
+                });
 
                 // Zip data
                 prop_data = d3.zip.apply(this, prop_data);
-                this.initialize_pattern(sel, pattern_id, prop_data, 'fill');
+                _cell.initialize_pattern(sel, pattern_id, prop_data, 'fill');
             }
 
-            this.update_pattern(x, sel, pattern_id);
-        };
+            _cell.update_pattern(x, sel, pattern_id);
+        });
 
-        this.patterns_initialized = true;
-        if (this.report_id) {this.update_report(x)}
+        _cell.patterns_initialized = true;
+        if (_cell.report_id) {_cell.update_report(x)}
     };
 
     return cell
@@ -619,18 +623,17 @@ function Line(uuid, line_ids, line_description, line_conditions, line_report_id)
     var line = new Element(uuid, line_ids, line_description, line_conditions, line_report_id);
 
     line.update = function(x) {
-        for (var isel in this.selectors) {
-            var sel = d3.select(this.selectors[isel]);
-            var pattern_id = 'pattern_' + this.ids[isel];
+        var _line = this;
+        _line.selectors.map(function(d, i) {
+            var sel = d3.select(d);
+            var pattern_id = 'pattern_' + _line.ids[i];
 
             var order_prop = 'y';
             var props = [order_prop, 'color', 'opacity', 'overlay'];
             var prop_data = [];
 
-            if (!this.patterns_initialized) {
-                for (var i in this.conditions) {
-                    var condition = this.conditions[i];
-
+            if (!_line.patterns_initialized) {
+                _line.conditions.map(function(condition) {
                     var order_val, color, opacity, overlay;
                     var max_order = 1.01;
                     opacity = condition.opacity;
@@ -640,7 +643,7 @@ function Line(uuid, line_ids, line_description, line_conditions, line_report_id)
                         // equal_y represents an open path element with equally sized patterns along the y axis
                         // number of y regions dictated by len of 2nd axis
                         var prop_data_slice = [];
-                        prop_data_slice = prop_data_slice.concat(condition.data_2d.map(function(arr, j) {
+                        prop_data_slice = prop_data_slice.concat(condition.data_2d.map(function(arr) {
                             return arr.map(function(d, k) {
                                 var order_val = k / arr.length;
                                 var color = condition.color_scale(d);
@@ -650,18 +653,18 @@ function Line(uuid, line_ids, line_description, line_conditions, line_report_id)
 
                         prop_data = prop_data.concat(d3.zip.apply(this, prop_data_slice));
                     }
-                }
+                });
 
                 // Zip data
                 prop_data = d3.zip.apply(this, prop_data);
-                this.initialize_pattern(sel, pattern_id, prop_data, 'stroke')
+                _line.initialize_pattern(sel, pattern_id, prop_data, 'stroke')
             };
 
-            this.update_pattern(x, sel, pattern_id);
-        };
+            _line.update_pattern(x, sel, pattern_id);
+        });
 
-        this.patterns_initialized = true;
-        if (this.report_id) {this.update_report(x)}
+        _line.patterns_initialized = true;
+        if (_line.report_id) {_line.update_report(x)}
     };
 
     return line
@@ -677,8 +680,9 @@ function Heatmap(uuid, heatmap_ids, heatmap_description, heatmap_conditions, hea
     heatmap.initialize = function() {
         var initial_vals = this.conditions[0].data_3d[0];
 
-        for (var isel in this.selectors) {
-            var sel = d3.select(this.selectors[isel]);
+        var _heatmap = this;
+        _heatmap.selectors.map(function(d) {
+            var sel = d3.select(d);
             var parent = d3.select(sel.node().parentNode);
 
             var bbox = sel.node().getBBox();
@@ -691,8 +695,8 @@ function Heatmap(uuid, heatmap_ids, heatmap_description, heatmap_conditions, hea
                 .append('g');
 
             // go through data and apply color scale
-            var scale = this.conditions[0].color_scale;
-            var data = this.conditions[0].data_3d.map(function(arr_2d) {
+            var scale = _heatmap.conditions[0].color_scale;
+            var data = _heatmap.conditions[0].data_3d.map(function(arr_2d) {
                 return arr_2d.map(function(arr) {
                     return arr.map(function(d) {
                         return scale(d)
@@ -722,12 +726,13 @@ function Heatmap(uuid, heatmap_ids, heatmap_description, heatmap_conditions, hea
                 .attr('height', bbox.height / (initial_vals.length));
 
             x_section.each(function (d, i) {d3.select(this).selectAll(".bin").attr("y", y(i))});
-        }
+        });
     };
 
     heatmap.update = function(x) {
-        for (var isel in this.selectors) {
-            var sel = d3.select(this.selectors[isel]);
+        var _heatmap = this;
+        _heatmap.selectors.map(function(d) {
+            var sel = d3.select(d);
             var parent = d3.select(sel.node().parentNode);
 
             var g = parent.select('g').select('g');
@@ -737,9 +742,9 @@ function Heatmap(uuid, heatmap_ids, heatmap_description, heatmap_conditions, hea
                 .data(function (d) { return d; })
                 .transition()
                 .style('fill', function(d) {return d});
-        }
+        });
 
-        if (this.report_id) {this.update_report(x)}
+        if (_heatmap.report_id) {_heatmap.update_report(x)}
     };
 
     heatmap.initialize();
@@ -753,12 +758,13 @@ function Toggle(uuid, toggle_ids, toggle_description, toggle_conditions, toggle_
 
     toggle.data_initialized = false;
     toggle.update = function(x) {
-        for (var isel in this.selectors) {
-            var sel = d3.selectAll(this.selectors[isel]);
+        var _toggle = this;
+        _toggle.selectors.map(function(d) {
+            var sel = d3.selectAll(d);
 
-            if (!this.data_initialized) {
-                if (this.conditions[0].type == 'show_hide') {
-                    sel.datum(this.conditions[0].data)
+            if (!_toggle.data_initialized) {
+                if (_toggle.conditions[0].type == 'show_hide') {
+                    sel.datum(_toggle.conditions[0].data)
                 }
             }
 
@@ -768,10 +774,10 @@ function Toggle(uuid, toggle_ids, toggle_description, toggle_conditions, toggle_
             } else {
                 sel.transition().attr('opacity',0)
             }
-        };
+        });
 
-        this.data_initialized = true;
-        if (this.report_id) {this.update_report(x)}
+        _toggle.data_initialized = true;
+        if (_toggle.report_id) {_toggle.update_report(x)}
     };
 
     return toggle
@@ -794,7 +800,7 @@ function Table(uuid, report_ids, report_description, report_conditions, report_i
 
     // If we have tabular (table-like) data overwrite base element report function
     table.initialize_report = function () {
-        var sel = d3.select('#' + this.uuid + ' #' + this.report_id);
+        var sel = d3.select(this.report_selector);
         var parent = d3.select(sel.node().parentNode);
 
         if (!sel.empty()) {
@@ -811,7 +817,7 @@ function Table(uuid, report_ids, report_description, report_conditions, report_i
             sel.style('visibility', 'hidden');
 
             // Reference font scale from svg attr
-            var font_scale = d3.select('#' + this.uuid + ' #ssv-svg').attr('font-scale');
+            var font_scale = d3.select(this.svg_selector).attr('font-scale');
 
             // Append new parent element for table
             var table = parent.append('g')
@@ -846,7 +852,7 @@ function Table(uuid, report_ids, report_description, report_conditions, report_i
         if (!this.report_initialized) {this.initialize_report()}
 
         var table_id = 'table_' + this.report_id;
-        var font_scale = d3.select('#' + this.uuid + ' #ssv-svg').attr('font-scale');
+        var font_scale = d3.select(this.svg_selector).attr('font-scale');
 
         table = d3.select('#' + this.uuid + ' #' + table_id + ' tbody');
 
@@ -881,10 +887,10 @@ function ColorScale(uuid, color_scale_ids, color_scale_description, color_scale_
 
     // Overwrite base element report function to show color scale
     color_scale.initialize_report = function () {
-        var sel = d3.select('#' + this.uuid + ' #' + this.report_id);
+        var sel = d3.select(this.report_selector);
         var parent = d3.select(sel.node().parentNode);
         
-        var font_scale = d3.select('#' + this.uuid + ' #ssv-svg').attr('font-scale');
+        var font_scale = d3.select(this.svg_selector).attr('font-scale');
 
         // If scale selector not empty fill it in with color scale legend
         if (!sel.empty()) {

@@ -1,4 +1,3 @@
-import itertools
 import json
 import xml.etree.ElementTree as ET
 import os
