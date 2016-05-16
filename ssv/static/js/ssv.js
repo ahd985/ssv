@@ -23,7 +23,7 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
         speed_selector: '#' + this.uuid + ' #speed-button',
         x_val_selector: '#' + this.uuid + ' #x-series-val',
         pause_icon_selector: '#' + this.uuid + ' #pause-icon',
-        play_icon_selector: '#' + this.uuid + ' #play-icon',
+        play_icon_selector: '#' + this.uuid + ' #play-icon'
     };
 
     // -- Pattern overlay (e.g., water) data provided by Python

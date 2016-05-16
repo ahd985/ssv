@@ -1,1 +1,1 @@
-from . import ssv
+from .ssv import SSV

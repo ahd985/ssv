@@ -10,10 +10,10 @@ import pytest
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
-from ssv.ssv import SSV
+from ssv import SSV
 from ssv.data_validators import validate_array, validate_colors, validate_array_slices, validate_color
-from testing.data import data_generator
-from ssv.elements import Element, ColorScale
+from tests.data import data_generator
+from ssv.elements import Element
 
 
 def get_subclass_from_name(cls, name):
@@ -147,8 +147,8 @@ class TestElements:
 
 
 class TestSSV:
-    _good_svg_path = os.path.join('testing', 'data', 'good_svg.svg')
-    _bad_svg_path = os.path.join('testing', 'data', 'bad_svg.svg')
+    _good_svg_path = os.path.join('tests', 'data', 'good_svg.svg')
+    _bad_svg_path = os.path.join('tests', 'data', 'bad_svg.svg')
     _valid_inputs = [[[1, 2, 3]], ['x'], [_good_svg_path], ['My Simulation'], [10]]
 
     def test_valid_instantiation(self):
@@ -189,7 +189,7 @@ class TestSSV:
 
     def test_bad_svg_(self):
         with pytest.raises(ET.ParseError):
-            SSV.create_vis([0], 'Title', os.path.join('testing', 'data', 'bad_svg.svg'))
+            SSV.create_vis([0], 'Title', os.path.join('tests', 'data', 'bad_svg.svg'))
 
     def test_element_id_collision(self):
         with pytest.raises(ValueError):

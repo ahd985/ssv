@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 
-from ssv.ssv import SSV
+from ssv import SSV
 
 
 def run():

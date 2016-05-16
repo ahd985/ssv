@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 import scipy.special as special
-from ssv.ssv import SSV
+from ssv import SSV
 
 
 def run():

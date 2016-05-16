@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 import pandas as pd
-from ssv.ssv import SSV
+from ssv import SSV
 
 
 def run():
