@@ -11,8 +11,26 @@ _validate_color_levels = lambda a, b, c: validate_array(a, b, 'float', 1, 1)
 _validate_1d_numeric = lambda a, b, c: validate_array(a, b, 'float', 1, 1, c)
 
 
-# Inheritable class for all element subclasses
 class Element:
+    """Class representing visualization element.
+
+        This class can represent many real world simulation objects (e.g., vessels, pipes, etc).  Note that
+            elements can include "reports" that indicate certain values of the visualization data (e.g., physical
+            quantities representing by the cell like pressure and temperature).
+
+        Args:
+            element_ids (list[str], str): String id(s) representing the id(s) of the corresponding svg element in the
+                svg layout provided by the Vis class.
+            element_description (Optional[str]): Description of the visualization element intended representation (e.g.,
+                physical objects like 'Reactor Vessel' and 'Steam Pipe').
+            x_series_len (int): Length of x-series data for simulation (e.g., time series).
+            element_report_id (str): id representing id of corresponding svg element in svg outline provided by
+                the Vis class.
+
+        Attributes:
+            conditions (list): List of element conditions (see Condition class)
+    """
+
     def __init__(self, element_ids, element_description, x_series_len, element_report_id):
         self.ids = element_ids
         if not isinstance(element_description, str):
@@ -47,17 +65,39 @@ class Element:
 
     @staticmethod
     def create(cls_name):
+        """Class factory method for Element subclasses.
+
+            Args:
+                cls_name (str): Element subclass.
+
+            Returns:
+                Element subclass of type cls_name.
+        """
+
         for cls in Element.__subclasses__():
             if cls_name.lower() == cls.__name__.lower():
                 return cls
 
         # If we get to end of function raise error
-        raise ValueError('element type \'%s\' is not a supported type.' % element_type)
+        raise ValueError('element type \'%s\' is not a supported type.' % cls_name)
 
-    def add_condition_post_hook(self, **kwargs):
+    def _add_condition_post_hook(self, **kwargs):
         pass
 
     def add_condition(self, condition_type, unit='', opacity=1.0, report=True, **kwargs):
+        """Method to add visualization condition to internal class property.
+
+        Args:
+            condition_type (str): Type of condition to add to element.
+            unit (Optional[str]): Description of condition value (e.g., a physical property like psi).
+            opacity (Optional[float, int]): Desired opacity of condition given rendered element
+            report (bool): Option to report condition data (if element report exists)
+            **kwargs: Arbitrary keyword arguments dependant on condition_type.
+
+        Returns:
+            New element condition of condition_type.
+        """
+
         if not isinstance(condition_type, str):
             raise TypeError("condition_type must be of type str")
         if not isinstance(unit, str):
@@ -94,10 +134,19 @@ class Element:
 
         # Send function input to post hook
         kwargs.update(dict(type=condition_type, unit=unit, opacity=opacity, report=report))
-        self.add_condition_post_hook(**kwargs)
+        self._add_condition_post_hook(**kwargs)
 
 
 class Condition:
+    """Class representing element condition.
+
+        This class can represent many physical properties of an object (e.g., water level, pressure, temperature).
+
+        Args:
+            condition_id (str): Unique id of condition.
+            **kwargs: Arbitrary keyword arguments dependant on condition subclass.
+    """
+
     def __init__(self, condition_id, **kwargs):
         self.id = condition_id
         for key, val in kwargs.items():
@@ -106,6 +155,40 @@ class Condition:
 
 # Wrapper for cell
 class Cell(Element):
+    """Class representing a 'Cell' element.
+
+        A 'Cell' element is generally defined as a 2d surface the user wishes to use to represent some component
+            of a visualization system.  Common uses include:
+                *Pressure vessels
+                *Compartments
+                *Tanks
+                *Pipes
+
+        A cell can implement the following conditions:
+            *level_static - represents a changing vertical portion of the cell with a static color (e.g., can visualize
+                water level in a tank with a static temperature)
+            *level_dynamic - same as level_static except the color can change with the x-series (e.g., can visualize
+                water level in a tank with a dynamic temperature)
+            *background - represents the background of a cell with a dynamically changing color (e.g., can visualize
+                gas temperature in a compartment)
+            *logical - like background but dynamically changes color based on True/False criteria (e.g., can visualize
+                pipe opened/closed)
+            *zonal_y - represents a vertical multi-zonal model (e.g., can visualize a two or more gas zones in a
+                compartment)
+
+        Note that more than one condition can be added to a Cell.  Precedence of condition visualization is based on
+            relative height of condition pattern (e.g., a condition calculated to visually cover 60% of a cell [like
+            a water level] would be shown overlapping a condition like a background that covers 100% of the cell.
+            Users should take take care to account for this ordering in the code.
+
+        Args:
+            cell_id (str): unique id of the cell used in conjunction with an svg layout to map the cell.
+            cell_description (str): Description of the what the cell physically represents (e.g., a reactor vessel)
+            x_series_len (int): Length of x-series data for simulation (e.g., time series).
+            cell_report_id (Optional[str]): id representing id of corresponding svg element in svg outline
+                provided by the Vis class.
+    """
+
     def __init__(self, cell_id, cell_description, x_series_len, cell_report_id=None):
         super(Cell, self).__init__(cell_id, cell_description, x_series_len, cell_report_id)
         self._required_validation.update({
@@ -145,7 +228,7 @@ class Cell(Element):
         })
 
     # Overwrite super's add_condition_post_hook function to handle special conditions
-    def add_condition_post_hook(self, **kwargs):
+    def _add_condition_post_hook(self, **kwargs):
         # Logic for level_dynamic and zonal_y - Add in special function to handle multi-dimensional data reporting
         if kwargs['type'] == 'level_dynamic' or kwargs['type'] == 'zonal_y':
             kwargs_dynamic = {'type': 'info',
@@ -164,6 +247,23 @@ class Cell(Element):
 
 # Wrapper for line
 class Line(Element):
+    """Class representing a 'Line' element.
+
+        A 'Line' element is generally defined as a 1d path of a visualization system.  Common uses include:
+                *Pressure vessel walls
+
+        A line can implement the following conditions:
+            *equal_y - represents an number of equal-height sections on a path dynamically colored (e.g., can visualize
+                temperature distribution in a vessel wall)
+
+        Args:
+            line_id (str): unique id of the line used in conjunction with an svg layout to map the line.
+            line_description (str): Description of the what the line physically represents (e.g., a vessel wall)
+            x_series_len (int): Length of x-series data for simulation (e.g., time series).
+            line_report_id (Optional[str]): id representing id of corresponding svg element in svg outline
+                provided by the Vis class.
+    """
+
     def __init__(self, line_id, line_description, x_series_len, line_report_id=None):
         super(Line, self).__init__(line_id, line_description, x_series_len, line_report_id)
         self._required_validation.update({
@@ -177,6 +277,24 @@ class Line(Element):
 
 # Wrapper for heatmap
 class Heatmap(Element):
+    """Class representing a 'Heatmap' element.
+
+        A 'Heatmap' element is generally defined as a 2d surface distributed into a matrix of discrete sections. Common
+            uses include:
+            *Reactor core temperature distribution
+
+        A heatmap can implement the following conditions:
+            *rect - represents a rectangular matrix of discrete sections dynamically colored (e.g., can visualize
+                temperature distribution in a reactor core)
+
+        Args:
+            heatmap_id (str): unique id of the heatmap used in conjunction with an svg layout to map the heatmap.
+            heatmap_description (str): Description of the what the heatmap physically represents (e.g., a reactor core)
+            x_series_len (int): Length of x-series data for simulation (e.g., time series).
+            heatmap_report_id (Optional[str]): id representing id of corresponding svg element in svg outline
+                provided by the Vis class.
+    """
+
     def __init__(self, heatmap_id, heatmap_description, x_series_len, heatmap_report_id=None):
         super(Heatmap, self).__init__(heatmap_id, heatmap_description, x_series_len, heatmap_report_id)
         self._required_validation.update({
@@ -189,6 +307,24 @@ class Heatmap(Element):
 
 # Wrapper for toggle
 class Toggle(Element):
+    """Class representing a 'Toggle' element.
+
+        A 'Toggle' element is generally defined as an element that is 'toggled' on and off, up and down, etc. Common
+            uses include:
+            *Indication of events like fires or pipe breaks
+
+        A toggle can implement the following conditions:
+            *show_hide - represents an event that occurs during specific time intervals (e.g., can visualize
+                when a fire is occurring in a compartment)
+
+        Args:
+            toggle_id (str): unique id of the heatmap used in conjunction with an svg layout to map the heatmap.
+            heatmap_description (str): Description of the what the heatmap physically represents (e.g., a reactor core)
+            x_series_len (int): Length of x-series data for simulation (e.g., time series).
+            heatmap_report_id (Optional[str]): id representing id of corresponding svg element in svg outline
+                provided by the Vis class.
+    """
+
     def __init__(self, toggle_id, toggle_description, x_series_len, toggle_report_id=None):
         super(Toggle, self).__init__(toggle_id, toggle_description, x_series_len, toggle_report_id)
         self._required_validation.update({
@@ -200,12 +336,34 @@ class Toggle(Element):
 
 # Wrapper for report
 class Report(Element):
+    """Class representing a 'Report' element.
+
+        A 'Report' element is an element that only provides a report output (i.e., only indicates data values)
+
+        Args:
+            report_id (str): unique id of the report used in conjunction with an svg layout to map the report.
+            report_description (str): Description of the what the report physically represents (e.g., external inputs)
+            x_series_len (int): Length of x-series data for simulation (e.g., time series).
+    """
+
     def __init__(self, report_id, report_description, x_series_len):
         super(Report, self).__init__('', report_description, x_series_len, report_id[0])
 
 
 # Wrapper for table
 class Table(Element):
+    """Class representing a 'Table' element.
+
+        A 'Table' element is an element that only provides tabular output (i.e., only indicates data values).
+
+        Args:
+            table_id (str): unique id of the table used in conjunction with an svg layout to map the table.
+            table_description (str): Description of the what the table physically represents (e.g., summary results)
+            x_series_len (int): Length of x-series data for simulation (e.g., time series).
+            tabular_data (array): Data able to be cast as str by numpy to represent table content
+            headers (array): Data able to be cast as str by numpy to represent table headers
+    """
+
     def __init__(self, table_id, table_description, x_series_len, tabular_data, headers):
         super(Table, self).__init__('', table_description, x_series_len, table_id[0])
         self._required_validation.update({
@@ -222,6 +380,19 @@ class Table(Element):
 
 # Wrapper for color scale legend
 class ColorScale(Element):
+    """Class representing a 'ColorScale' element.
+
+        A 'ColorScale' element is an element that only provides a color scale legend.
+
+        Args:
+            color_scale_id (str): unique id of the scale used in conjunction with an svg layout to map the color scale.
+            color_scale_desc (str): Description of the what the color scale physically represents
+                (e.g., gas temperature)
+            x_series_len (int): Length of x-series data for simulation (e.g., time series).
+            color_scale (array): Data able to be cast as numeric by numpy to represent color scale
+            color_levels (array): Data able to be cast as str by numpy to represent color levels
+    """
+
     def __init__(self, color_scale_id, color_scale_desc, x_series_len, color_scale, color_levels, opacity=1):
         super(ColorScale, self).__init__('', color_scale_desc, x_series_len, color_scale_id[0])
         self._required_validation.update({

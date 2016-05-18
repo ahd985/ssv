@@ -13,13 +13,39 @@ from . import elements
 
 
 class SSV:
+    """Class factory for Vis."""
+
     @staticmethod
     def create_vis(*args, **kwargs):
+        """method to create new Vis Class.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            New instance of Vis
+        """
+
         return Vis(*args, **kwargs)
 
 
-# Main Visualization Class
 class Vis:
+    """Class representing SSV visualization.
+
+        This class represents all parts required to generate an SSV visualization (Vis) object, including:
+            *Visualization Element Mapping
+            *Visualization Rendering
+
+        Args:
+            x_series (int, float): X-series data for simulation (e.g., time series).
+                Must be castable as a numeric array by numpy.
+            x_series_unit (string): X-series data unit (e.g., 'hours')
+            svg_file_path (str): File path of svg outline used to support visualization layout.
+            title (Optional[str]): Title of visualization.
+            font_size (Optional[int,float]): Font size to be used post-render (relative to Web Browser)
+    """
+
     _svg_namespace = 'http://www.w3.org/2000/svg'
     _supported_svg_attribs = ['viewBox', 'xmlns']
     _supported_svg = ['path', 'circle', 'rect', 'ellipse']
@@ -83,6 +109,21 @@ class Vis:
         self._rendered = False
 
     def add_element(self, element_type, element_ids, element_description='', **kwargs):
+        """Method to add visualization element to internal class property.
+
+        Args:
+            element_type (str): String representation of visualization element type (see Element Module for
+                valid types).
+            element_ids (list[str], str): String id(s) representing the id(s) of the corresponding svg element in the
+                svg layout provided by the Vis class.
+            element_description (Optional[str]): Description of the visualization element intended representation (e.g.,
+                physical objects like 'Reactor Vessel' and 'Steam Pipe').
+            **kwargs: Arbitrary keyword arguments dependant on element_type.
+
+        Returns:
+            New visualization element of element_type.
+        """
+
         if not isinstance(element_type, str):
             raise TypeError('\'element_type\' input must be a string')
         if not isinstance(element_ids, (list, str)) or element_ids == '':
@@ -105,6 +146,12 @@ class Vis:
         return element_entry
 
     def del_element(self, element_id):
+        """Method to delete visualization element from internal class property.
+
+        Args:
+            element_ids (str): String id representing the id of the corresponding svg element in the
+                svg layout provided by the Vis class.
+        """
         if not isinstance(element_id, str):
             raise TypeError('\'element_id\' input must be a string.')
 
@@ -112,8 +159,12 @@ class Vis:
             if element_id in self._elements[element_type]:
                 del self._elements[element_type][element_id]
 
-    # Save ssv model as .html file
     def save_visualization(self, file_path):
+        """Method to save rendered visualization as html file.
+
+        Args:
+            file_path (str): Intended file path for saving rendered visualization as single encompassing html file.
+        """
         ext = '.html'
         if len(file_path) < len(ext) or not ext == file_path[-len(ext)] and os.path.basename(file_path) != '':
             file_path += ext
@@ -123,6 +174,17 @@ class Vis:
 
     # Render ssv model using javascript, html, and css
     def render_model(self, mode='full', height=500):
+        """Method to render visualization.
+
+        Args:
+            mode (str): Rendering mode:
+                *'full' rendering creates full visualization that can be saved directly as an html file
+                *'partial' rendering creates a subset of the visualization that requires external dependencies
+                    (i.e., javascript libraries) to be provided separately.  Use this option to support
+                    a dashboard layout.
+            height (float, int): Base pixel height for partial rendering (not used for full render).
+        """
+
         if not isinstance(height, (int, float)) or height < 0:
             raise TypeError('Input for visualization height must be a number greater than 0')
 
