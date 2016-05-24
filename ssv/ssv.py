@@ -194,11 +194,11 @@ class Vis:
 
         for element_type, elements in self._elements.items():
             for element in set(elements.values()):
-                element_dict = {k: v for k, v in element.__dict__.items() if k[0] != '_'}
+                element_dict = element.dump_attr()
 
                 if 'conditions' in element_dict:
                     for i in range(len(element_dict['conditions'])):
-                        element_dict['conditions'][i] = element_dict['conditions'][i].__dict__
+                        element_dict['conditions'][i] = element_dict['conditions'][i].dump_attr()
 
                 element_data[element_type].append(element_dict)
 

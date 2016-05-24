@@ -5,7 +5,7 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
     this.svg_selector = '#' + this.uuid + ' #ssv-svg';
     this.svg_div_selector = '#' + this.uuid + ' .sim-visual';
     this.svg_zoom_selector = '#' + this.uuid + ' #zoom-container';
-    this.svg_overlay_selector = '#' + this.uuid + ' #svg-overlay';
+    this.svg_overlay_selector = '#' + this.uuid + ' #ssv-overlay';
     // -- Element_data is the 'y' data representing svg elements that corresponds to the x_series data
     this.x_series = x_series;
     this.element_data = element_data;
@@ -76,8 +76,8 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
                 } else if (element_type == 'table') {
                     this.elements.push(new Table(this.uuid, element.ids, element.description,
                         element.conditions, element.report_id))
-                } else if (element_type == 'colorscale') {
-                    this.elements.push(new ColorScale(this.uuid, element.ids, element.description,
+                } else if (element_type == 'legend') {
+                    this.elements.push(new Legend(this.uuid, element.ids, element.description,
                         element.conditions, element.report_id))
                 }
             }
@@ -352,13 +352,10 @@ function Element(uuid, element_ids, element_description, element_conditions, rep
                 var condition = this.conditions[i];
 
                 if ("report" in condition && condition.report) {
-                    var condition_data, data_j_len;
-                    if ('data_2d' in condition) {
-                        condition_data = condition.data_2d;
+                    var condition_data=condition.data;
+                    var data_j_len = 1;
+                    if (condition_data[0].constructor === Array) {
                         data_j_len = condition_data[0].length
-                    } else {
-                        condition_data = condition.data;
-                        data_j_len = 1
                     }
 
                     // Box outline (background)
@@ -564,14 +561,14 @@ function Cell(uuid, cell_ids, cell_description, cell_conditions, cell_report_id)
                         prop_data.push(condition.data.map(function(d) {
                             return [max_order, condition.color_scale(d), condition.opacity, overlay]
                         }));
-                    } else if (condition.type == 'level_static') {
+                    } else if (condition.type == 'levelstatic') {
                         // level_static represents a changing level in a cell that does not change color
                         prop_data.push(condition.data.map(function(d) {
                             var order_val = (Math.min((d - condition.min_height) /
                                 (condition.max_height - condition.min_height)), 1);
                             return [order_val, condition.color, condition.opacity, overlay]
                         }));
-                    } else if (condition.type == 'level_dynamic') {
+                    } else if (condition.type == 'dynamiclevel') {
                         // level_dynamic represents a changing level in a cell that changes color
                         prop_data.push(condition.data.map(function(d, j) {
                             var order_val = Math.min((d - condition.min_height) /
@@ -587,15 +584,15 @@ function Cell(uuid, cell_ids, cell_description, cell_conditions, cell_report_id)
                             d ? color = condition.true_color : color = condition.false_color;
                             return [max_order, color, condition.opacity, overlay]
                         }));
-                    } else if (condition.type == 'zonal_y') {
+                    } else if (condition.type == 'zonaly') {
                         // zonal_y represents a zonal model in the y direction
                         // number of zones dictated by len of 2nd axis
                         var prop_data_slice = [];
-                        prop_data_slice = prop_data_slice.concat(condition.data_2d.map(function(arr, j) {
+                        prop_data_slice = prop_data_slice.concat(condition.data.map(function(arr, j) {
                             return arr.map(function(d, k) {
                                 var order_val = Math.min((d - condition.min_height) /
                                     (condition.max_height - condition.min_height), 1);
-                                var color = condition.color_scale(condition.data_dynamic_2d[j][k]);
+                                var color = condition.color_scale(condition.data_dynamic[j][k]);
                                 return [order_val, color, condition.opacity, overlay]
                             })
                         }));
@@ -639,11 +636,11 @@ function Line(uuid, line_ids, line_description, line_conditions, line_report_id)
                     opacity = condition.opacity;
                     overlay = null;
 
-                    if (condition.type == 'equal_y') {
+                    if (condition.type == 'equaly') {
                         // equal_y represents an open path element with equally sized patterns along the y axis
                         // number of y regions dictated by len of 2nd axis
                         var prop_data_slice = [];
-                        prop_data_slice = prop_data_slice.concat(condition.data_2d.map(function(arr) {
+                        prop_data_slice = prop_data_slice.concat(condition.data.map(function(arr) {
                             return arr.map(function(d, k) {
                                 var order_val = k / arr.length;
                                 var color = condition.color_scale(d);
@@ -674,11 +671,11 @@ function Line(uuid, line_ids, line_description, line_conditions, line_report_id)
 function Heatmap(uuid, heatmap_ids, heatmap_description, heatmap_conditions, heatmap_report_id) {
     var heatmap = new Element(uuid, heatmap_ids, heatmap_description, heatmap_conditions, heatmap_report_id);
 
-    heatmap.conditions[0].data_3d[0].constructor == Array ? heatmap.conditions.num_sections =
-        heatmap.conditions[0].data_3d[0].length : heatmap.conditions[0].num_sections = 1;
+    heatmap.conditions[0].data[0].constructor == Array ? heatmap.conditions.num_sections =
+        heatmap.conditions[0].data[0].length : heatmap.conditions[0].num_sections = 1;
 
     heatmap.initialize = function() {
-        var initial_vals = this.conditions[0].data_3d[0];
+        var initial_vals = this.conditions[0].data[0];
 
         var _heatmap = this;
         _heatmap.selectors.map(function(d) {
@@ -696,7 +693,7 @@ function Heatmap(uuid, heatmap_ids, heatmap_description, heatmap_conditions, hea
 
             // go through data and apply color scale
             var scale = _heatmap.conditions[0].color_scale;
-            var data = _heatmap.conditions[0].data_3d.map(function(arr_2d) {
+            var data = _heatmap.conditions[0].data.map(function(arr_2d) {
                 return arr_2d.map(function(arr) {
                     return arr.map(function(d) {
                         return scale(d)
@@ -763,7 +760,7 @@ function Toggle(uuid, toggle_ids, toggle_description, toggle_conditions, toggle_
             var sel = d3.selectAll(d);
 
             if (!_toggle.data_initialized) {
-                if (_toggle.conditions[0].type == 'show_hide') {
+                if (_toggle.conditions[0].type == 'showhide') {
                     sel.datum(_toggle.conditions[0].data)
                 }
             }
@@ -829,7 +826,7 @@ function Table(uuid, report_ids, report_description, report_conditions, report_i
                 .append('xhtml:table')
                 .attr('class', 'table')
                 .attr('id', table_id)
-                .datum(this.conditions[0].tabular_data);
+                .datum(this.conditions[0].data);
 
             // Add table header
             table.append('thead').append('tr')
@@ -881,12 +878,12 @@ function Table(uuid, report_ids, report_description, report_conditions, report_i
     return table
 }
 
-// Wrapper class for color scale
-function ColorScale(uuid, color_scale_ids, color_scale_description, color_scale_conditions, report_id) {
-    var color_scale = new Element(uuid, color_scale_ids, color_scale_description, color_scale_conditions, report_id);
+// Wrapper class for legend
+function Legend(uuid, legend_ids, legend_description, legend_conditions, report_id) {
+    var legend = new Element(uuid, legend_ids, legend_description, legend_conditions, report_id);
 
     // Overwrite base element report function to show color scale
-    color_scale.initialize_report = function () {
+    legend.initialize_report = function () {
         var sel = d3.select(this.report_selector);
         var parent = d3.select(sel.node().parentNode);
         
@@ -912,7 +909,7 @@ function ColorScale(uuid, color_scale_ids, color_scale_description, color_scale_
                 .append('g')
                 .attr('font-size', font_scale + 'em')
                 .attr('stroke', 'black')
-                .attr('stroke-width','1px');
+                .attr('stroke-width','0.01em');
 
             // Calculate discrete color bin scale
             var color_scale = this.conditions[0].color_scale;
@@ -964,15 +961,15 @@ function ColorScale(uuid, color_scale_ids, color_scale_description, color_scale_
         this.report_initialized = true
     };
 
-    color_scale.update_report = function(x) {
+    legend.update_report = function(x) {
         if (!this.report_initialized) {this.initialize_report()}
     };
 
-    color_scale.update = function(x) {
+    legend.update = function(x) {
         if (this.report_id) {this.update_report(x)}
     };
 
-    return color_scale
+    return legend
 }
 
 // Error catching

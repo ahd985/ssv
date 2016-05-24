@@ -40,63 +40,63 @@ class TestDataValidators:
     def test_validate_array_num(self, arr_num):
         # Cycle through allowable min_dim values
         for i in range(1, len(arr_num.shape)+1):
-            validate_array(arr_num, 'test_data', 'float', i, len(arr_num.shape), arr_num.shape[0])
+            validate_array(arr_num, 'float', i, len(arr_num.shape), arr_num.shape[0])
 
         # Check unbounded dims
-        validate_array(arr_num, 'test_data', 'float', None)
+        validate_array(arr_num, 'float', None)
 
     def test_validate_array_str(self, arr_str):
         # Cycle through allowable min_dim values
         for i in range(1, len(arr_str.shape) + 1):
-            validate_array(arr_str, 'test_data', 'str', i, len(arr_str.shape), arr_str.shape[0])
+            validate_array(arr_str, 'str', i, len(arr_str.shape), arr_str.shape[0])
 
         # Check unbounded dims
-        validate_array(arr_str, 'test_data', 'str', None)
+        validate_array(arr_str, 'str', None)
 
     def test_validate_array_fail(self, arr_num):
         # Fail on min_dim being too high
         with pytest.raises(ValueError):
-            validate_array(arr_num, 'test_data', 'float', len(arr_num.shape)+1, len(arr_num.shape), arr_num.shape[0])
+            validate_array(arr_num, 'float', len(arr_num.shape)+1, len(arr_num.shape), arr_num.shape[0])
         # Fail on max_dim being too low
         with pytest.raises(ValueError):
-            validate_array(arr_num, 'test_data', 'float', 0, len(arr_num.shape)-1, arr_num.shape[0])
+            validate_array(arr_num, 'float', 0, len(arr_num.shape)-1, arr_num.shape[0])
         # Fail dim 0 len + 1
         with pytest.raises(ValueError):
-            validate_array(arr_num, 'test_data', 'float', 0, len(arr_num.shape) - 1, arr_num.shape[0]+1)
+            validate_array(arr_num, 'float', 0, len(arr_num.shape) - 1, arr_num.shape[0]+1)
         # Fail dim 0 len - 1
         with pytest.raises(ValueError):
-            validate_array(arr_num, 'test_data', 'float', 0, len(arr_num.shape) - 1, arr_num.shape[0]-1)
+            validate_array(arr_num, 'float', 0, len(arr_num.shape) - 1, arr_num.shape[0]-1)
 
     def test_validate_array_dim_mismatch(self):
         arr = [[1, 2, 3, 0], [0, 0, 3]]
         with pytest.raises(ValueError):
-            validate_array(arr, 'test_data', 'float', None)
+            validate_array(arr, 'float', None)
 
     def test_validate_array_num_bad_type(self):
         arr = [[1, 2, 3, 'x'], ['z', 0, 3, 2]]
         with pytest.raises(ValueError):
-            validate_array(arr, 'test_data', 'float', None)
+            validate_array(arr, 'float', None)
 
     def test_validate_array_slices(self):
         arr = [np.random.rand(3, 3)] + [np.random.rand(5, 5)] + [np.random.rand(7, 7)]
-        validate_array_slices(arr, 'test_data', 'float')
+        validate_array_slices(arr, 'float')
 
     def test_validate_array_slices_fail(self):
         arr = [np.random.rand(3, 3)] + [np.random.rand(5, 5)] + [np.array([[1, 2],[1, 2, 3]])]
         with pytest.raises(ValueError):
-            validate_array_slices(arr, 'test_data', 'float')
+            validate_array_slices(arr, 'float')
 
     def test_validate_colors(self, arr_str):
-        validate_colors(arr_str, 'test_data')
+        validate_colors(arr_str)
 
     def test_validate_colors_fail(self, arr_str):
         arr_str[0] = 'RGB(1,1,1)'
         arr_str[1] = 'NXSKJNLVD'
         with pytest.raises(ValueError):
-            validate_colors(arr_str, 'test_data')
+            validate_colors(arr_str)
 
     def test_validate_color(self):
-        validate_color('#FFFFFF', 'test_data')
+        validate_color('#FFFFFF')
 
 
 class TestElements:
@@ -127,6 +127,18 @@ class TestElements:
     def test_valid_condition_inputs(self, cls):
         cls_args = data_generator.get_element_input(True, cls.__name__)[0]
         element = cls(*cls_args)
+        for condition_type in element._allowed_conditions:
+            condition_arg_combos = data_generator.get_condition_input(True, condition_type)
+            for condition_args in condition_arg_combos:
+                cls(*cls_args).add_condition(condition_type, *condition_args)
+
+    """
+    _condition_test_classes = [cls for cls in Element.__subclasses__() if cls.__name__ not in ['Table', 'ColorScale']]
+
+    @pytest.mark.parametrize("cls", _condition_test_classes)
+    def test_valid_condition_inputs(self, cls):
+        cls_args = data_generator.get_element_input(True, cls.__name__)[0]
+        element = cls(*cls_args)
         for condition_type, condition_inputs in element._required_validation.items():
             condition_kwarg_combos = \
                 data_generator.get_condition_input(True, list(condition_inputs.keys()))
@@ -144,6 +156,7 @@ class TestElements:
                 for condition_kwargs in condition_kwarg_combos:
                     with pytest.raises(error_cls):
                         cls(*cls_args).add_condition(condition_type, **condition_kwargs)
+    """
 
 
 class TestSSV:

@@ -38,7 +38,7 @@ def run():
 
     # Initiate and hook up SSV model
     ssv_model = SSV.create_vis(cutset_freqs, 'per year', os.path.join('examples', 'example_4', 'example_4.svg'),
-                    title="Cutset Visualization", font_size=10)
+                    title="Cutset Visualization", font_size=8)
 
     # Add tablular data
     ssv_model.add_element('table', 'cutset-report', tabular_data=report,

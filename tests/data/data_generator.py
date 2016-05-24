@@ -38,7 +38,7 @@ def get_element_input(valid, element_type):
         'toggle': base_element_args + report_id_args,
         'report': base_element_args,
         'table': base_element_args + data_args + headers_args,
-        'colorscale': base_element_args + color_scale_args + color_level_args + opacity_args
+        'legend': base_element_args + color_scale_args + color_level_args + opacity_args
     }
 
     valid_args = [i['valid'] for i in element_args[element_type.lower()]]
@@ -56,28 +56,58 @@ def get_element_input(valid, element_type):
         return invalid_args
 
 
-def get_condition_input(valid, condition_inputs):
-    condition_kwargs = {
+def get_condition_input(valid, condition_type):
+    condition_kwargs_base = {
         'report': {'valid': [True, False], 'invalid': {'TypeError': [1, 'True']}},
         'section_label': {'valid': ['Section', ''], 'invalid': {'TypeError': [1, True]}},
         'description': {'valid': ['Description', ''], 'invalid': {'TypeError': [1, True]}},
-        'description_dynamic': {'valid': ['Description', ''], 'invalid': {'TypeError': [1, True]}},
-        'max_height': {'valid': [10], 'invalid': {'TypeError': ['XX']}},
-        'min_height': {'valid': [10], 'invalid': {'TypeError': ['XX']}},
-        'true_color': {'valid': ['#FFFFFF', '#FFF'], 'invalid': {'ValueError': ['#ZZZ', 'RGB(1,1,1)']}},
-        'false_color': {'valid': ['#FFFFFF', '#FFF'], 'invalid': {'ValueError': ['#ZZZ', 'RGB(1,1,1)']}},
         'overlay': {'valid': ['water'], 'invalid': {'TypeError': [1, True]}},
-        'unit_dynamic': {'valid': ['unit', ''], 'invalid': {'TypeError': [1, True]}},
-        'color_levels': {'valid': [[100, 200]], 'invalid': {'ValueError': ['XX']}},
-        'color_scale': {'valid': [['#DDDDDD', '#DDDDDD']], 'invalid': {'ValueError': ['XX']}},
-        'data': {'valid': [[100] * 10], 'invalid': {'ValueError': [['xx'] * 8]}},
-        'data_2d': {'valid': [[[100] * 10] * 10], 'invalid': {'ValueError': [['xx'] * 8]}},
-        'data_3d': {'valid': [[[[100] * 10] * 10] * 10], 'invalid': {'ValueError': [['xx'] * 8]}},
-        'data_dynamic': {'valid': [[100] * 10], 'invalid': {'ValueError': [['xx'] * 8]}},
-        'data_dynamic_2d': {'valid': [[[100] * 10] * 10], 'invalid': {'ValueError': [['xx'] * 8]}},
-        'headers': {'valid': [['xxx','xxx']], 'invalid': {'ValueError': ['XX']}}
+        'unit': {'valid': ['unit', ''], 'invalid': {'TypeError': [1, True]}},
     }
 
+    color_legend_args = [
+        # Color scale
+        {'valid': [['#DDDDDD', '#DDDDDD']], 'invalid': {'ValueError': ['XX']}},
+        # Color levels
+        {'valid': [[100, 200]], 'invalid': {'ValueError': ['XX']}},
+    ]
+
+    true_false_color_args = [
+        {'valid': ['#FFFFFF', '#FFF'], 'invalid': {'ValueError': ['#ZZZ', 'RGB(1,1,1)']}},
+        {'valid': ['#FFFFFF', '#FFF'], 'invalid': {'ValueError': ['#ZZZ', 'RGB(1,1,1)']}}
+    ]
+
+    dynamic_args = [
+        # Description
+        {'valid': ['Description', ''], 'invalid': {'TypeError': [1, True]}},
+        # Unit
+        {'valid': ['unit', ''], 'invalid': {'TypeError': [1, True]}}
+    ]
+
+    height_args = [
+        # Min
+        {'valid': [9], 'invalid': {'TypeError': ['XX']}},
+        # Max
+        {'valid': [10], 'invalid': {'TypeError': ['XX']}}
+    ]
+
+    data_1d_arg = [{'valid': [[100] * 10], 'invalid': {'ValueError': [['xx'] * 8]}}]
+    data_2d_arg = [{'valid': [[[100] * 10] * 10], 'invalid': {'ValueError': [['xx'] * 8]}}]
+    data_3d_arg = [{'valid': [[[[100] * 10] * 10] * 10], 'invalid': {'ValueError': [['xx'] * 8]}}]
+
+    condition_args = {
+        'info': data_1d_arg,
+        'background': data_1d_arg + color_legend_args,
+        'staticlevel': data_1d_arg + color_legend_args + height_args,
+        'dynamiclevel': data_1d_arg + data_1d_arg + color_legend_args + height_args + dynamic_args,
+        'logical': data_1d_arg + true_false_color_args,
+        'zonaly': data_2d_arg + data_2d_arg + color_legend_args + height_args + dynamic_args,
+        'equaly': data_2d_arg + color_legend_args,
+        'rect': data_3d_arg + color_legend_args,
+        'showhide': data_1d_arg,
+    }
+
+    """
     kwargs = {k: condition_kwargs[k]['valid'] for k in condition_inputs}
 
     condition_kwarg_combos = []
@@ -102,3 +132,18 @@ def get_condition_input(valid, condition_inputs):
                 invalid_kwargs[k_error] += [dict(d) for d in itertools.product(*kwarg_combo)]
 
         return invalid_kwargs
+    """
+
+    valid_args = [i['valid'] for i in condition_args[condition_type.lower()]]
+    if valid:
+        return list(itertools.product(*valid_args))
+    else:
+        valid_args = [[arg[0]] for arg in valid_args]
+        invalid_args = defaultdict(list)
+        for i in range(len(valid_args)):
+            arg_combo = valid_args.copy()
+            for k, v in condition_args[condition_type.lower()][i]['invalid'].items():
+                arg_combo[i] = v
+                invalid_args[k] += list(itertools.product(*arg_combo))
+
+        return invalid_args

@@ -162,14 +162,14 @@ def run():
 
     # Initiate and hook up SSV model
     ssv_model = SSV.create_vis(sim_data['time'], 'seconds', os.path.join('examples', 'example_1', 'example_1.svg'),
-                        title="Steam Quench Tank Simulation", font_size=10)
+                        title="Steam Quench Tank Simulation", font_size=8)
 
     # Wire up svg elements
     tank = ssv_model.add_element('cell', 'tank-1', 'Quench Tank', cell_report_id='tank-1-report')
     tank.add_condition('background', description='Vapor Temp', unit='K', data=sim_data['temp'],
                        color_scale=['#fee6ce','#fdae6b','#e6550d'],
                        color_levels=np.linspace(min(sim_data['temp']), max(sim_data['temp']), 3))
-    tank.add_condition('level_dynamic', description='Water Level', unit='m', data=sim_data['wtr_lvl'],
+    tank.add_condition('dynamiclevel', description='Water Level', unit='m', data=sim_data['wtr_lvl'],
                        data_dynamic=sim_data['temp'], color_scale=['#deebf7','#9ecae1','#3182bd'],
                        color_levels=np.linspace(min(sim_data['temp']), max(sim_data['temp']), 3),
                        max_height=10, description_dynamic='Water Temp', unit_dynamic='K', overlay='water',
@@ -183,16 +183,16 @@ def run():
     steam_discharge.add_condition('logical', description='Flowrate', data=sim_data['disch'], true_color='#4CAF50', false_color='#F44336', unit='kg/s')
 
     steam_toggle = ssv_model.add_element('toggle', 'steam-toggle', 'Steam Toggle')
-    steam_toggle.add_condition('show_hide', data=sim_data['disch'], color='#FFFFFF')
+    steam_toggle.add_condition('showhide', data=sim_data['disch'])
 
     relief_toggle = ssv_model.add_element('toggle', 'relief-toggle', 'Relief Toggle')
-    relief_toggle.add_condition('show_hide', data=sim_data['rv'], color='black')
+    relief_toggle.add_condition('showhide', data=sim_data['rv'])
 
-    ssv_model.add_element('colorscale', 'color-scale-water', 'Water Temperature (F)',
+    ssv_model.add_element('legend', 'color-scale-water', 'Water Temperature (F)',
                           color_scale=['#deebf7', '#9ecae1', '#3182bd'],
                           color_levels=np.linspace(min(sim_data['temp']), max(sim_data['temp']), 3))
 
-    x = ssv_model.add_element('colorscale', 'color-scale-gas', 'Gas Temperature (F)',
+    x = ssv_model.add_element('legend', 'color-scale-gas', 'Gas Temperature (F)',
                           color_scale=['#fee6ce','#fdae6b','#e6550d'],
                           color_levels=np.linspace(min(sim_data['temp']), max(sim_data['temp']), 3))
 
