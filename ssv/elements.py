@@ -80,6 +80,16 @@ class Element:
 
         condition_id = '%s_%d' % ('_'.join(self.ids), len(self.conditions))
         condition = Condition.create(condition_cls, self.x_series_len, *args, id=condition_id, **kwargs)
+
+        # If "additional_info" exists as attr, add it as separate "Info" Condition
+        if hasattr(condition, 'additional_info'):
+            info = Condition.create('info', self.x_series_len,
+                                    condition.additional_info['data'],
+                                    description = condition.additional_info['description'],
+                                    unit = condition.additional_info['unit'],
+                                    id=condition_id)
+            self.conditions.append(info)
+
         if len(self.conditions) > self._max_conditions > 0:
             self.conditions.insert(-1, condition)
         else:

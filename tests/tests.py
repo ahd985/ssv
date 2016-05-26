@@ -128,9 +128,22 @@ class TestElements:
         cls_args = data_generator.get_element_input(True, cls.__name__)[0]
         element = cls(*cls_args)
         for condition_type in element._allowed_conditions:
-            condition_arg_combos = data_generator.get_condition_input(True, condition_type)
+            condition_arg_combos, condition_kwarg_combos = data_generator.get_condition_input(True, condition_type)
             for condition_args in condition_arg_combos:
-                cls(*cls_args).add_condition(condition_type, *condition_args)
+                for condition_kwargs in condition_kwarg_combos:
+                    cls(*cls_args).add_condition(condition_type, *condition_args, **condition_kwargs)
+
+    @pytest.mark.parametrize("cls", _condition_test_classes)
+    def test_invalid_condition_inputs(self, cls):
+        cls_args = data_generator.get_element_input(True, cls.__name__)[0]
+        element = cls(*cls_args)
+        for condition_type in element._allowed_conditions:
+            condition_combos_by_error = data_generator.get_condition_input(False, condition_type)
+            for error_name, combos in condition_combos_by_error.items():
+                error_cls = get_subclass_from_name(Exception, error_name)
+                for args_kwargs in combos:
+                    with pytest.raises(error_cls):
+                        cls(*cls_args).add_condition(condition_type, *args_kwargs[0], **args_kwargs[1])
 
     """
     _condition_test_classes = [cls for cls in Element.__subclasses__() if cls.__name__ not in ['Table', 'ColorScale']]

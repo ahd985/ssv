@@ -57,7 +57,7 @@ def get_element_input(valid, element_type):
 
 
 def get_condition_input(valid, condition_type):
-    condition_kwargs_base = {
+    condition_kwargs = {
         'report': {'valid': [True, False], 'invalid': {'TypeError': [1, 'True']}},
         'section_label': {'valid': ['Section', ''], 'invalid': {'TypeError': [1, True]}},
         'description': {'valid': ['Description', ''], 'invalid': {'TypeError': [1, True]}},
@@ -107,9 +107,9 @@ def get_condition_input(valid, condition_type):
         'showhide': data_1d_arg,
     }
 
-    """
-    kwargs = {k: condition_kwargs[k]['valid'] for k in condition_inputs}
+    valid_args = [i['valid'] for i in condition_args[condition_type.lower()]]
 
+    kwargs = {k: condition_kwargs[k]['valid'] for k in condition_kwargs}
     condition_kwarg_combos = []
     kwarg_names = list(kwargs.keys())
     for k in kwarg_names:
@@ -117,33 +117,29 @@ def get_condition_input(valid, condition_type):
     condition_kwarg_combos = [dict(d) for d in itertools.product(*condition_kwarg_combos)]
 
     if valid:
-        return condition_kwarg_combos
-    else:
-        # Tuple of valid base arguments
-        valid_kwargs = [[(k, v)] for k, v in condition_kwarg_combos[0].items()]
-        kwarg_names = [t[0][0] for t in valid_kwargs]
-        invalid_kwargs = defaultdict(list)
-
-        # Loop through each kwarg and create error by type input
-        for i, k in enumerate(kwarg_names):
-            kwarg_combo = copy.deepcopy(valid_kwargs)
-            for k_error, v in condition_kwargs[k]['invalid'].items():
-                kwarg_combo[i] = ((k, p) for p in v)
-                invalid_kwargs[k_error] += [dict(d) for d in itertools.product(*kwarg_combo)]
-
-        return invalid_kwargs
-    """
-
-    valid_args = [i['valid'] for i in condition_args[condition_type.lower()]]
-    if valid:
-        return list(itertools.product(*valid_args))
+        return list(itertools.product(*valid_args)), condition_kwarg_combos
     else:
         valid_args = [[arg[0]] for arg in valid_args]
-        invalid_args = defaultdict(list)
+        valid_kwargs = [[(k, v)] for k, v in condition_kwarg_combos[0].items()]
+
+        invalid_combos = defaultdict(list)
+
+        # Extract invalid args
         for i in range(len(valid_args)):
             arg_combo = valid_args.copy()
             for k, v in condition_args[condition_type.lower()][i]['invalid'].items():
                 arg_combo[i] = v
-                invalid_args[k] += list(itertools.product(*arg_combo))
+                all_arg_combos = list(itertools.product(*arg_combo))
+                invalid_combos[k] += list(zip(all_arg_combos,
+                                              [dict([i[0] for i in valid_kwargs])] * len(all_arg_combos)))
 
-        return invalid_args
+        # Extract invalid kwargs
+        kwarg_names = [t[0][0] for t in valid_kwargs]
+        for i, k in enumerate(kwarg_names):
+            kwarg_combo = copy.deepcopy(valid_kwargs)
+            for k_error, v in condition_kwargs[k]['invalid'].items():
+                kwarg_combo[i] = ((k, p) for p in v)
+                all_kwarg_combos = [dict(d) for d in itertools.product(*kwarg_combo)]
+                invalid_combos[k_error] += list(zip([i for i in valid_args] * len(all_kwarg_combos), all_kwarg_combos))
+
+        return invalid_combos

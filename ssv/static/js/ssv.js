@@ -268,7 +268,7 @@ function Element(uuid, element_ids, element_description, element_conditions, rep
     this.report_initialized = false;
 
     // Loop through conditions and check for color scale
-    // If color scale exists, use d3 to generate domain and range of scale.
+    // If color scale exists, use d3 to generate domain and range of scale. 
     this.initialize_color_scales = function() {
         this.conditions.map(function(condition) {
             if ('color_scale' in condition && 'color_levels' in condition) {
@@ -281,7 +281,7 @@ function Element(uuid, element_ids, element_description, element_conditions, rep
         });
     };
     this.initialize_color_scales();
-
+    
     // Report initialization function - called if report_id provided and report_initialized == false
     this.initialize_report = function() {
         var sel = d3.select(this.report_selector);

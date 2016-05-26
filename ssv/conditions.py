@@ -230,6 +230,7 @@ class EqualY(Condition):
         self.color_scale = _validate_color_scale(color_scale)
         self.color_levels = _validate_color_levels(color_levels)
 
+
 #Heatmap-specific classes
 class Rect(Condition):
     """Class representing a rectangular heatmap.
