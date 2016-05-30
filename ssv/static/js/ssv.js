@@ -120,7 +120,10 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
                     setTimeout(function() {
                         context.controls.current_x = ui.value;
                         context.update_elements(ui.value);
-                    }, 200);
+                        if (context.controls.play_enabled) {
+                           $(context.controls.play_selector).trigger('click')
+                        };
+                    }, 100);
                 }
             });
         });
@@ -140,7 +143,6 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
                     $(context.controls.play_icon_selector).attr('style', 'display:none');
                     if (context.controls.current_x >= context.x_series.length - 1) {
                         context.controls.current_x = 0;
-                        $('.range-slider').foundation('slider', 'set_value', context.controls.current_x);
                     }
                     context.x_series_forward()
                 }
@@ -163,7 +165,7 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
     this.x_series_forward = function () {
         var context = this;
         window.setTimeout(function() {
-            if (context.controls.play_enabled && context.controls.current_x < context.x_series.length) {
+            if (context.controls.play_enabled && context.controls.current_x < context.x_series.length - 1) {
                 context.controls.current_x += 1;
                 $(context.controls.slider_selector).slider('value', context.controls.current_x);
                 context.update_elements(context.controls.current_x);
@@ -172,7 +174,7 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
                 if (context.controls.current_x < context.x_series.length - 1) {
                     context.x_series_forward()
                 } else {
-                    $(context.controls.play_icon_selector).trigger('click')
+                    $(context.controls.play_selector).trigger('click')
                 }
             }
         }, 1000 / this.controls.play_speed);
