@@ -138,7 +138,7 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
                     context.controls.play_enabled = true;
                     $(context.controls.pause_icon_selector).attr('style', '');
                     $(context.controls.play_icon_selector).attr('style', 'display:none');
-                    if (context.controls.current_x == context.x_series.length - 1) {
+                    if (context.controls.current_x >= context.x_series.length - 1) {
                         context.controls.current_x = 0;
                         $('.range-slider').foundation('slider', 'set_value', context.controls.current_x);
                     }
@@ -446,7 +446,7 @@ function Element(uuid, element_ids, element_description, element_conditions, rep
         }
 
         // Sort prop data and denormalize order prop
-        var norm_val = sel.node().getBBox().height;
+        var norm_val = sel.getBBox().height;
         if (prop_data[0].length > 1) {
             prop_data = prop_data.map(function(t) {return t.sort(function(a,b) {return -(a[0] - b[0])})});
         }
@@ -496,18 +496,18 @@ function Element(uuid, element_ids, element_description, element_conditions, rep
                 .attr('height', '100%');
         });
 
+        var el = d3.select(sel);
         // Set to stroke or fill based on style_apply
-        style_apply == 'fill' ? sel.style('fill', 'url(#' + pattern_id + ')') :
-            sel.style('stroke', 'url(#' + pattern_id + ')');
+        style_apply == 'fill' ? el.style('fill', 'url(#' + pattern_id + ')') :
+            el.style('stroke', 'url(#' + pattern_id + ')');
 
         // Set initial opacities to 1
-        sel.style('fill-opacity', 1);
-        sel.style('opacity', 1);
+        el.style('fill-opacity', 1);
+        el.style('opacity', 1);
     };
     
     this.update_pattern = function(x, sel, pattern_id) {
         var pattern = d3.select('#' + this.uuid + ' #' + pattern_id);
-        var max_order = sel.node().getBBox().height;
 
         // Update base pattern
         pattern.selectAll('#base')
@@ -521,7 +521,7 @@ function Element(uuid, element_ids, element_description, element_conditions, rep
         pattern.selectAll('#transition')
             .data(function(t) {return t[x]})
             .transition()
-            .attr('y', function(d) {if (d[0] < max_order) {return d[0]} else {return '-1%' }})
+            .attr('y', function(d) {if (d[0] > 0) {return d[0]} else {return '-1%' }})
             .style('opacity', function(d) {return d[2]});
 
         // Update overlays
@@ -541,14 +541,13 @@ function Cell(uuid, cell_ids, cell_description, cell_conditions, cell_report_id)
     cell.update = function(x) {
         var _cell = this;
         _cell.selectors.map(function(d, i) {
-            var sel = d3.select(d);
+            var sels = d3.selectAll(d);
             var pattern_id = 'pattern_' + _cell.ids[i];
-
-            var order_prop = 'y';
-            var props = [order_prop, 'color', 'opacity', 'overlay'];
 
             if (!_cell.patterns_initialized) {
                 var prop_data = [];
+                var order_prop = 'y';
+                var props = [order_prop, 'color', 'opacity', 'overlay'];
 
                 _cell.conditions.map(function(condition) {
                     var order_val, color, opacity, overlay;
@@ -602,10 +601,16 @@ function Cell(uuid, cell_ids, cell_description, cell_conditions, cell_report_id)
 
                 // Zip data
                 prop_data = d3.zip.apply(this, prop_data);
-                _cell.initialize_pattern(sel, pattern_id, prop_data, 'fill');
+
+                // Apply pattern to each in sels list
+                sels.each(function() {
+                    _cell.initialize_pattern(this, pattern_id, prop_data, 'fill');
+                });
             }
 
-            _cell.update_pattern(x, sel, pattern_id);
+            sels.each(function() {
+                _cell.update_pattern(x, this, pattern_id);
+            });
         });
 
         _cell.patterns_initialized = true;
@@ -622,17 +627,17 @@ function Line(uuid, line_ids, line_description, line_conditions, line_report_id)
     line.update = function(x) {
         var _line = this;
         _line.selectors.map(function(d, i) {
-            var sel = d3.select(d);
+            var sels = d3.selectAll(d);
             var pattern_id = 'pattern_' + _line.ids[i];
-
-            var order_prop = 'y';
-            var props = [order_prop, 'color', 'opacity', 'overlay'];
             var prop_data = [];
 
             if (!_line.patterns_initialized) {
                 _line.conditions.map(function(condition) {
                     var order_val, color, opacity, overlay;
                     var max_order = 1.01;
+                    var order_prop = 'y';
+                    var props = [order_prop, 'color', 'opacity', 'overlay'];
+
                     opacity = condition.opacity;
                     overlay = null;
 
@@ -654,10 +659,14 @@ function Line(uuid, line_ids, line_description, line_conditions, line_report_id)
 
                 // Zip data
                 prop_data = d3.zip.apply(this, prop_data);
-                _line.initialize_pattern(sel, pattern_id, prop_data, 'stroke')
-            };
 
-            _line.update_pattern(x, sel, pattern_id);
+                sels.each(function() {
+                    _line.initialize_pattern(this, pattern_id, prop_data, 'stroke')
+                });
+            };
+            sels.each(function() {
+                _line.update_pattern(x, this, pattern_id);
+            });
         });
 
         _line.patterns_initialized = true;

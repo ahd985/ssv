@@ -1309,7 +1309,7 @@ svg {
  </style>
 </head>
 <body>
-  <div class="ssv-panel" id="sf98613dc-da40-44cd-a18a-8494d51c9fd7">
+  <div class="ssv-panel" id="s19cf7ab8-3bec-4d2f-b6ea-ecce1c3ba2f8">
       <div class="row full-width">
         <div class="col-sm-12 col-md-12 sim-title" align="center"><h1 style="color:white">Cutset Visualization</h1></div>
       </div>
@@ -18260,7 +18260,7 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
                     context.controls.play_enabled = true;
                     $(context.controls.pause_icon_selector).attr('style', '');
                     $(context.controls.play_icon_selector).attr('style', 'display:none');
-                    if (context.controls.current_x == context.x_series.length - 1) {
+                    if (context.controls.current_x >= context.x_series.length - 1) {
                         context.controls.current_x = 0;
                         $('.range-slider').foundation('slider', 'set_value', context.controls.current_x);
                     }
@@ -18568,7 +18568,7 @@ function Element(uuid, element_ids, element_description, element_conditions, rep
         }
 
         // Sort prop data and denormalize order prop
-        var norm_val = sel.node().getBBox().height;
+        var norm_val = sel.getBBox().height;
         if (prop_data[0].length > 1) {
             prop_data = prop_data.map(function(t) {return t.sort(function(a,b) {return -(a[0] - b[0])})});
         }
@@ -18618,18 +18618,18 @@ function Element(uuid, element_ids, element_description, element_conditions, rep
                 .attr('height', '100%');
         });
 
+        var el = d3.select(sel);
         // Set to stroke or fill based on style_apply
-        style_apply == 'fill' ? sel.style('fill', 'url(#' + pattern_id + ')') :
-            sel.style('stroke', 'url(#' + pattern_id + ')');
+        style_apply == 'fill' ? el.style('fill', 'url(#' + pattern_id + ')') :
+            el.style('stroke', 'url(#' + pattern_id + ')');
 
         // Set initial opacities to 1
-        sel.style('fill-opacity', 1);
-        sel.style('opacity', 1);
+        el.style('fill-opacity', 1);
+        el.style('opacity', 1);
     };
     
     this.update_pattern = function(x, sel, pattern_id) {
         var pattern = d3.select('#' + this.uuid + ' #' + pattern_id);
-        var max_order = sel.node().getBBox().height;
 
         // Update base pattern
         pattern.selectAll('#base')
@@ -18643,7 +18643,7 @@ function Element(uuid, element_ids, element_description, element_conditions, rep
         pattern.selectAll('#transition')
             .data(function(t) {return t[x]})
             .transition()
-            .attr('y', function(d) {if (d[0] < max_order) {return d[0]} else {return '-1%' }})
+            .attr('y', function(d) {if (d[0] > 0) {return d[0]} else {return '-1%' }})
             .style('opacity', function(d) {return d[2]});
 
         // Update overlays
@@ -18663,14 +18663,13 @@ function Cell(uuid, cell_ids, cell_description, cell_conditions, cell_report_id)
     cell.update = function(x) {
         var _cell = this;
         _cell.selectors.map(function(d, i) {
-            var sel = d3.select(d);
+            var sels = d3.selectAll(d);
             var pattern_id = 'pattern_' + _cell.ids[i];
-
-            var order_prop = 'y';
-            var props = [order_prop, 'color', 'opacity', 'overlay'];
 
             if (!_cell.patterns_initialized) {
                 var prop_data = [];
+                var order_prop = 'y';
+                var props = [order_prop, 'color', 'opacity', 'overlay'];
 
                 _cell.conditions.map(function(condition) {
                     var order_val, color, opacity, overlay;
@@ -18724,10 +18723,16 @@ function Cell(uuid, cell_ids, cell_description, cell_conditions, cell_report_id)
 
                 // Zip data
                 prop_data = d3.zip.apply(this, prop_data);
-                _cell.initialize_pattern(sel, pattern_id, prop_data, 'fill');
+
+                // Apply pattern to each in sels list
+                sels.each(function() {
+                    _cell.initialize_pattern(this, pattern_id, prop_data, 'fill');
+                });
             }
 
-            _cell.update_pattern(x, sel, pattern_id);
+            sels.each(function() {
+                _cell.update_pattern(x, this, pattern_id);
+            });
         });
 
         _cell.patterns_initialized = true;
@@ -18744,17 +18749,17 @@ function Line(uuid, line_ids, line_description, line_conditions, line_report_id)
     line.update = function(x) {
         var _line = this;
         _line.selectors.map(function(d, i) {
-            var sel = d3.select(d);
+            var sels = d3.selectAll(d);
             var pattern_id = 'pattern_' + _line.ids[i];
-
-            var order_prop = 'y';
-            var props = [order_prop, 'color', 'opacity', 'overlay'];
             var prop_data = [];
 
             if (!_line.patterns_initialized) {
                 _line.conditions.map(function(condition) {
                     var order_val, color, opacity, overlay;
                     var max_order = 1.01;
+                    var order_prop = 'y';
+                    var props = [order_prop, 'color', 'opacity', 'overlay'];
+
                     opacity = condition.opacity;
                     overlay = null;
 
@@ -18776,10 +18781,14 @@ function Line(uuid, line_ids, line_description, line_conditions, line_report_id)
 
                 // Zip data
                 prop_data = d3.zip.apply(this, prop_data);
-                _line.initialize_pattern(sel, pattern_id, prop_data, 'stroke')
-            };
 
-            _line.update_pattern(x, sel, pattern_id);
+                sels.each(function() {
+                    _line.initialize_pattern(this, pattern_id, prop_data, 'stroke')
+                });
+            };
+            sels.each(function() {
+                _line.update_pattern(x, this, pattern_id);
+            });
         });
 
         _line.patterns_initialized = true;
@@ -19106,10 +19115,10 @@ function add_element_context(uuid, x_series, element_data, svg_overlays) {
 
  </script>
   <script>
-      var uuid = "sf98613dc-da40-44cd-a18a-8494d51c9fd7";
+      var uuid = "s19cf7ab8-3bec-4d2f-b6ea-ecce1c3ba2f8";
       var x_series = ['3.6000e-13', '1.0000e-09', '4.0000e-17', '1.0000e-08'];
-      var svg_overlays = {"water": "<pattern id=\"water\" x=\"10px\" y=\"2px\" width=\"8px\" height=\"10px\" patternUnits=\"userSpaceOnUse\"><circle cx=\"4px\" cy=\"-1px\" r=\"4px\" fill=\"none\" stroke=\"white\" stroke-width=\"-1px\"/></pattern>", "diag_hatch": "<pattern id=\"diag_hatch\" width=\"1%\" height=\"1%\" patternUnits=\"userSpaceOnUse\" patternTransform=\"rotate(45 0 0)\"><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"10\" style=\"stroke:white; stroke-width:0.5%\"></line></pattern>"};
-      var element_data = {"report": [], "table": [{"conditions": [{"id": "_0", "opacity": 1.0, "unit": "", "report": true, "section_label": "Zone", "data": [[["%LDHR", "Loss of Decay Heat Removal", "0.01"], ["ACB-A-F", "Failure of AC Bus A", "0.003"], ["ACB-B-F", "Failure of AC Bus B", "0.003"], ["RCIC-F", "Failure of Reactor Core Isolation Cooling", "0.004"], ["HPCI-F", "Failure of High Pressure Cooland Injection", "0.001"]], [["%ATWS", "Anticipated Transient Without SCRAM", "0.01"], ["SLC-F", "Failure of Standby Liquid Coolant", "0.001"], ["RHR-F", "Failure of Residual Heat Removal", "0.0001"]], [["%LOSP", "Loss of Offsite Power", "0.001"], ["EDG-A-F", "Failure of Emergency Diesel Generator A", "0.0001"], ["EDG-B-F", "Failure of Emergency Diesel Generator B", "0.0001"], ["RCIC-F", "Failure of Reactor Core Isolation Cooling", "0.004"], ["HPCI-F", "Failure of High Pressure Cooland Injection", "0.001"]], [["%LDHR", "Loss of Decay Heat Removal", "0.01"], ["DCB-A-F", "Failure of DC Bus A", "0.02"], ["DCB-B-F", "Failure of DC Bus B", "0.02"], ["LPCI-A-F", "Failure of Low Pressure Coolant Injection A", "0.05"], ["LPCI-B-F", "Failure of Low Pressure Coolant Injection B", "0.05"]]], "overlay": null, "headers": ["Basic Event", "Description", "Probability"], "type": "tabularinfo", "description": ""}], "x_series_len": 4, "add_condition": null, "ids": "", "report_id": "cutset-report", "description": ""}], "legend": [], "heatmap": [], "line": [], "cell": [{"conditions": [{"id": "dcb-a_0", "opacity": 1.0, "unit": "", "report": true, "section_label": "Zone", "data": [0.0, 0.0, 0.0, 1.0], "false_color": "#FFFFFF", "overlay": null, "true_color": "#F44336", "type": "logical", "description": ""}], "ids": ["dcb-a"], "report_id": null, "description": "", "x_series_len": 4}, {"conditions": [{"id": "rhr_0", "opacity": 1.0, "unit": "", "report": true, "section_label": "Zone", "data": [0.0, 1.0, 0.0, 0.0], "false_color": "#FFFFFF", "overlay": null, "true_color": "#F44336", "type": "logical", "description": ""}], "ids": ["rhr"], "report_id": null, "description": "", "x_series_len": 4}, {"conditions": [{"id": "lpci-b_0", "opacity": 1.0, "unit": "", "report": true, "section_label": "Zone", "data": [0.0, 0.0, 0.0, 1.0], "false_color": "#FFFFFF", "overlay": null, "true_color": "#F44336", "type": "logical", "description": ""}], "ids": ["lpci-b"], "report_id": null, "description": "", "x_series_len": 4}, {"conditions": [{"id": "ldhr_0", "opacity": 1.0, "unit": "", "report": true, "section_label": "Zone", "data": [1.0, 0.0, 0.0, 1.0], "false_color": "#FFFFFF", "overlay": null, "true_color": "#F44336", "type": "logical", "description": ""}], "ids": ["ldhr"], "report_id": null, "description": "", "x_series_len": 4}, {"conditions": [{"id": "acb-b_0", "opacity": 1.0, "unit": "", "report": true, "section_label": "Zone", "data": [1.0, 0.0, 0.0, 0.0], "false_color": "#FFFFFF", "overlay": null, "true_color": "#F44336", "type": "logical", "description": ""}], "ids": ["acb-b"], "report_id": null, "description": "", "x_series_len": 4}, {"conditions": [{"id": "acb-a_0", "opacity": 1.0, "unit": "", "report": true, "section_label": "Zone", "data": [1.0, 0.0, 0.0, 0.0], "false_color": "#FFFFFF", "overlay": null, "true_color": "#F44336", "type": "logical", "description": ""}], "ids": ["acb-a"], "report_id": null, "description": "", "x_series_len": 4}, {"conditions": [{"id": "edg-a_0", "opacity": 1.0, "unit": "", "report": true, "section_label": "Zone", "data": [0.0, 0.0, 1.0, 0.0], "false_color": "#FFFFFF", "overlay": null, "true_color": "#F44336", "type": "logical", "description": ""}], "ids": ["edg-a"], "report_id": null, "description": "", "x_series_len": 4}, {"conditions": [{"id": "slc_0", "opacity": 1.0, "unit": "", "report": true, "section_label": "Zone", "data": [0.0, 1.0, 0.0, 0.0], "false_color": "#FFFFFF", "overlay": null, "true_color": "#F44336", "type": "logical", "description": ""}], "ids": ["slc"], "report_id": null, "description": "", "x_series_len": 4}, {"conditions": [{"id": "dcb-b_0", "opacity": 1.0, "unit": "", "report": true, "section_label": "Zone", "data": [0.0, 0.0, 0.0, 1.0], "false_color": "#FFFFFF", "overlay": null, "true_color": "#F44336", "type": "logical", "description": ""}], "ids": ["dcb-b"], "report_id": null, "description": "", "x_series_len": 4}, {"conditions": [{"id": "lpci-a_0", "opacity": 1.0, "unit": "", "report": true, "section_label": "Zone", "data": [0.0, 0.0, 0.0, 1.0], "false_color": "#FFFFFF", "overlay": null, "true_color": "#F44336", "type": "logical", "description": ""}], "ids": ["lpci-a"], "report_id": null, "description": "", "x_series_len": 4}, {"conditions": [{"id": "hpci_0", "opacity": 1.0, "unit": "", "report": true, "section_label": "Zone", "data": [1.0, 0.0, 1.0, 0.0], "false_color": "#FFFFFF", "overlay": null, "true_color": "#F44336", "type": "logical", "description": ""}], "ids": ["hpci"], "report_id": null, "description": "", "x_series_len": 4}, {"conditions": [{"id": "losp_0", "opacity": 1.0, "unit": "", "report": true, "section_label": "Zone", "data": [0.0, 0.0, 1.0, 0.0], "false_color": "#FFFFFF", "overlay": null, "true_color": "#F44336", "type": "logical", "description": ""}], "ids": ["losp"], "report_id": null, "description": "", "x_series_len": 4}, {"conditions": [{"id": "xfmr_0", "opacity": 1.0, "unit": "", "report": true, "section_label": "Zone", "data": [0.0, 0.0, 0.0, 0.0], "false_color": "#FFFFFF", "overlay": null, "true_color": "#F44336", "type": "logical", "description": ""}], "ids": ["xfmr"], "report_id": null, "description": "", "x_series_len": 4}, {"conditions": [{"id": "rcic_0", "opacity": 1.0, "unit": "", "report": true, "section_label": "Zone", "data": [1.0, 0.0, 1.0, 0.0], "false_color": "#FFFFFF", "overlay": null, "true_color": "#F44336", "type": "logical", "description": ""}], "ids": ["rcic"], "report_id": null, "description": "", "x_series_len": 4}, {"conditions": [{"id": "atws_0", "opacity": 1.0, "unit": "", "report": true, "section_label": "Zone", "data": [0.0, 1.0, 0.0, 0.0], "false_color": "#FFFFFF", "overlay": null, "true_color": "#F44336", "type": "logical", "description": ""}], "ids": ["atws"], "report_id": null, "description": "", "x_series_len": 4}, {"conditions": [{"id": "edg-b_0", "opacity": 1.0, "unit": "", "report": true, "section_label": "Zone", "data": [0.0, 0.0, 1.0, 0.0], "false_color": "#FFFFFF", "overlay": null, "true_color": "#F44336", "type": "logical", "description": ""}], "ids": ["edg-b"], "report_id": null, "description": "", "x_series_len": 4}], "toggle": []};
+      var svg_overlays = {"diag_hatch": "<pattern id=\"diag_hatch\" width=\"1%\" height=\"1%\" patternUnits=\"userSpaceOnUse\" patternTransform=\"rotate(45 0 0)\"><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"10\" style=\"stroke:white; stroke-width:0.5%\"></line></pattern>", "water": "<pattern id=\"water\" x=\"10px\" y=\"2px\" width=\"8px\" height=\"10px\" patternUnits=\"userSpaceOnUse\"><circle cx=\"4px\" cy=\"-1px\" r=\"4px\" fill=\"none\" stroke=\"white\" stroke-width=\"-1px\"/></pattern>"};
+      var element_data = {"cell": [{"conditions": [{"section_label": "Zone", "description": "", "type": "logical", "data": [1.0, 0.0, 0.0, 0.0], "opacity": 1.0, "unit": "", "true_color": "#F44336", "overlay": null, "id": "acb-b_0", "false_color": "#FFFFFF", "report": true}], "x_series_len": 4, "report_id": null, "description": "", "ids": ["acb-b"]}, {"conditions": [{"section_label": "Zone", "description": "", "type": "logical", "data": [0.0, 0.0, 0.0, 1.0], "opacity": 1.0, "unit": "", "true_color": "#F44336", "overlay": null, "id": "dcb-a_0", "false_color": "#FFFFFF", "report": true}], "x_series_len": 4, "report_id": null, "description": "", "ids": ["dcb-a"]}, {"conditions": [{"section_label": "Zone", "description": "", "type": "logical", "data": [0.0, 1.0, 0.0, 0.0], "opacity": 1.0, "unit": "", "true_color": "#F44336", "overlay": null, "id": "slc_0", "false_color": "#FFFFFF", "report": true}], "x_series_len": 4, "report_id": null, "description": "", "ids": ["slc"]}, {"conditions": [{"section_label": "Zone", "description": "", "type": "logical", "data": [0.0, 1.0, 0.0, 0.0], "opacity": 1.0, "unit": "", "true_color": "#F44336", "overlay": null, "id": "rhr_0", "false_color": "#FFFFFF", "report": true}], "x_series_len": 4, "report_id": null, "description": "", "ids": ["rhr"]}, {"conditions": [{"section_label": "Zone", "description": "", "type": "logical", "data": [0.0, 0.0, 1.0, 0.0], "opacity": 1.0, "unit": "", "true_color": "#F44336", "overlay": null, "id": "edg-a_0", "false_color": "#FFFFFF", "report": true}], "x_series_len": 4, "report_id": null, "description": "", "ids": ["edg-a"]}, {"conditions": [{"section_label": "Zone", "description": "", "type": "logical", "data": [0.0, 0.0, 0.0, 1.0], "opacity": 1.0, "unit": "", "true_color": "#F44336", "overlay": null, "id": "lpci-a_0", "false_color": "#FFFFFF", "report": true}], "x_series_len": 4, "report_id": null, "description": "", "ids": ["lpci-a"]}, {"conditions": [{"section_label": "Zone", "description": "", "type": "logical", "data": [1.0, 0.0, 0.0, 0.0], "opacity": 1.0, "unit": "", "true_color": "#F44336", "overlay": null, "id": "acb-a_0", "false_color": "#FFFFFF", "report": true}], "x_series_len": 4, "report_id": null, "description": "", "ids": ["acb-a"]}, {"conditions": [{"section_label": "Zone", "description": "", "type": "logical", "data": [0.0, 0.0, 0.0, 1.0], "opacity": 1.0, "unit": "", "true_color": "#F44336", "overlay": null, "id": "dcb-b_0", "false_color": "#FFFFFF", "report": true}], "x_series_len": 4, "report_id": null, "description": "", "ids": ["dcb-b"]}, {"conditions": [{"section_label": "Zone", "description": "", "type": "logical", "data": [0.0, 0.0, 1.0, 0.0], "opacity": 1.0, "unit": "", "true_color": "#F44336", "overlay": null, "id": "edg-b_0", "false_color": "#FFFFFF", "report": true}], "x_series_len": 4, "report_id": null, "description": "", "ids": ["edg-b"]}, {"conditions": [{"section_label": "Zone", "description": "", "type": "logical", "data": [0.0, 0.0, 0.0, 0.0], "opacity": 1.0, "unit": "", "true_color": "#F44336", "overlay": null, "id": "xfmr_0", "false_color": "#FFFFFF", "report": true}], "x_series_len": 4, "report_id": null, "description": "", "ids": ["xfmr"]}, {"conditions": [{"section_label": "Zone", "description": "", "type": "logical", "data": [0.0, 0.0, 1.0, 0.0], "opacity": 1.0, "unit": "", "true_color": "#F44336", "overlay": null, "id": "losp_0", "false_color": "#FFFFFF", "report": true}], "x_series_len": 4, "report_id": null, "description": "", "ids": ["losp"]}, {"conditions": [{"section_label": "Zone", "description": "", "type": "logical", "data": [1.0, 0.0, 1.0, 0.0], "opacity": 1.0, "unit": "", "true_color": "#F44336", "overlay": null, "id": "rcic_0", "false_color": "#FFFFFF", "report": true}], "x_series_len": 4, "report_id": null, "description": "", "ids": ["rcic"]}, {"conditions": [{"section_label": "Zone", "description": "", "type": "logical", "data": [0.0, 0.0, 0.0, 1.0], "opacity": 1.0, "unit": "", "true_color": "#F44336", "overlay": null, "id": "lpci-b_0", "false_color": "#FFFFFF", "report": true}], "x_series_len": 4, "report_id": null, "description": "", "ids": ["lpci-b"]}, {"conditions": [{"section_label": "Zone", "description": "", "type": "logical", "data": [1.0, 0.0, 0.0, 1.0], "opacity": 1.0, "unit": "", "true_color": "#F44336", "overlay": null, "id": "ldhr_0", "false_color": "#FFFFFF", "report": true}], "x_series_len": 4, "report_id": null, "description": "", "ids": ["ldhr"]}, {"conditions": [{"section_label": "Zone", "description": "", "type": "logical", "data": [1.0, 0.0, 1.0, 0.0], "opacity": 1.0, "unit": "", "true_color": "#F44336", "overlay": null, "id": "hpci_0", "false_color": "#FFFFFF", "report": true}], "x_series_len": 4, "report_id": null, "description": "", "ids": ["hpci"]}, {"conditions": [{"section_label": "Zone", "description": "", "type": "logical", "data": [0.0, 1.0, 0.0, 0.0], "opacity": 1.0, "unit": "", "true_color": "#F44336", "overlay": null, "id": "atws_0", "false_color": "#FFFFFF", "report": true}], "x_series_len": 4, "report_id": null, "description": "", "ids": ["atws"]}], "toggle": [], "table": [{"x_series_len": 4, "report_id": "cutset-report", "add_condition": null, "conditions": [{"section_label": "Zone", "description": "", "type": "tabularinfo", "data": [[["%LDHR", "Loss of Decay Heat Removal", "0.01"], ["ACB-A-F", "Failure of AC Bus A", "0.003"], ["ACB-B-F", "Failure of AC Bus B", "0.003"], ["RCIC-F", "Failure of Reactor Core Isolation Cooling", "0.004"], ["HPCI-F", "Failure of High Pressure Cooland Injection", "0.001"]], [["%ATWS", "Anticipated Transient Without SCRAM", "0.01"], ["SLC-F", "Failure of Standby Liquid Coolant", "0.001"], ["RHR-F", "Failure of Residual Heat Removal", "0.0001"]], [["%LOSP", "Loss of Offsite Power", "0.001"], ["EDG-A-F", "Failure of Emergency Diesel Generator A", "0.0001"], ["EDG-B-F", "Failure of Emergency Diesel Generator B", "0.0001"], ["RCIC-F", "Failure of Reactor Core Isolation Cooling", "0.004"], ["HPCI-F", "Failure of High Pressure Cooland Injection", "0.001"]], [["%LDHR", "Loss of Decay Heat Removal", "0.01"], ["DCB-A-F", "Failure of DC Bus A", "0.02"], ["DCB-B-F", "Failure of DC Bus B", "0.02"], ["LPCI-A-F", "Failure of Low Pressure Coolant Injection A", "0.05"], ["LPCI-B-F", "Failure of Low Pressure Coolant Injection B", "0.05"]]], "headers": ["Basic Event", "Description", "Probability"], "opacity": 1.0, "unit": "", "overlay": null, "id": "_0", "report": true}], "ids": "", "description": ""}], "line": [], "heatmap": [], "legend": [], "report": []};
       add_element_context(uuid, x_series, element_data, svg_overlays);
   </script>
 </body>

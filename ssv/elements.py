@@ -85,8 +85,8 @@ class Element:
         if hasattr(condition, 'additional_info'):
             info = Condition.create('info', self.x_series_len,
                                     condition.additional_info['data'],
-                                    description = condition.additional_info['description'],
-                                    unit = condition.additional_info['unit'],
+                                    description=condition.additional_info['description'],
+                                    unit=condition.additional_info['unit'],
                                     id=condition_id)
             self.conditions.append(info)
 

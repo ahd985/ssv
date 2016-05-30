@@ -94,15 +94,9 @@ class Vis:
         self._elements = {element: {} for element in [cls.__name__.lower() for
                                                       cls in elements.Element.__subclasses__()]}
 
-        self._svg_overlays = {"water": "<pattern id=\"water\" x=\"10px\" y=\"2px\" width=\"8px\" "
-                                      "height=\"10px\" patternUnits=\"userSpaceOnUse\"><circle "
-                                      "cx=\"4px\" cy=\"-1px\" r=\"4px\" fill=\"none\" stroke=\"white\" "
-                                      "stroke-width=\"-1px\"/></pattern>",
-                              "diag_hatch": "<pattern id=\"diag_hatch\" width=\"1%\" height=\"1%\" "
-                                            "patternUnits=\"userSpaceOnUse\" patternTransform=\"rotate(45 0 0)\">"
-                                            "<line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"10\" "
-                                            "style=\"stroke:white; stroke-width:0.5%\"></line></pattern>"
-                              }
+        with open(os.path.join('ssv', 'static', 'data', 'ssv-overlays.json'), 'r') as f:
+            self._svg_overlays = json.load(f)
+
         self._svg_out = None
         self._font_size = font_size
         self._reserved_element_ids = set()
