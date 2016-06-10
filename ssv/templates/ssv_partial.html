@@ -1,27 +1,38 @@
-<style> {% include 'static/css/ssv.css' %} </style>
-<div class="ssv-panel" id="{{ uuid }}" style="height: {{ height }}px; width: 100%;">
-  <div class="row" style="height:90%;width:100%;margin-left:auto;margin-right:auto;max-width: initial;">
-    <div class="col-sm-12 sim-visual" align="center" style="height:100%;font-size:{{ font_size }}px">{{ sim_visual }}</div>
-  </div>
-  <div class="row" style="height:10%;width:100%;margin-left:auto;margin-right:auto;max-width: initial;">
-    <div class="col-sm-8 full-height" style="display: table">
-      <div style="display: table-cell;vertical-align: middle;">
-        <div class="range-slider ssv-slider"></div>
-      </div>
+<div class="ssv-panel" id="{{ uuid }}" style="height:{{ height }}px;">
+    <div class="ssv-header">
+        <div class="ssv-title">
+            <span id="title">{{ title }}</span>
+        </div>
+        <div class="ssv-x-series">
+            <span id="x-series-val"></span>
+            <span><i><b>{{ x_series_unit }}</b></i></span>
+        </div>
     </div>
-    <div class="col-sm-4 full-height" align="center" style="display: table">
-      <div style="display: table-cell; vertical-align: middle">
-        <span id="x-series-val"></span>
-        <span><i><b>{{ x_series_unit }}</b></i></span>
-      </div>
+    <div class="ssv-visual" style="font-size:{{ font_size }}px;" align="center">
+        <div class="svg-container">
+            {{ sim_visual }}
+        </div>
     </div>
-  </div>
+    <div align="center" class="modebar modebar--hover">
+        <div class="modebar-group">
+            <a class="modebar-button" id="speed-button" style="display:table">
+                <span id="speed-val" style="display: table-cell;vertical-align: middle;"><b>1x</b></span>
+            </a>
+            <a class="modebar-button" id="play-button">
+                <span id="play-icon">{% include 'static/svg/fi-play-circle.svg' %}</span>
+                <span id="pause-icon" style="display:none">{% include 'static/svg/fi-pause.svg' %}</span>
+            </a>
+        </div>
+        <div class="modebar-group">
+            <div class="modebar-slider"></div>
+        </div>
+    </div>
 </div>
 <script>
-  var uuid = "{{ uuid }}";
-  var x_series = {{ x_series }};
-  var element_data = {{ element_data }};
-  var svg_overlays = {{ svg_overlays }};
-  add_element_context(uuid, x_series, element_data, svg_overlays);
+    var uuid = "{{ uuid }}";
+    var x_series = {{ x_series }};
+    var svg_overlays = {{ svg_overlays }};
+    var element_data = {{ element_data }};
+    add_element_context(uuid, x_series, element_data, svg_overlays);
 </script>
 

@@ -3,7 +3,7 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
     // Initialize properties
     this.uuid = uuid;
     this.svg_selector = '#' + this.uuid + ' #ssv-svg';
-    this.svg_div_selector = '#' + this.uuid + ' .sim-visual';
+    this.svg_div_selector = '#' + this.uuid + ' .ssv-visual';
     this.svg_zoom_selector = '#' + this.uuid + ' #zoom-container';
     this.svg_overlay_selector = '#' + this.uuid + ' #ssv-overlay';
     // -- Element_data is the 'y' data representing svg elements that corresponds to the x_series data
@@ -15,11 +15,13 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
     this.controls = {
         // control state information
         play_enabled: false,
+        slider_moving: false,
         current_x: 0,
-        play_speed: 1.0,
-        max_speed: 5.0,
-        min_speed: 1.0,
-        speed_step: 1.0,
+        target_x: 0,
+        play_speed: 1,
+        max_speed: 8,
+        min_speed: 1,
+        speed_mult: 2,
         // control selectors
         play_selector: '#' + this.uuid + ' #play-button',
         slider_selector: '#' + this.uuid + ' .range-slider',
@@ -96,88 +98,135 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
 
     // Function to tell all manipulated element classes to update rendering given index of this.x_series
     this.update_elements = function(x) {
-        $(this.controls.x_val_selector).html(num_format(this.x_series[x]));
+        d3.select(this.controls.x_val_selector).html(num_format(this.x_series[x]));
         for (var element in this.elements) {
             this.elements[element].update(x);
         }
     };
 
+    var context = this;
+    this.render_slider = function() {
+        var bbox = d3.select('#' + context.uuid + ' .modebar').node().getBoundingClientRect();
+        var height = bbox.height;
+        var margin = 2;
+        var handle_r = 8;
+        var width = bbox.width - d3.select('#' + context.uuid + " .modebar-group").node().getBoundingClientRect().width;
+
+        var x = d3.scale.linear()
+            .domain([0, context.x_series.length - 1])
+            .range([0, width - 2*(margin + handle_r)])
+            .clamp(true);
+
+        context.brush = d3.svg.brush()
+            .x(x)
+            .extent([0, 0])
+            .on("brush", function() {
+                if (d3.event.sourceEvent) {
+                    context.controls.target_x = Math.round(x.invert(d3.mouse(this)[0]));
+                    context.move();
+                };
+
+                handle.attr("cx", x(context.controls.target_x));
+            });
+
+        d3.select(".modebar-slider").selectAll("svg").remove();
+        var svg = d3.select(".modebar-slider").append("svg")
+            .attr("width", width)
+            .append("g")
+            .attr("transform", "translate(" + (handle_r + margin).toString() + "," + (height/2 + margin).toString() + ")");
+
+        svg.append("g")
+            .attr("class", "slider-axis")
+            .call(d3.svg.axis()
+              .scale(x)
+              .tickSize(0)
+              .tickFormat(""))
+          .select(".domain")
+          .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+            .attr("class", "slider-halo");
+
+        context.slider = svg.append("g")
+            .attr("class", "slider")
+            .call(context.brush);
+
+        context.slider.selectAll(".extent,.resize")
+            .remove();
+
+        var handle = context.slider.append("circle")
+            .attr("class", "slider-handle")
+            .attr("r", handle_r.toString() + "px");
+    };
+
     // Initialize controls for ssv control bar
     this.initialize_controls = function() {
-        $(this.controls.slider_selector)
-            .attr('data-options', 'initial: 0; start: 0; end: ' + (this.x_series.length - 1).toString())
-            .attr('ssv-id', this.uuid);
-
         var context = this;
-        $(function() {
-            $(context.controls.slider_selector).slider({
-                value:0,
-                min: 0,
-                max: (context.x_series.length - 1),
-                step: 1,
-                slide: function(event, ui) {
-                    var context = element_contexts[d3.select(this).attr('ssv-id')];
-                    setTimeout(function() {
-                        context.controls.current_x = ui.value;
-                        context.update_elements(ui.value);
-                        if (context.controls.play_enabled) {
-                           $(context.controls.play_selector).trigger('click')
-                        };
-                    }, 100);
+        context.render_slider();
+        d3.select(window).on('resize', context.render_slider);
+
+        context.play = function() {
+            if (context.controls.play_enabled) {
+                context.controls.play_enabled = false;
+                d3.select(context.controls.pause_icon_selector).attr('style', 'display:none');
+                d3.select(context.controls.play_icon_selector).attr('style', '');
+            } else {
+                context.controls.play_enabled = true;
+                d3.select(context.controls.pause_icon_selector).attr('style', '');
+                d3.select(context.controls.play_icon_selector).attr('style', 'display:none');
+                if (context.controls.current_x >= context.x_series.length - 1) {
+                    context.controls.current_x = 0;
                 }
-            });
-        });
+                context.x_series_forward()
+            }
+        };
 
         // Clicking on play button automates the forward run of the x_series
-        $(this.controls.play_selector)
+        d3.select(this.controls.play_selector)
             .attr('ssv-id', this.uuid)
-            .click(function() {
-                var context = element_contexts[d3.select(this).attr('ssv-id')];
-                if (context.controls.play_enabled) {
-                    context.controls.play_enabled = false;
-                    $(context.controls.pause_icon_selector).attr('style', 'display:none');
-                    $(context.controls.play_icon_selector).attr('style', '');
-                } else {
-                    context.controls.play_enabled = true;
-                    $(context.controls.pause_icon_selector).attr('style', '');
-                    $(context.controls.play_icon_selector).attr('style', 'display:none');
-                    if (context.controls.current_x >= context.x_series.length - 1) {
-                        context.controls.current_x = 0;
-                    }
-                    context.x_series_forward()
-                }
-        });
+            .on("click", context.play);
 
         // Clicking on the speed button changes the speed of play
-        $(this.controls.speed_selector).attr('ssv-id', this.uuid)
-            .click(function() {
+        d3.select(this.controls.speed_selector).attr('ssv-id', this.uuid)
+            .on("click", function() {
                 var context = element_contexts[d3.select(this).attr('ssv-id')];
                 if (context.controls.play_speed == context.controls.max_speed) {
                     context.controls.play_speed = context.controls.min_speed
                 } else {
-                    context.controls.play_speed += context.controls.speed_step
+                    context.controls.play_speed *= context.controls.speed_mult
                 }
-            $(context.controls.speed_selector + ' span').html(context.controls.play_speed.toString() + 'x')
-        })
-    };
+            var speed = context.controls.play_speed.toString();
+            d3.select(context.controls.speed_selector + ' span')
+                .html("<b>" + speed + 'x</b>')
+        });
 
-    // Function to auto update elements based on current x_series position and selected play speed
-    this.x_series_forward = function () {
-        var context = this;
-        window.setTimeout(function() {
-            if (context.controls.play_enabled && context.controls.current_x < context.x_series.length - 1) {
-                context.controls.current_x += 1;
-                $(context.controls.slider_selector).slider('value', context.controls.current_x);
-                context.update_elements(context.controls.current_x);
+        context.move = function() {
+            if (context.controls.slider_moving) return;
 
+            context.controls.slider_moving = true;
+            context.slider.call(context.brush.extent([context.controls.target_x, context.controls.target_x]))
+                .call(context.brush.event);
+            context.controls.current_x = context.controls.target_x;
+            context.update_elements(context.controls.current_x);
 
-                if (context.controls.current_x < context.x_series.length - 1) {
-                    context.x_series_forward()
-                } else {
-                    $(context.controls.play_selector).trigger('click')
+            d3.timer(function() {
+                context.controls.slider_moving = false;
+            },100);
+        };
+
+        // Function to auto update elements based on current x_series position and selected play speed
+        context.x_series_forward = function () {
+            window.setTimeout(function() {
+                if (context.controls.play_enabled && context.controls.current_x < context.x_series.length - 1) {
+                    context.controls.target_x = context.controls.current_x + 1;
+                    context.move();
+
+                    if (context.controls.current_x < context.x_series.length - 1) {
+                        context.x_series_forward()
+                    } else {
+                        context.play();
+                    }
                 }
-            }
-        }, 1000 / this.controls.play_speed);
+            }, 1000 / this.controls.play_speed);
+        };
     };
 
     // Initializer of pan and zoom functionality
@@ -187,9 +236,7 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
         ssv_svg.append('rect')
             .attr('height', '100%')
             .attr('width', '100%')
-            .style('stroke', 'black')
-            .style('fill', 'none')
-            .style('stroke-width', '2px');
+            .style('fill', 'none');
 
         // Get svg, svg parent div dimensions
         var viewbox = ssv_svg.attr('viewBox').split(' ');
@@ -233,8 +280,8 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
     // Call all initialization functions
     this.initialize_overlays();
     this.set_font_scale();
-    this.initialize_elements();
     this.initialize_controls();
+    this.initialize_elements();
     this.initialize_pan_zoom();
 }
 

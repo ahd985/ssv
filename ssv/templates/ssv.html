@@ -1,56 +1,13 @@
 <!DOCTYPE html>
 <html>
-<head lang="en">
-    <meta charset="UTF-8">
-    <title>{{ title }}</title>
-    <style> {% include 'static/css/jquery-ui.css' %} </style>
-    <style> {% include 'static/css/bootstrap.min.css' %} </style>
-    <style> {% include 'static/css/ssv.css' %} </style>
-</head>
-<body>
-  <div class="ssv-panel" id="{{ uuid }}">
-      <div class="row full-width">
-        <div class="col-sm-12 col-md-12 sim-title" align="center"><h1 style="color:white">{{ title }}</h1></div>
-      </div>
-      <div class="row full-width">
-        <div class="col-sm-12 col-md-12 sim-visual"
-             align="center" style="font-size:{{ font_size }}px">{{ sim_visual }}</div>
-      </div>
-      <div class="row full-width ssv-control">
-        <div class="col-sm-6 col-md-1 full-height ssv-button sim-control">
-          <a id="speed-button" class="ssv-control" align="center" style="display: table">
-            <span id="speed-val" style="display: table-cell;vertical-align: middle;color: white"><b>1x</b></span>
-          </a>
-        </div>
-        <div class="col-sm-6 col-md-1 full-height ssv-button sim-control">
-          <a id="play-button" class="ssv-control" align="center" style="display:block; margin:auto">
-            <span id="play-icon">{% include 'static/svg/fi-play-circle.svg' %}</span>
-            <span id="pause-icon" style="display:none">{% include 'static/svg/fi-pause.svg' %}</span>
-          </a>
-        </div>
-        <div class="col-sm-12 col-md-8 full-height sim-control" style="display: table">
-          <div style="display: table-cell;vertical-align: middle;">
-            <div class="range-slider ssv-slider"></div>
-          </div>
-        </div>
-        <div class="col-sm-12 col-md-2 full-height sim-control" align="center" style="display: table">
-          <div class="ssv-control radius" style="display: table-cell; vertical-align: middle; color: white">
-            <span id="x-series-val"></span>
-            <span><i><b>{{ x_series_unit }}</b></i></span>
-          </div>
-        </div>
-      </div>
-  </div>
-  <script> {% include 'static/js/d3.min.js' %} </script>
-  <script> {% include 'static/js/jquery-2.1.4.min.js' %} </script>
-  <script> {% include 'static/js/jquery-ui.js' %} </script>
-  <script> {% include 'static/js/ssv.js' %} </script>
-  <script>
-      var uuid = "{{ uuid }}";
-      var x_series = {{ x_series }};
-      var svg_overlays = {{ svg_overlays }};
-      var element_data = {{ element_data }};
-      add_element_context(uuid, x_series, element_data, svg_overlays);
-  </script>
-</body>
+    <head lang="en">
+        <meta charset="UTF-8">
+        <title>{{ title }}</title>
+        <style> {% include 'static/css/ssv.css' %} </style>
+        <script> {% include 'static/js/d3.min.js' %} </script>
+        <script> {% include 'static/js/ssv.js' %} </script>
+    </head>
+    <body>
+        {% include 'templates/ssv_partial.html' %}
+    </body>
 </html>

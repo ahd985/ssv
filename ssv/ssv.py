@@ -73,7 +73,7 @@ class Vis:
             if not svg_root.tag == '{%s}svg' % self._svg_namespace:
                 raise ValueError('\'svg_file\' root element must be an svg.')
 
-            # Loop through svg attributes and remove everything but viewBox so svg scales
+            # Loop through svg attributes and remove everything but viewBox so svg scales properly
             attribs = list(svg_root.attrib.keys())
             for attrib in attribs:
                 if not attrib in self._supported_svg_attribs:
@@ -94,7 +94,8 @@ class Vis:
         self._elements = {element: {} for element in [cls.__name__.lower() for
                                                       cls in elements.Element.__subclasses__()]}
 
-        with open(os.path.join('ssv', 'static', 'data', 'ssv-overlays.json'), 'r') as f:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        with open(os.path.join(base_path, 'data', 'ssv-overlays.json'), 'r') as f:
             self._svg_overlays = json.load(f)
 
         self._svg_out = None
@@ -167,7 +168,7 @@ class Vis:
             f.write(self.render_model())
 
     # Render ssv model using javascript, html, and css
-    def render_model(self, mode='full', height=500):
+    def render_model(self, mode='full', height=400):
         """Method to render visualization.
 
         Args:
@@ -176,7 +177,7 @@ class Vis:
                 *'partial' rendering creates a subset of the visualization that requires external dependencies
                     (i.e., javascript libraries) to be provided separately.  Use this option to support
                     a dashboard layout.
-            height (float, int): Base pixel height for partial rendering (not used for full render).
+            height (float, int): Base pixel height for visualization div.
         """
 
         if not isinstance(height, (int, float)) or height < 0:
@@ -201,7 +202,7 @@ class Vis:
             template = env.get_template(os.path.join('templates', 'ssv.html'))
             return template.render({'title': self._title, 'element_data': json.dumps(element_data),
                                     'uuid': 's' + str(uuid.uuid4()), 'svg_overlays': json.dumps(self._svg_overlays),
-                                    'x_series': self._x_series,
+                                    'height': height, 'x_series': self._x_series,
                                     'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
                                     'sim_visual': ET.tostring(self._svg_root, 'utf-8', method='xml').decode('utf-8')})
 
@@ -210,7 +211,7 @@ class Vis:
             template = env.get_template(os.path.join('templates', 'ssv_partial.html'))
             return template.render({'element_data': json.dumps(element_data), 'uuid': 's' + str(uuid.uuid4()),
                                     'x_series': self._x_series, 'svg_overlays': json.dumps(self._svg_overlays),
-                                    'height': height,
+                                    'height': height, 'title': self._title,
                                     'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
                                     'sim_visual': ET.tostring(self._svg_root, 'utf-8', method='xml').decode('utf-8')})
 
