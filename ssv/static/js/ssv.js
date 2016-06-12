@@ -129,8 +129,9 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
                 handle.attr("cx", x(context.controls.target_x));
             });
 
-        d3.select(".modebar-slider").selectAll("svg").remove();
-        var svg = d3.select(".modebar-slider").append("svg")
+        var slider = d3.select('#' + context.uuid + " .modebar-slider");
+        slider.selectAll("svg").remove();
+        var svg = slider.append("svg")
             .attr("width", width)
             .append("g")
             .attr("transform", "translate(" + (handle_r + margin).toString() + "," + (height/2 + margin).toString() + ")");
