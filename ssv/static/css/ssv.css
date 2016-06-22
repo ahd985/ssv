@@ -132,3 +132,18 @@
     fill: #37474F;
     opacity: 1;
 }
+
+/* Animation support */
+.ssv-panel .bubble-container{
+  animation: ssv-bubbles-move-up 1s linear infinite;
+}
+
+.ssv-panel .bubble {
+  fill: white;
+}
+
+@keyframes ssv-bubbles-move-up {
+    100% {
+        transform: translateY(-100px);
+    }
+}

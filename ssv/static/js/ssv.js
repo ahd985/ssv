@@ -32,6 +32,7 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
     };
 
     // -- Pattern overlay (e.g., water) data provided by Python
+    // AHD see https://jsfiddle.net/96txdmnf/1/
     this.svg_overlays = svg_overlays;
 
     // Initializer of svg pattern overlays (e.g., water pattern overlays).  These are inserted into

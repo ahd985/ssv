@@ -197,23 +197,23 @@ class Vis:
 
                 element_data[element_type].append(element_dict)
 
+        render_vars = {
+            'title': self._title, 'element_data': json.dumps(element_data),
+            'uuid': 's' + str(uuid.uuid4()), 'svg_overlays': json.dumps(self._svg_overlays),
+            'height': height, 'x_series': self._x_series,
+            'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
+            'sim_visual': ET.tostring(self._svg_root, 'utf-8', method='xml').decode('utf-8')
+        }
+
         # Render static web page for "full" mode
         if mode == 'full':
             template = env.get_template(os.path.join('templates', 'ssv.html'))
-            return template.render({'title': self._title, 'element_data': json.dumps(element_data),
-                                    'uuid': 's' + str(uuid.uuid4()), 'svg_overlays': json.dumps(self._svg_overlays),
-                                    'height': height, 'x_series': self._x_series,
-                                    'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
-                                    'sim_visual': ET.tostring(self._svg_root, 'utf-8', method='xml').decode('utf-8')})
+            return template.render(render_vars)
 
         # Render html
         elif mode == 'html':
             template = env.get_template(os.path.join('templates', 'ssv_partial.html'))
-            return template.render({'element_data': json.dumps(element_data), 'uuid': 's' + str(uuid.uuid4()),
-                                    'x_series': self._x_series, 'svg_overlays': json.dumps(self._svg_overlays),
-                                    'height': height, 'title': self._title,
-                                    'x_series_unit': self._x_series_unit, 'font_size': self._font_size,
-                                    'sim_visual': ET.tostring(self._svg_root, 'utf-8', method='xml').decode('utf-8')})
+            return template.render(render_vars)
 
         else:
             raise ValueError('inout for \'mode\' is not recognizable')

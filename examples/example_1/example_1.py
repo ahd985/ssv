@@ -177,7 +177,7 @@ def run():
     tank.add_condition('dynamiclevel', description='Water Level', unit='m', data=sim_data['wtr_lvl'],
                        data_dynamic=sim_data['temp'], color_scale=water_color_scale,
                        color_levels=water_color_levels,
-                       max_height=10, description_dynamic='Water Temp', unit_dynamic='K', overlay='water',
+                       max_height=10, description_dynamic='Water Temp', unit_dynamic='K', overlay='bubbles',
                        min_height=0)
     tank.add_condition('info', data=sim_data['press'], description='Press', unit='MPa')
 
