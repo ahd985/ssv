@@ -105,6 +105,14 @@
     height:100%;
 }
 
+.ssv-panel #pan-zoom-enabled-icon svg {
+    height:100%;
+}
+
+.ssv-panel #pan-zoom-disabled-icon svg {
+    height:100%;
+}
+
 /* SSV mode bar slider components */
 .ssv-panel .modebar-slider {
     width: 100%;

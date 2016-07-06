@@ -33,7 +33,7 @@ class Element:
 
     _allowed_conditions = []
 
-    def __init__(self, element_ids, element_description, x_series_len, element_report_id):
+    def __init__(self, element_ids, element_description, x_series_len, element_report_id, popover_content):
         self.ids = element_ids
         if not isinstance(element_description, str):
             raise TypeError('\'element_description\' must be a string.')
@@ -42,6 +42,9 @@ class Element:
             raise TypeError('\'element_report_id\' for \'%s\' must be a string.' % element_description)
         self.x_series_len = x_series_len
         self.report_id = element_report_id
+        if not popover_content is None and not isinstance(popover_content, dict):
+            raise TypeError('\'popover_content\' for \'%s\' must be a dict.' % element_description)
+        self.popover_content = popover_content
         self._max_conditions = -1
         self.conditions = []
 
@@ -132,8 +135,8 @@ class Cell(Element):
 
     _allowed_conditions = ['Info', 'Background', 'StaticLevel', 'DynamicLevel', 'Logical', 'ZonalY']
 
-    def __init__(self, cell_id, cell_description, x_series_len, cell_report_id=None):
-        super(Cell, self).__init__(cell_id, cell_description, x_series_len, cell_report_id)
+    def __init__(self, cell_id, cell_description, x_series_len, cell_report_id=None, popover_content=None):
+        super(Cell, self).__init__(cell_id, cell_description, x_series_len, cell_report_id, popover_content)
 
     # Overwrite super's add_condition_post_hook function to handle special conditions
     def _add_condition_post_hook(self, **kwargs):
@@ -173,8 +176,8 @@ class Line(Element):
 
     _allowed_conditions = ['EqualY']
 
-    def __init__(self, line_id, line_description, x_series_len, line_report_id=None):
-        super(Line, self).__init__(line_id, line_description, x_series_len, line_report_id)
+    def __init__(self, line_id, line_description, x_series_len, line_report_id=None, popover_content=None):
+        super(Line, self).__init__(line_id, line_description, x_series_len, line_report_id, popover_content)
 
         self._max_conditions = 1
 
@@ -200,8 +203,8 @@ class Heatmap(Element):
 
     _allowed_conditions = ['Rect']
 
-    def __init__(self, heatmap_id, heatmap_description, x_series_len, heatmap_report_id=None):
-        super(Heatmap, self).__init__(heatmap_id, heatmap_description, x_series_len, heatmap_report_id)
+    def __init__(self, heatmap_id, heatmap_description, x_series_len, heatmap_report_id=None, popover_content=None):
+        super(Heatmap, self).__init__(heatmap_id, heatmap_description, x_series_len, heatmap_report_id, popover_content)
 
         self._max_conditions = 1
 
@@ -227,7 +230,7 @@ class Toggle(Element):
     _allowed_conditions = ['Info', 'ShowHide']
 
     def __init__(self, toggle_id, toggle_description, x_series_len, toggle_report_id=None):
-        super(Toggle, self).__init__(toggle_id, toggle_description, x_series_len, toggle_report_id)
+        super(Toggle, self).__init__(toggle_id, toggle_description, x_series_len, toggle_report_id, None)
 
         self._max_conditions = 1
 
@@ -248,7 +251,7 @@ class Report(Element):
     _allowed_conditions = ['Info']
 
     def __init__(self, report_id, report_description, x_series_len):
-        super(Report, self).__init__('', report_description, x_series_len, report_id[0])
+        super(Report, self).__init__('', report_description, x_series_len, report_id[0], None)
 
 
 # Wrapper for table
@@ -268,7 +271,7 @@ class Table(Element):
     _allowed_conditions = ['TabularInfo']
 
     def __init__(self, table_id, table_description, x_series_len, tabular_data, headers):
-        super(Table, self).__init__('', table_description, x_series_len, table_id[0])
+        super(Table, self).__init__('', table_description, x_series_len, table_id[0], None)
 
         # Add info and remove ability to add additional conditions to element
         self.add_condition('TabularInfo', data=tabular_data, headers=headers)
@@ -291,7 +294,7 @@ class Legend(Element):
     """
 
     def __init__(self, color_scale_id, color_scale_desc, x_series_len, color_scale, color_levels, opacity=1):
-        super(Legend, self).__init__('', color_scale_desc, x_series_len, color_scale_id[0])
+        super(Legend, self).__init__('', color_scale_desc, x_series_len, color_scale_id[0], None)
 
         # Add color scale and remove ability to add additional conditions to element
         self.add_condition('ColorScale', color_scale=color_scale, color_levels=color_levels, opacity=opacity)

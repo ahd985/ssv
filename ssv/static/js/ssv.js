@@ -15,6 +15,7 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
     this.controls = {
         // control state information
         play_enabled: false,
+        pan_zoom_enabled: true,
         slider_moving: false,
         current_x: 0,
         target_x: 0,
@@ -24,11 +25,14 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
         speed_mult: 2,
         // control selectors
         play_selector: '#' + this.uuid + ' #play-button',
+        pan_zoom_selector: '#' + this.uuid + ' #pan-zoom-button',
         slider_selector: '#' + this.uuid + ' .range-slider',
         speed_selector: '#' + this.uuid + ' #speed-button',
         x_val_selector: '#' + this.uuid + ' #x-series-val',
         pause_icon_selector: '#' + this.uuid + ' #pause-icon',
-        play_icon_selector: '#' + this.uuid + ' #play-icon'
+        play_icon_selector: '#' + this.uuid + ' #play-icon',
+        pan_zoom_enabled_icon_selector: '#' + this.uuid + ' #pan-zoom-enabled-icon',
+        pan_zoom_disabled_icon_selector: '#' + this.uuid + ' #pan-zoom-disabled-icon'
     };
 
     // -- Pattern overlay (e.g., water) data provided by Python
@@ -181,10 +185,27 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
             }
         };
 
+        context.toggle_pan_zoom = function() {
+            if (context.controls.pan_zoom_enabled) {
+                context.controls.pan_zoom_enabled = false;
+                d3.select(context.controls.pan_zoom_disabled_icon_selector).attr('style', '');
+                d3.select(context.controls.pan_zoom_enabled_icon_selector).attr('style', 'display:none');
+            } else {
+                context.controls.pan_zoom_enabled = true;
+                d3.select(context.controls.pan_zoom_disabled_icon_selector).attr('style', 'display:none');
+                d3.select(context.controls.pan_zoom_enabled_icon_selector).attr('style', '');
+            }
+        };
+
         // Clicking on play button automates the forward run of the x_series
         d3.select(this.controls.play_selector)
             .attr('ssv-id', this.uuid)
             .on("click", context.play);
+
+        // Clicking on zoom button toggles pan/zoom ability
+        d3.select(this.controls.pan_zoom_selector)
+            .attr('ssv-id', this.uuid)
+            .on("click", context.toggle_pan_zoom);
 
         // Clicking on the speed button changes the speed of play
         d3.select(this.controls.speed_selector).attr('ssv-id', this.uuid)
@@ -262,18 +283,21 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
 
         // Apply zoom/pan features and pan limit
         var zoom_container = d3.select(this.svg_zoom_selector);
+        var context = this;
         var zoom = d3.behavior.zoom()
             .scale(1)
             .scaleExtent([1, 8])
             .on('zoom', function() {
-                var scale = d3.event.scale;
-                var tx = Math.max(d3.event.translate[0], -(x2 * scale - max_width));
-                var tx = Math.min(tx, x1);
-                var ty = Math.max(d3.event.translate[1], -(y2 * scale - max_height));
-                var ty = Math.min(ty, y1);
+                if (context.controls.pan_zoom_enabled) {
+                    var scale = d3.event.scale;
+                    var tx = Math.max(d3.event.translate[0], -(x2 * scale - max_width));
+                    var tx = Math.min(tx, x1);
+                    var ty = Math.max(d3.event.translate[1], -(y2 * scale - max_height));
+                    var ty = Math.min(ty, y1);
 
-                zoom.translate([tx,ty]);
-                zoom_container.attr('transform', 'translate(' + [tx,ty] + ')scale(' + scale + ')')
+                    zoom.translate([tx,ty]);
+                    zoom_container.attr('transform', 'translate(' + [tx,ty] + ')scale(' + scale + ')')
+                }
             });
 
         d3.select(this.svg_overlay_selector).call(zoom);

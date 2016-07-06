@@ -22,6 +22,12 @@
                 <span id="play-icon">{% include 'static/svg/fi-play-circle.svg' %}</span>
                 <span id="pause-icon" style="display:none">{% include 'static/svg/fi-pause.svg' %}</span>
             </a>
+            <a class="modebar-button" id="pan-zoom-button">
+                <span id="pan-zoom-enabled-icon">{% include 'static/svg/magnifying-glass-enabled.svg' %}</span>
+                <span id="pan-zoom-disabled-icon" style="display:none">
+                    {% include 'static/svg/magnifying-glass-disabled.svg' %}
+                </span>
+            </a>
         </div>
         <div class="modebar-group">
             <div class="modebar-slider"></div>

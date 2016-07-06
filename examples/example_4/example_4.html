@@ -110,6 +110,14 @@
     height:100%;
 }
 
+.ssv-panel #pan-zoom-enabled-icon svg {
+    height:100%;
+}
+
+.ssv-panel #pan-zoom-disabled-icon svg {
+    height:100%;
+}
+
 /* SSV mode bar slider components */
 .ssv-panel .modebar-slider {
     width: 100%;
@@ -174,6 +182,7 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
     this.controls = {
         // control state information
         play_enabled: false,
+        pan_zoom_enabled: true,
         slider_moving: false,
         current_x: 0,
         target_x: 0,
@@ -183,11 +192,14 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
         speed_mult: 2,
         // control selectors
         play_selector: '#' + this.uuid + ' #play-button',
+        pan_zoom_selector: '#' + this.uuid + ' #pan-zoom-button',
         slider_selector: '#' + this.uuid + ' .range-slider',
         speed_selector: '#' + this.uuid + ' #speed-button',
         x_val_selector: '#' + this.uuid + ' #x-series-val',
         pause_icon_selector: '#' + this.uuid + ' #pause-icon',
-        play_icon_selector: '#' + this.uuid + ' #play-icon'
+        play_icon_selector: '#' + this.uuid + ' #play-icon',
+        pan_zoom_enabled_icon_selector: '#' + this.uuid + ' #pan-zoom-enabled-icon',
+        pan_zoom_disabled_icon_selector: '#' + this.uuid + ' #pan-zoom-disabled-icon'
     };
 
     // -- Pattern overlay (e.g., water) data provided by Python
@@ -340,10 +352,27 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
             }
         };
 
+        context.toggle_pan_zoom = function() {
+            if (context.controls.pan_zoom_enabled) {
+                context.controls.pan_zoom_enabled = false;
+                d3.select(context.controls.pan_zoom_disabled_icon_selector).attr('style', '');
+                d3.select(context.controls.pan_zoom_enabled_icon_selector).attr('style', 'display:none');
+            } else {
+                context.controls.pan_zoom_enabled = true;
+                d3.select(context.controls.pan_zoom_disabled_icon_selector).attr('style', 'display:none');
+                d3.select(context.controls.pan_zoom_enabled_icon_selector).attr('style', '');
+            }
+        };
+
         // Clicking on play button automates the forward run of the x_series
         d3.select(this.controls.play_selector)
             .attr('ssv-id', this.uuid)
             .on("click", context.play);
+
+        // Clicking on zoom button toggles pan/zoom ability
+        d3.select(this.controls.pan_zoom_selector)
+            .attr('ssv-id', this.uuid)
+            .on("click", context.toggle_pan_zoom);
 
         // Clicking on the speed button changes the speed of play
         d3.select(this.controls.speed_selector).attr('ssv-id', this.uuid)
@@ -421,18 +450,21 @@ function ElementContext(uuid, x_series, element_data, svg_overlays) {
 
         // Apply zoom/pan features and pan limit
         var zoom_container = d3.select(this.svg_zoom_selector);
+        var context = this;
         var zoom = d3.behavior.zoom()
             .scale(1)
             .scaleExtent([1, 8])
             .on('zoom', function() {
-                var scale = d3.event.scale;
-                var tx = Math.max(d3.event.translate[0], -(x2 * scale - max_width));
-                var tx = Math.min(tx, x1);
-                var ty = Math.max(d3.event.translate[1], -(y2 * scale - max_height));
-                var ty = Math.min(ty, y1);
+                if (context.controls.pan_zoom_enabled) {
+                    var scale = d3.event.scale;
+                    var tx = Math.max(d3.event.translate[0], -(x2 * scale - max_width));
+                    var tx = Math.min(tx, x1);
+                    var ty = Math.max(d3.event.translate[1], -(y2 * scale - max_height));
+                    var ty = Math.min(ty, y1);
 
-                zoom.translate([tx,ty]);
-                zoom_container.attr('transform', 'translate(' + [tx,ty] + ')scale(' + scale + ')')
+                    zoom.translate([tx,ty]);
+                    zoom_container.attr('transform', 'translate(' + [tx,ty] + ')scale(' + scale + ')')
+                }
             });
 
         d3.select(this.svg_overlay_selector).call(zoom);
@@ -1204,7 +1236,7 @@ function add_element_context(uuid, x_series, element_data, svg_overlays) {
  </script>
     </head>
     <body>
-        <div class="ssv-panel" id="se8d2da6c-3468-4311-a258-b2859d913f3d" style="height:400px;">
+        <div class="ssv-panel" id="sc7e6bb30-4d2c-4a01-9bc0-7a12cd44c571" style="height:400px;">
     <div class="ssv-header">
         <div class="ssv-title">
             <span id="title">Cutset Visualization</span>
@@ -1338,7 +1370,7 @@ function add_element_context(uuid, x_series, element_data, svg_overlays) {
     <g><rect height="60" id="atws" ry="2.1346899e-05" style="opacity:1;fill:none;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" width="110" x="713" y="52.362206" ns1:label="#rect6074" />
     </g><text id="text6076" style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" x="738" y="91.362206" ns2:linespacing="125%" xml:space="preserve"><tspan id="tspan6078" style="font-size:22.5px" x="738" y="91.362206" ns2:role="line">ATWS</tspan></text>
   </g>
-</g><rect id="ssv-overlay" /><metadata id="metadata7">
+</g><rect id="ssv-overlay" /><rect fill="none" height="100%" id="popover-container" width="100%" /><metadata id="metadata7">
     <rdf:RDF>
       <ns4:Work rdf:about="">
         <dc:format>image/svg+xml</dc:format>
@@ -1380,6 +1412,25 @@ function add_element_context(uuid, x_series, element_data, svg_overlays) {
 </g>
 </svg></span>
             </a>
+            <a class="modebar-button" id="pan-zoom-button">
+                <span id="pan-zoom-enabled-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -10 56.966 66.966">
+    <g>
+        <path d="M 53.211492,47.057713 40.492895,33.729339 c 3.270175,-3.916941 5.061923,-8.845254 5.061923,-13.975842 0,-11.9871234 -9.679192,-21.7397767 -21.576024,-21.7397767 -11.896831,0 -21.5760227,9.7526533 -21.5760227,21.7397767 0,11.987125 9.6791917,21.739778 21.5760227,21.739778 4.466237,0 8.722342,-1.357318 12.361185,-3.933954 l 12.81522,13.429511 c 0.535648,0.560508 1.2561,0.869591 2.028146,0.869591 0.730771,0 1.424018,-0.280727 1.950285,-0.791139 1.118201,-1.084153 1.153848,-2.881938 0.07786,-4.009571 z M 23.978794,3.6849666 c 8.793637,0 15.947496,7.2081544 15.947496,16.0685304 0,8.860378 -7.153859,16.068532 -15.947496,16.068532 -8.793636,0 -15.947495,-7.208154 -15.947495,-16.068532 0,-8.860376 7.153859,-16.0685304 15.947495,-16.0685304 z"/>
+    </g>
+</svg></span>
+                <span id="pan-zoom-disabled-icon" style="display:none">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -10 56.966 66.966">
+  <path
+     d="M 53.495246,46.490204 40.776649,33.16183 c 3.270175,-3.916941 5.061923,-8.845254 5.061923,-13.975842 0,-11.9871229 -9.679192,-21.7397762 -21.576024,-21.7397762 -11.896831,0 -21.5760224,9.7526533 -21.5760224,21.7397762 0,11.987125 9.6791914,21.739778 21.5760224,21.739778 4.466237,0 8.722342,-1.357318 12.361185,-3.933954 l 12.81522,13.429511 c 0.535648,0.560508 1.2561,0.869591 2.028146,0.869591 0.730771,0 1.424018,-0.280727 1.950285,-0.791139 1.118201,-1.084153 1.153848,-2.881938 0.07786,-4.009571 z M 24.262548,3.1174581 c 8.793637,0 15.947496,7.2081539 15.947496,16.0685299 0,8.860378 -7.153859,16.068532 -15.947496,16.068532 -8.793636,0 -15.9474947,-7.208154 -15.9474947,-16.068532 0,-8.860376 7.1538587,-16.0685299 15.9474947,-16.0685299 z"/>
+  <rect
+     width="13.052695"
+     height="61.007164"
+     x="-43.296112"
+     y="-28.348307"
+     transform="matrix(-0.70710678,-0.70710678,0.70710678,-0.70710678,0,0)"/>
+</svg>
+                </span>
+            </a>
         </div>
         <div class="modebar-group">
             <div class="modebar-slider"></div>
@@ -1387,10 +1438,10 @@ function add_element_context(uuid, x_series, element_data, svg_overlays) {
     </div>
 </div>
 <script>
-    var uuid = "se8d2da6c-3468-4311-a258-b2859d913f3d";
+    var uuid = "sc7e6bb30-4d2c-4a01-9bc0-7a12cd44c571";
     var x_series = ['3.6000e-13', '1.0000e-09', '4.0000e-17', '1.0000e-08'];
-    var svg_overlays = {"diag_hatch": "<pattern id=\"diag_hatch\" width=\"1%\" height=\"1%\" patternUnits=\"userSpaceOnUse\" patternTransform=\"rotate(45 0 0)\"><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"10\" style=\"stroke:white; stroke-width:0.5%\"></line></pattern>", "bubbles": "<pattern id=\"bubbles\" x=\"0\" y=\"0\" width=\"100px\" height=\"100px\" patternUnits=\"userSpaceOnUse\"><rect class=\"bubble-container\" fill=\"url(#bubble-grid)\" width=\"100px\" height=\"200px\"></rect></pattern><pattern id=\"bubble-grid\" x=\"0\" y=\"0\" width=\"100px\" height=\"100px\" patternUnits=\"userSpaceOnUse\"><circle class=\"bubble\" cx=\"19.365438605265652px\" cy=\"12.383586880265106px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"51.10260702072209px\" cy=\"88.53023760117776px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"60.75849196466141px\" cy=\"93.1856502268328px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"89.38802098398159px\" cy=\"66.19281214176651px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"81.53554813330727px\" cy=\"54.34912840633628px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"91.87436107357618px\" cy=\"93.47463494290942px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"17.236078810012124px\" cy=\"42.98852693427584px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"63.96461884830196px\" cy=\"79.37796005953159px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"32.58926442487393px\" cy=\"93.32155637316566px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"70.96324163111065px\" cy=\"42.390653367757444px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"7.962093539349868px\" cy=\"42.433083176808225px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"69.63769673721731px\" cy=\"10.260556946702938px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"43.129766719283104px\" cy=\"10.810143664224526px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"79.42775290601918px\" cy=\"72.61532211365038px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"65.87189246216167px\" cy=\"16.15303031961095px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"42.02643428152646px\" cy=\"25.6466127905562px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"75.06964209757254px\" cy=\"84.50681852429321px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"68.1453241660617px\" cy=\"50.75036747750528px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"15.928051087342855px\" cy=\"76.94775927452949px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"43.62339320586439px\" cy=\"69.89252025674205px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"53.87950329285953px\" cy=\"43.66357932335505px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"85.39949931242607px\" cy=\"63.09707312739838px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"27.128485221242226px\" cy=\"62.184924435604884px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"34.31574200161116px\" cy=\"84.20444617779572px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"39.1993235124509px\" cy=\"88.9850158461642px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"89.93976373445238px\" cy=\"47.69639429126822px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"53.128314473381735px\" cy=\"78.34961182248551px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"12.286371068963753px\" cy=\"16.58772050190491px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"33.8262110617618px\" cy=\"40.762278851683135px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"34.900774138391675px\" cy=\"26.46521074450363px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"90.92586979459438px\" cy=\"25.78139755848923px\" r=\"2px\"></circle></pattern>"};
-    var element_data = {"report": [], "table": [{"conditions": [{"report": true, "unit": "", "description": "", "overlay": null, "type": "tabularinfo", "opacity": 1.0, "data": [[["%LDHR", "Loss of Decay Heat Removal", "0.01"], ["ACB-A-F", "Failure of AC Bus A", "0.003"], ["ACB-B-F", "Failure of AC Bus B", "0.003"], ["RCIC-F", "Failure of Reactor Core Isolation Cooling", "0.004"], ["HPCI-F", "Failure of High Pressure Cooland Injection", "0.001"]], [["%ATWS", "Anticipated Transient Without SCRAM", "0.01"], ["SLC-F", "Failure of Standby Liquid Coolant", "0.001"], ["RHR-F", "Failure of Residual Heat Removal", "0.0001"]], [["%LOSP", "Loss of Offsite Power", "0.001"], ["EDG-A-F", "Failure of Emergency Diesel Generator A", "0.0001"], ["EDG-B-F", "Failure of Emergency Diesel Generator B", "0.0001"], ["RCIC-F", "Failure of Reactor Core Isolation Cooling", "0.004"], ["HPCI-F", "Failure of High Pressure Cooland Injection", "0.001"]], [["%LDHR", "Loss of Decay Heat Removal", "0.01"], ["DCB-A-F", "Failure of DC Bus A", "0.02"], ["DCB-B-F", "Failure of DC Bus B", "0.02"], ["LPCI-A-F", "Failure of Low Pressure Coolant Injection A", "0.05"], ["LPCI-B-F", "Failure of Low Pressure Coolant Injection B", "0.05"]]], "headers": ["Basic Event", "Description", "Probability"], "section_label": "Zone", "id": "_0"}], "add_condition": null, "report_id": "cutset-report", "x_series_len": 4, "ids": "", "description": ""}], "toggle": [], "heatmap": [], "line": [], "cell": [{"conditions": [{"report": true, "unit": "", "description": "", "data": [0.0, 1.0, 0.0, 0.0], "overlay": null, "type": "logical", "opacity": 1.0, "false_color": "#FFFFFF", "section_label": "Zone", "true_color": "#F44336", "id": "atws_0"}], "x_series_len": 4, "ids": ["atws"], "description": "", "report_id": null}, {"conditions": [{"report": true, "unit": "", "description": "", "data": [0.0, 0.0, 0.0, 1.0], "overlay": null, "type": "logical", "opacity": 1.0, "false_color": "#FFFFFF", "section_label": "Zone", "true_color": "#F44336", "id": "dcb-b_0"}], "x_series_len": 4, "ids": ["dcb-b"], "description": "", "report_id": null}, {"conditions": [{"report": true, "unit": "", "description": "", "data": [1.0, 0.0, 1.0, 0.0], "overlay": null, "type": "logical", "opacity": 1.0, "false_color": "#FFFFFF", "section_label": "Zone", "true_color": "#F44336", "id": "rcic_0"}], "x_series_len": 4, "ids": ["rcic"], "description": "", "report_id": null}, {"conditions": [{"report": true, "unit": "", "description": "", "data": [1.0, 0.0, 0.0, 1.0], "overlay": null, "type": "logical", "opacity": 1.0, "false_color": "#FFFFFF", "section_label": "Zone", "true_color": "#F44336", "id": "ldhr_0"}], "x_series_len": 4, "ids": ["ldhr"], "description": "", "report_id": null}, {"conditions": [{"report": true, "unit": "", "description": "", "data": [1.0, 0.0, 1.0, 0.0], "overlay": null, "type": "logical", "opacity": 1.0, "false_color": "#FFFFFF", "section_label": "Zone", "true_color": "#F44336", "id": "hpci_0"}], "x_series_len": 4, "ids": ["hpci"], "description": "", "report_id": null}, {"conditions": [{"report": true, "unit": "", "description": "", "data": [0.0, 1.0, 0.0, 0.0], "overlay": null, "type": "logical", "opacity": 1.0, "false_color": "#FFFFFF", "section_label": "Zone", "true_color": "#F44336", "id": "slc_0"}], "x_series_len": 4, "ids": ["slc"], "description": "", "report_id": null}, {"conditions": [{"report": true, "unit": "", "description": "", "data": [0.0, 0.0, 0.0, 1.0], "overlay": null, "type": "logical", "opacity": 1.0, "false_color": "#FFFFFF", "section_label": "Zone", "true_color": "#F44336", "id": "lpci-b_0"}], "x_series_len": 4, "ids": ["lpci-b"], "description": "", "report_id": null}, {"conditions": [{"report": true, "unit": "", "description": "", "data": [0.0, 0.0, 0.0, 1.0], "overlay": null, "type": "logical", "opacity": 1.0, "false_color": "#FFFFFF", "section_label": "Zone", "true_color": "#F44336", "id": "lpci-a_0"}], "x_series_len": 4, "ids": ["lpci-a"], "description": "", "report_id": null}, {"conditions": [{"report": true, "unit": "", "description": "", "data": [0.0, 0.0, 1.0, 0.0], "overlay": null, "type": "logical", "opacity": 1.0, "false_color": "#FFFFFF", "section_label": "Zone", "true_color": "#F44336", "id": "edg-b_0"}], "x_series_len": 4, "ids": ["edg-b"], "description": "", "report_id": null}, {"conditions": [{"report": true, "unit": "", "description": "", "data": [0.0, 0.0, 1.0, 0.0], "overlay": null, "type": "logical", "opacity": 1.0, "false_color": "#FFFFFF", "section_label": "Zone", "true_color": "#F44336", "id": "edg-a_0"}], "x_series_len": 4, "ids": ["edg-a"], "description": "", "report_id": null}, {"conditions": [{"report": true, "unit": "", "description": "", "data": [0.0, 0.0, 1.0, 0.0], "overlay": null, "type": "logical", "opacity": 1.0, "false_color": "#FFFFFF", "section_label": "Zone", "true_color": "#F44336", "id": "losp_0"}], "x_series_len": 4, "ids": ["losp"], "description": "", "report_id": null}, {"conditions": [{"report": true, "unit": "", "description": "", "data": [0.0, 1.0, 0.0, 0.0], "overlay": null, "type": "logical", "opacity": 1.0, "false_color": "#FFFFFF", "section_label": "Zone", "true_color": "#F44336", "id": "rhr_0"}], "x_series_len": 4, "ids": ["rhr"], "description": "", "report_id": null}, {"conditions": [{"report": true, "unit": "", "description": "", "data": [1.0, 0.0, 0.0, 0.0], "overlay": null, "type": "logical", "opacity": 1.0, "false_color": "#FFFFFF", "section_label": "Zone", "true_color": "#F44336", "id": "acb-a_0"}], "x_series_len": 4, "ids": ["acb-a"], "description": "", "report_id": null}, {"conditions": [{"report": true, "unit": "", "description": "", "data": [1.0, 0.0, 0.0, 0.0], "overlay": null, "type": "logical", "opacity": 1.0, "false_color": "#FFFFFF", "section_label": "Zone", "true_color": "#F44336", "id": "acb-b_0"}], "x_series_len": 4, "ids": ["acb-b"], "description": "", "report_id": null}, {"conditions": [{"report": true, "unit": "", "description": "", "data": [0.0, 0.0, 0.0, 1.0], "overlay": null, "type": "logical", "opacity": 1.0, "false_color": "#FFFFFF", "section_label": "Zone", "true_color": "#F44336", "id": "dcb-a_0"}], "x_series_len": 4, "ids": ["dcb-a"], "description": "", "report_id": null}, {"conditions": [{"report": true, "unit": "", "description": "", "data": [0.0, 0.0, 0.0, 0.0], "overlay": null, "type": "logical", "opacity": 1.0, "false_color": "#FFFFFF", "section_label": "Zone", "true_color": "#F44336", "id": "xfmr_0"}], "x_series_len": 4, "ids": ["xfmr"], "description": "", "report_id": null}], "legend": []};
+    var svg_overlays = {"bubbles": "<pattern id=\"bubbles\" x=\"0\" y=\"0\" width=\"100px\" height=\"100px\" patternUnits=\"userSpaceOnUse\"><rect class=\"bubble-container\" fill=\"url(#bubble-grid)\" width=\"100px\" height=\"200px\"></rect></pattern><pattern id=\"bubble-grid\" x=\"0\" y=\"0\" width=\"100px\" height=\"100px\" patternUnits=\"userSpaceOnUse\"><circle class=\"bubble\" cx=\"19.365438605265652px\" cy=\"12.383586880265106px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"51.10260702072209px\" cy=\"88.53023760117776px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"60.75849196466141px\" cy=\"93.1856502268328px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"89.38802098398159px\" cy=\"66.19281214176651px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"81.53554813330727px\" cy=\"54.34912840633628px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"91.87436107357618px\" cy=\"93.47463494290942px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"17.236078810012124px\" cy=\"42.98852693427584px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"63.96461884830196px\" cy=\"79.37796005953159px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"32.58926442487393px\" cy=\"93.32155637316566px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"70.96324163111065px\" cy=\"42.390653367757444px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"7.962093539349868px\" cy=\"42.433083176808225px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"69.63769673721731px\" cy=\"10.260556946702938px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"43.129766719283104px\" cy=\"10.810143664224526px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"79.42775290601918px\" cy=\"72.61532211365038px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"65.87189246216167px\" cy=\"16.15303031961095px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"42.02643428152646px\" cy=\"25.6466127905562px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"75.06964209757254px\" cy=\"84.50681852429321px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"68.1453241660617px\" cy=\"50.75036747750528px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"15.928051087342855px\" cy=\"76.94775927452949px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"43.62339320586439px\" cy=\"69.89252025674205px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"53.87950329285953px\" cy=\"43.66357932335505px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"85.39949931242607px\" cy=\"63.09707312739838px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"27.128485221242226px\" cy=\"62.184924435604884px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"34.31574200161116px\" cy=\"84.20444617779572px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"39.1993235124509px\" cy=\"88.9850158461642px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"89.93976373445238px\" cy=\"47.69639429126822px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"53.128314473381735px\" cy=\"78.34961182248551px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"12.286371068963753px\" cy=\"16.58772050190491px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"33.8262110617618px\" cy=\"40.762278851683135px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"34.900774138391675px\" cy=\"26.46521074450363px\" r=\"2px\"></circle><circle class=\"bubble\" cx=\"90.92586979459438px\" cy=\"25.78139755848923px\" r=\"2px\"></circle></pattern>", "diag_hatch": "<pattern id=\"diag_hatch\" width=\"1%\" height=\"1%\" patternUnits=\"userSpaceOnUse\" patternTransform=\"rotate(45 0 0)\"><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"10\" style=\"stroke:white; stroke-width:0.5%\"></line></pattern>"};
+    var element_data = {"line": [], "report": [], "table": [{"report_id": "cutset-report", "add_condition": null, "description": "", "popover_content": null, "ids": "", "conditions": [{"id": "_0", "unit": "", "section_label": "Zone", "opacity": 1.0, "data": [[["%LDHR", "Loss of Decay Heat Removal", "0.01"], ["ACB-A-F", "Failure of AC Bus A", "0.003"], ["ACB-B-F", "Failure of AC Bus B", "0.003"], ["RCIC-F", "Failure of Reactor Core Isolation Cooling", "0.004"], ["HPCI-F", "Failure of High Pressure Cooland Injection", "0.001"]], [["%ATWS", "Anticipated Transient Without SCRAM", "0.01"], ["SLC-F", "Failure of Standby Liquid Coolant", "0.001"], ["RHR-F", "Failure of Residual Heat Removal", "0.0001"]], [["%LOSP", "Loss of Offsite Power", "0.001"], ["EDG-A-F", "Failure of Emergency Diesel Generator A", "0.0001"], ["EDG-B-F", "Failure of Emergency Diesel Generator B", "0.0001"], ["RCIC-F", "Failure of Reactor Core Isolation Cooling", "0.004"], ["HPCI-F", "Failure of High Pressure Cooland Injection", "0.001"]], [["%LDHR", "Loss of Decay Heat Removal", "0.01"], ["DCB-A-F", "Failure of DC Bus A", "0.02"], ["DCB-B-F", "Failure of DC Bus B", "0.02"], ["LPCI-A-F", "Failure of Low Pressure Coolant Injection A", "0.05"], ["LPCI-B-F", "Failure of Low Pressure Coolant Injection B", "0.05"]]], "description": "", "overlay": null, "type": "tabularinfo", "report": true, "headers": ["Basic Event", "Description", "Probability"]}], "x_series_len": 4}], "toggle": [], "heatmap": [], "cell": [{"report_id": null, "description": "", "popover_content": null, "ids": ["acb-a"], "conditions": [{"id": "acb-a_0", "unit": "", "section_label": "Zone", "opacity": 1.0, "false_color": "#FFFFFF", "data": [1.0, 0.0, 0.0, 0.0], "description": "", "overlay": null, "type": "logical", "report": true, "true_color": "#F44336"}], "x_series_len": 4}, {"report_id": null, "description": "", "popover_content": null, "ids": ["xfmr"], "conditions": [{"id": "xfmr_0", "unit": "", "section_label": "Zone", "opacity": 1.0, "false_color": "#FFFFFF", "data": [0.0, 0.0, 0.0, 0.0], "description": "", "overlay": null, "type": "logical", "report": true, "true_color": "#F44336"}], "x_series_len": 4}, {"report_id": null, "description": "", "popover_content": null, "ids": ["dcb-a"], "conditions": [{"id": "dcb-a_0", "unit": "", "section_label": "Zone", "opacity": 1.0, "false_color": "#FFFFFF", "data": [0.0, 0.0, 0.0, 1.0], "description": "", "overlay": null, "type": "logical", "report": true, "true_color": "#F44336"}], "x_series_len": 4}, {"report_id": null, "description": "", "popover_content": null, "ids": ["acb-b"], "conditions": [{"id": "acb-b_0", "unit": "", "section_label": "Zone", "opacity": 1.0, "false_color": "#FFFFFF", "data": [1.0, 0.0, 0.0, 0.0], "description": "", "overlay": null, "type": "logical", "report": true, "true_color": "#F44336"}], "x_series_len": 4}, {"report_id": null, "description": "", "popover_content": null, "ids": ["losp"], "conditions": [{"id": "losp_0", "unit": "", "section_label": "Zone", "opacity": 1.0, "false_color": "#FFFFFF", "data": [0.0, 0.0, 1.0, 0.0], "description": "", "overlay": null, "type": "logical", "report": true, "true_color": "#F44336"}], "x_series_len": 4}, {"report_id": null, "description": "", "popover_content": null, "ids": ["lpci-a"], "conditions": [{"id": "lpci-a_0", "unit": "", "section_label": "Zone", "opacity": 1.0, "false_color": "#FFFFFF", "data": [0.0, 0.0, 0.0, 1.0], "description": "", "overlay": null, "type": "logical", "report": true, "true_color": "#F44336"}], "x_series_len": 4}, {"report_id": null, "description": "", "popover_content": null, "ids": ["ldhr"], "conditions": [{"id": "ldhr_0", "unit": "", "section_label": "Zone", "opacity": 1.0, "false_color": "#FFFFFF", "data": [1.0, 0.0, 0.0, 1.0], "description": "", "overlay": null, "type": "logical", "report": true, "true_color": "#F44336"}], "x_series_len": 4}, {"report_id": null, "description": "", "popover_content": null, "ids": ["slc"], "conditions": [{"id": "slc_0", "unit": "", "section_label": "Zone", "opacity": 1.0, "false_color": "#FFFFFF", "data": [0.0, 1.0, 0.0, 0.0], "description": "", "overlay": null, "type": "logical", "report": true, "true_color": "#F44336"}], "x_series_len": 4}, {"report_id": null, "description": "", "popover_content": null, "ids": ["hpci"], "conditions": [{"id": "hpci_0", "unit": "", "section_label": "Zone", "opacity": 1.0, "false_color": "#FFFFFF", "data": [1.0, 0.0, 1.0, 0.0], "description": "", "overlay": null, "type": "logical", "report": true, "true_color": "#F44336"}], "x_series_len": 4}, {"report_id": null, "description": "", "popover_content": null, "ids": ["lpci-b"], "conditions": [{"id": "lpci-b_0", "unit": "", "section_label": "Zone", "opacity": 1.0, "false_color": "#FFFFFF", "data": [0.0, 0.0, 0.0, 1.0], "description": "", "overlay": null, "type": "logical", "report": true, "true_color": "#F44336"}], "x_series_len": 4}, {"report_id": null, "description": "", "popover_content": null, "ids": ["rcic"], "conditions": [{"id": "rcic_0", "unit": "", "section_label": "Zone", "opacity": 1.0, "false_color": "#FFFFFF", "data": [1.0, 0.0, 1.0, 0.0], "description": "", "overlay": null, "type": "logical", "report": true, "true_color": "#F44336"}], "x_series_len": 4}, {"report_id": null, "description": "", "popover_content": null, "ids": ["edg-b"], "conditions": [{"id": "edg-b_0", "unit": "", "section_label": "Zone", "opacity": 1.0, "false_color": "#FFFFFF", "data": [0.0, 0.0, 1.0, 0.0], "description": "", "overlay": null, "type": "logical", "report": true, "true_color": "#F44336"}], "x_series_len": 4}, {"report_id": null, "description": "", "popover_content": null, "ids": ["edg-a"], "conditions": [{"id": "edg-a_0", "unit": "", "section_label": "Zone", "opacity": 1.0, "false_color": "#FFFFFF", "data": [0.0, 0.0, 1.0, 0.0], "description": "", "overlay": null, "type": "logical", "report": true, "true_color": "#F44336"}], "x_series_len": 4}, {"report_id": null, "description": "", "popover_content": null, "ids": ["dcb-b"], "conditions": [{"id": "dcb-b_0", "unit": "", "section_label": "Zone", "opacity": 1.0, "false_color": "#FFFFFF", "data": [0.0, 0.0, 0.0, 1.0], "description": "", "overlay": null, "type": "logical", "report": true, "true_color": "#F44336"}], "x_series_len": 4}, {"report_id": null, "description": "", "popover_content": null, "ids": ["atws"], "conditions": [{"id": "atws_0", "unit": "", "section_label": "Zone", "opacity": 1.0, "false_color": "#FFFFFF", "data": [0.0, 1.0, 0.0, 0.0], "description": "", "overlay": null, "type": "logical", "report": true, "true_color": "#F44336"}], "x_series_len": 4}, {"report_id": null, "description": "", "popover_content": null, "ids": ["rhr"], "conditions": [{"id": "rhr_0", "unit": "", "section_label": "Zone", "opacity": 1.0, "false_color": "#FFFFFF", "data": [0.0, 1.0, 0.0, 0.0], "description": "", "overlay": null, "type": "logical", "report": true, "true_color": "#F44336"}], "x_series_len": 4}], "legend": []};
     add_element_context(uuid, x_series, element_data, svg_overlays);
 </script>
 

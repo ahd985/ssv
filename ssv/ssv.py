@@ -221,7 +221,14 @@ class Vis:
     # Function to clean and ready svg for output
     # Cleans svg of troublesome attributes and searches for user-provided element ids to bind data to
     def _prepare_svg(self):
-        # Add container elements to allow for zooming and panning
+        # Add container element for popovers
+        g_popover = ET.Element('rect')
+        g_popover.attrib['id'] = 'popover-container'
+        g_popover.attrib['height'] = '100%'
+        g_popover.attrib['width'] = '100%'
+        g_popover.attrib['fill'] = 'none'
+
+        # Add container element to allow for zooming and panning
         # Add id to svg to allow for identification on front end
         g_zoom = ET.Element('g')
         g_zoom.attrib['id'] = 'zoom-container'
@@ -235,9 +242,11 @@ class Vis:
         overlay_rect = ET.Element('rect')
         overlay_rect.attrib['id'] = 'ssv-overlay'
 
+        # Attach containers to root
         self._svg_root.attrib['id'] = 'ssv-svg'
         self._svg_root.insert(-1, g_zoom)
         self._svg_root.insert(-1, overlay_rect)
+        self._svg_root.insert(-1, g_popover)
 
         # Build dict of element ids and include report ids
         elements = {k: v for e in list(self._elements.values()) for k, v in e.items()}
