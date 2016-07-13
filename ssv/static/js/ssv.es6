@@ -1095,12 +1095,11 @@ window.onerror=function(msg){
 };
 
 var element_contexts = {};
-function add_element_context(uuid, x_series, element_data, svg_overlays) {
-    element_contexts[uuid] = new ElementContext(uuid, x_series, element_data, svg_overlays);
-}
 
-module.exports = function() {
-    alert("YEP")
-}
+module.exports = {
+    add_element_context: function(uuid, x_series, element_data, svg_overlays) {
+        element_contexts[uuid] = new ElementContext(uuid, x_series, element_data, svg_overlays);
+    }
+};
 
 
