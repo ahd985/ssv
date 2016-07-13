@@ -236,7 +236,7 @@ class Vis:
         # Add container element to allow for zooming and panning
         # Add id to svg to allow for identification on front end
         g_zoom = ET.Element('g')
-        g_zoom.attrib['id'] = 'zoom-container'
+        g_zoom.attrib['id'] = 'zoom-layer'
 
         for element in list(self._svg_root):
             if self._namespace_strip(element.tag) in self._supported_svg + ['g']:
@@ -245,7 +245,7 @@ class Vis:
                 self._svg_root.remove(element)
 
         overlay_rect = ET.Element('rect')
-        overlay_rect.attrib['id'] = 'ssv-overlay'
+        overlay_rect.attrib['id'] = 'info-layer'
 
         # Attach containers to root
         self._svg_root.attrib['id'] = 'ssv-svg'

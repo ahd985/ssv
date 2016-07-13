@@ -1,21 +1,12 @@
-class SSV {
-    constructor() {
-        this.element_contexts = {}
-    };
-
-
-
-}
-
 // Main class to generate contextual information of ssv setup
 class ElementContext {
     constructor(uuid, x_series, element_data, svg_overlays) {
         // Initialize properties
         this.uuid = uuid;
-        this.svg_selector = '#' + this.uuid + ' #ssv-svg';
-        this.svg_div_selector = '#' + this.uuid + ' .ssv-visual';
-        this.svg_zoom_selector = '#' + this.uuid + ' #zoom-container';
-        this.svg_overlay_selector = '#' + this.uuid + ' #ssv-overlay';
+        this.svg_sel = d3.select(`#${this.uuid} #ssv-svg`);
+        this.svg_container_sel = d3.select(`#${this.uuid} .ssv-visual`);
+        this.zoom_layer_sel = d3.select(`#${this.uuid} #zoom-layer`);
+        this.info_layer_sel = d3.select(`#${this.uuid} #info-layer`);
         // -- Element_data is the 'y' data representing svg elements that corresponds to the x_series data
         this.x_series = x_series;
         this.element_data = element_data;
@@ -50,39 +41,32 @@ class ElementContext {
         this.svg_overlays = svg_overlays;
 
         // Call all initialization functions
-        console.log("starting")
         this.initialize_overlays();
-        console.log("overlays done")
         this.set_font_scale();
-        console.log("set font scale")
         this.initialize_controls();
-        console.log("set controls")
         this.initialize_elements();
-        console.log("set elements")
         this.initialize_pan_zoom();
-        console.log("set pan zoom")
     }
 
     // Initializer of svg pattern overlays (e.g., water pattern overlays).  These are inserted into
     // the svg 'defs' child for reference by svg elements.
     initialize_overlays() {
-        var svg = d3.select(this.svg_selector);
-        if (svg.select('defs').empty()) {
-            svg.append('defs')
+        if (this.svg_sel.select('defs').empty()) {
+            this.svg_sel.append('defs')
         }
 
         for (var k in this.svg_overlays) {
-            svg.select('defs').html(svg.select('defs').html() + this.svg_overlays[k])
+            this.svg_sel.select('defs').html(this.svg_sel.select('defs').html() + this.svg_overlays[k])
         }
     };
 
     // Function to calculate scale of svg view box to parent svg div
     // This is required to scale user input font size correctly
     set_font_scale() {
-        var font_scale = parseFloat(d3.select(this.svg_selector).attr('viewBox').split(' ')[3]) /
-            d3.select(this.svg_div_selector).node().getBoundingClientRect().height;
+        var font_scale = parseFloat(this.svg_sel.attr('viewBox').split(' ')[3]) /
+            this.svg_container_sel.node().getBoundingClientRect().height;
         this.font_scale = font_scale;
-        d3.select(this.svg_selector).attr('font-scale', font_scale)
+        this.svg_sel.attr('font-scale', font_scale)
     };
 
     initialize_elements() {
@@ -239,7 +223,7 @@ class ElementContext {
     initialize_controls() {
         var context = this;
         context.render_slider();
-        d3.select(window).on('resize', function() {context.render_slider});
+        window.addEventListener("resize", context.render_slider);
 
         // Clicking on play button automates the forward run of the x_series
         d3.select(this.controls.play_selector)
@@ -268,16 +252,9 @@ class ElementContext {
 
     // Initializer of pan and zoom functionality
     initialize_pan_zoom() {
-        // Add border to svg to outline zoom/pan zone
-        var ssv_svg = d3.select(this.svg_selector);
-        ssv_svg.append('rect')
-            .attr('height', '100%')
-            .attr('width', '100%')
-            .style('fill', 'none');
-
         // Get svg, svg parent div dimensions
-        var viewbox = ssv_svg.attr('viewBox').split(' ');
-        var svg_bbox = ssv_svg.node().getBBox();
+        var viewbox = this.svg_sel.attr('viewBox').split(' ');
+        var svg_bbox = this.svg_sel.node().getBBox();
         var x1 = parseFloat(viewbox[0]);
         var x2 = parseFloat(viewbox[2]);
         var y1 = parseFloat(viewbox[1]);
@@ -286,14 +263,13 @@ class ElementContext {
         var max_width = (x2 - x1);
         var max_height = (y2 - y1);
 
-        var div_bbox = d3.select(this.svg_div_selector).node().getBoundingClientRect();
+        var div_bbox = this.svg_container_sel.node().getBoundingClientRect();
 
         // Apply overlay to control zoom/pan;
-        var ssv_overlay = d3.select(this.svg_overlay_selector)
-            .attr('y', svg_bbox.y)
-            .attr('height', svg_bbox.height)
-            .attr('x', svg_bbox.x)
-            .attr('width', svg_bbox.width);
+        this.info_layer_sel.attr('y', '0%')
+            .attr('height', '100%')
+            .attr('x', '0%')
+            .attr('width', '100%');
 
         // Apply zoom/pan features and pan limit
         var context = this;
@@ -306,11 +282,11 @@ class ElementContext {
                     var tx = Math.min(tx, x1);
                     var ty = Math.max(d3.event.transform.y, -(y2 * scale - max_height));
                     var ty = Math.min(ty, y1);
-                    d3.select(context.svg_zoom_selector).attr("transform",
+                    context.zoom_layer_sel.attr("transform",
                         'translate(' + [tx,ty] + ')scale(' + scale + ')');
                 }
             });
-        d3.select(this.svg_overlay_selector).call(zoom)
+        this.info_layer_sel.call(zoom)
     };
 }
 

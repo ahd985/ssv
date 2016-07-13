@@ -43,7 +43,7 @@
     border-right: 1px solid #E0E0E0;
 }
 
-.ssv-panel #ssv-overlay {
+.ssv-panel #info-layer {
     fill: none;
     pointer-events: all;
 }
