@@ -1,3 +1,12 @@
+class SSV {
+    constructor() {
+        this.element_contexts = {}
+    };
+
+
+
+}
+
 // Main class to generate contextual information of ssv setup
 class ElementContext {
     constructor(uuid, x_series, element_data, svg_overlays) {
@@ -1087,7 +1096,11 @@ window.onerror=function(msg){
 
 var element_contexts = {};
 function add_element_context(uuid, x_series, element_data, svg_overlays) {
-    element_contexts[uuid] = new ElementContext(uuid, x_series, element_data, svg_overlays)
+    element_contexts[uuid] = new ElementContext(uuid, x_series, element_data, svg_overlays);
+}
+
+module.exports = function() {
+    alert("YEP")
 }
 
 

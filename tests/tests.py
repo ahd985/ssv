@@ -197,7 +197,7 @@ class TestSSV:
         # svg_path
         with pytest.raises(FileNotFoundError):
             invalid_arg_combos = [[args[0]] for args in self._valid_inputs]
-            invalid_arg_combos[2] = ['C:']
+            invalid_arg_combos[2] = ['']
             for invalid_args in itertools.product(*invalid_arg_combos):
                 SSV.create_vis(*invalid_args)
         # title

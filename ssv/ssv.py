@@ -207,7 +207,12 @@ class Vis:
 
         # Render static web page for "full" mode
         if mode == 'full':
-            template = env.get_template(os.path.join('templates', 'ssv.html'))
+            # Workaround for jinja2 Windows path bug
+            if os.name == 'nt':
+                template = env.get_template(os.path.join('templates/ssv.html'))
+            else:
+                template = env.get_template(os.path.join('templates', 'ssv.html'))
+
             return template.render(render_vars)
 
         # Render html
