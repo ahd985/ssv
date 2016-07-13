@@ -41,11 +41,17 @@ class ElementContext {
         this.svg_overlays = svg_overlays;
 
         // Call all initialization functions
+        console.log("starting")
         this.initialize_overlays();
+        console.log("overlays done")
         this.set_font_scale();
+        console.log("set font scale")
         this.initialize_controls();
+        console.log("set controls")
         this.initialize_elements();
+        console.log("set elements")
         this.initialize_pan_zoom();
+        console.log("set pan zoom")
     }
 
     // Initializer of svg pattern overlays (e.g., water pattern overlays).  These are inserted into
@@ -126,50 +132,38 @@ class ElementContext {
         var handle_r = 8;
         var width = bbox.width - d3.select('#' + context.uuid + " .modebar-group").node().getBoundingClientRect().width;
 
-        var x = d3.scale.linear()
+        var x = d3.scaleLinear()
             .domain([0, context.x_series.length - 1])
             .range([0, width - 2*(margin + handle_r)])
             .clamp(true);
 
-        context.brush = d3.svg.brush()
-            .x(x)
-            .extent([0, 0])
-            .on("brush", function() {
-                if (d3.event.sourceEvent) {
-                    context.controls.target_x = Math.round(x.invert(d3.mouse(this)[0]));
-                    context.move();
-                };
-
-                handle.attr("cx", x(context.controls.target_x));
-            });
-
-        var slider = d3.select('#' + context.uuid + " .modebar-slider");
-        slider.selectAll("svg").remove();
-        var svg = slider.append("svg")
+        var slider_div = d3.select('#' + context.uuid + " .modebar-slider");
+        slider_div.selectAll("svg").remove();
+        var slider = slider_div.append("svg")
             .attr("width", width)
             .append("g")
-            .attr("transform", "translate(" + (handle_r + margin).toString() + "," + (height/2 + margin).toString() + ")");
+            .attr("transform",
+                "translate(" + (handle_r + margin).toString() + "," + (height/2 + margin).toString() + ")")
 
-        svg.append("g")
-            .attr("class", "slider-axis")
-            .call(d3.svg.axis()
-              .scale(x)
-              .tickSize(0)
-              .tickFormat(""))
-          .select(".domain")
-          .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
-            .attr("class", "slider-halo");
+        slider.append("line")
+            .attr("class", "slider-track")
+            .attr("x1", x.range()[0])
+            .attr("x2", x.range()[1])
+            .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+                .attr("class", "slider-inset")
+            .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+                .attr("class", "slider-overlay")
+                .call(d3.drag()
+                    .on("start.interrupt", function() {slider.interrupt()})
+                    .on("start drag", function() {
+                        context.controls.target_x = Math.round(x.invert(d3.event.x));
+                        context.move();
+                        handle.attr("cx", x(context.controls.target_x));
+                    }))
 
-        context.slider = svg.append("g")
-            .attr("class", "slider")
-            .call(context.brush);
-
-        context.slider.selectAll(".extent,.resize")
-            .remove();
-
-        var handle = context.slider.append("circle")
+        var handle = slider.append("circle")
             .attr("class", "slider-handle")
-            .attr("r", handle_r.toString() + "px");
+            .attr("r", handle_r);
     };
 
     play() {
@@ -207,8 +201,6 @@ class ElementContext {
         if (context.controls.slider_moving) return;
 
         context.controls.slider_moving = true;
-        context.slider.call(context.brush.extent([context.controls.target_x, context.controls.target_x]))
-            .call(context.brush.event);
         context.controls.current_x = context.controls.target_x;
         context.update_elements(context.controls.current_x);
 
@@ -282,10 +274,10 @@ class ElementContext {
         var y1 = parseFloat(viewbox[1]);
         var y2 = parseFloat(viewbox[3]);
 
-        var div_bbox = d3.select(this.svg_div_selector).node().getBoundingClientRect();
-
         var max_width = (x2 - x1);
         var max_height = (y2 - y1);
+
+        var div_bbox = d3.select(this.svg_div_selector).node().getBoundingClientRect();
 
         // Apply overlay to control zoom/pan;
         var ssv_overlay = d3.select(this.svg_overlay_selector)
@@ -295,25 +287,21 @@ class ElementContext {
             .attr('width', svg_bbox.width);
 
         // Apply zoom/pan features and pan limit
-        var zoom_container = d3.select(this.svg_zoom_selector);
         var context = this;
-        var zoom = d3.behavior.zoom()
-            .scale(1)
+        var zoom = d3.zoom()
             .scaleExtent([1, 8])
             .on('zoom', function() {
                 if (context.controls.pan_zoom_enabled) {
-                    var scale = d3.event.scale;
-                    var tx = Math.max(d3.event.translate[0], -(x2 * scale - max_width));
+                    var scale = d3.event.transform.k;
+                    var tx = Math.max(d3.event.transform.x, -(x2 * scale - max_width));
                     var tx = Math.min(tx, x1);
-                    var ty = Math.max(d3.event.translate[1], -(y2 * scale - max_height));
+                    var ty = Math.max(d3.event.transform.y, -(y2 * scale - max_height));
                     var ty = Math.min(ty, y1);
-
-                    zoom.translate([tx,ty]);
-                    zoom_container.attr('transform', 'translate(' + [tx,ty] + ')scale(' + scale + ')')
+                    d3.select(context.svg_zoom_selector).attr("transform",
+                        'translate(' + [tx,ty] + ')scale(' + scale + ')');
                 }
             });
-
-        d3.select(this.svg_overlay_selector).call(zoom);
+        d3.select(this.svg_overlay_selector).call(zoom)
     };
 }
 
@@ -358,14 +346,12 @@ class Element {
             if ('color_scale' in condition && 'color_levels' in condition) {
                 var color_scale = condition.color_scale;
                 var color_levels = condition.color_levels;
-                condition.color_scale = d3.scale.quantile()
+                condition.color_scale = d3.scaleQuantile()
                     .domain([d3.min(color_levels), d3.max(color_levels)])
                     .range(color_scale);
             };
         });
     };
-
-
     
     // Report initialization function - called if report_id provided and report_initialized == false
     initialize_report() {
@@ -394,10 +380,6 @@ class Element {
             var report_fill = '#616161';
             var sizing_text = 'Sizing...';
 
-            // Create base attributes for report elements
-            var base_attr = {'x':0, 'y':0, 'width':width, 'fill':report_fill, 'fill-opacity':'1',
-                'text-anchor':'middle', 'alignment-baseline':'after-edge'};
-
             // Hide placement element
             sel.style('visibility', 'hidden');
 
@@ -412,10 +394,19 @@ class Element {
                 .attr('font-size', font_scale.toString() + 'em');
 
             // Create report title outline
-            var title_outline = report.append('rect').attr(base_attr);
+            var title_outline = report.append('rect')
+                .attr('width', width)
+                .attr('fill', report_fill)
+                .attr('fill-opacity', '1')
+                .attr('text-anchor', 'middle')
+                .attr('alignment-baseline', 'after-edge');
 
             // Create report title text
-            var title_text = report.append('text').attr(base_attr)
+            var title_text = report.append('text')
+                .attr('width', width)
+                .attr('fill-opacity', '1')
+                .attr('text-anchor', 'middle')
+                .attr('alignment-baseline', 'after-edge')
                 .attr('x', width / 2)
                 .attr('fill', header_color)
                 .style('font-size', header_em.toString() + 'em')
@@ -444,12 +435,21 @@ class Element {
                     }
 
                     // Box outline (background)
-                    report.append('rect').attr(base_attr)
+                    report.append('rect')
+                        .attr('width', width)
+                        .attr('fill', report_fill)
+                        .attr('fill-opacity', '1')
+                        .attr('text-anchor', 'middle')
+                        .attr('alignment-baseline', 'after-edge')
                         .attr('y', y_count)
                         .attr('height', ((data_j_len + 1)*y_row));
 
                     // Condition description text
-                    report.append('text').attr(base_attr)
+                    report.append('text')
+                        .attr('width', width)
+                        .attr('fill-opacity', '1')
+                        .attr('text-anchor', 'middle')
+                        .attr('alignment-baseline', 'after-edge')
                         .attr('x', width / 2)
                         .attr('y', y_count + y_text)
                         .attr('fill', description_color)
@@ -473,7 +473,11 @@ class Element {
 
                         // Add Zone # if data_j_len > 1
                         if (data_j_len > 1) {
-                            report.append('text').attr(base_attr)
+                            report.append('text')
+                                .attr('width', width)
+                                .attr('fill-opacity', '1')
+                                .attr('text-anchor', 'middle')
+                                .attr('alignment-baseline', 'after-edge')
                                 .attr('x', width / (num_sections * 2))
                                 .attr('y', y_count + y_text)
                                 .attr('fill', zone_color)
@@ -485,7 +489,11 @@ class Element {
                         var datum;
                         data_j_len > 1 ? datum = condition_data.map(function(i) {return num_format(i[j])}) :
                             datum = condition_data.map(function(i) {return num_format(i)});
-                        report.append('text').attr(base_attr)
+                        report.append('text')
+                            .attr('width', width)
+                            .attr('fill-opacity', '1')
+                            .attr('text-anchor', 'middle')
+                            .attr('alignment-baseline', 'after-edge')
                             .attr('class', 'value-text')
                             .datum(datum)
                             .attr('x', width / (2 * (4 - num_sections)))
@@ -494,7 +502,11 @@ class Element {
                             .style('font-size', report_em.toString() + 'em');
 
                         // Unit text
-                        report.append('text').attr(base_attr)
+                        report.append('text')
+                            .attr('width', width)
+                            .attr('fill-opacity', '1')
+                            .attr('text-anchor', 'middle')
+                            .attr('alignment-baseline', 'after-edge')
                             .attr('x', (num_sections * 2 - 1) * width / (2 * num_sections))
                             .attr('y', y_count + y_text)
                             .attr('fill', unit_color)
@@ -558,7 +570,7 @@ class Element {
             .data(function(t) {return t[0]})
             .enter();
 
-        pattern_data[0].map(function() {
+        pattern_data.each(function() {
             // Add base pattern
             pattern.append('rect')
                 .attr('id', 'base')
@@ -784,8 +796,8 @@ class Heatmap extends Element {
             var bbox = sel.node().getBBox();
 
             // Assume heatmap occupies entire placement element bounding box
-            var x = d3.scale.linear().domain([0, initial_vals[0].length]).range([0, bbox.width]);
-            var y = d3.scale.linear().domain([0, initial_vals.length]).range([0, bbox.height]);
+            var x = d3.scaleLinear().domain([0, initial_vals[0].length]).range([0, bbox.width]);
+            var y = d3.scaleLinear().domain([0, initial_vals.length]).range([0, bbox.height]);
             var g = parent.append('g')
                 .attr('transform', 'translate(' + bbox.x + ',' + bbox.y + ')')
                 .append('g');
@@ -943,26 +955,27 @@ class Table extends Element {
     };
 
     update_report(x) {
-        if (!this.report_initialized) {this.initialize_report()}
+        if (!this.report_initialized) {this.initialize_report()};
 
         var table_id = 'table_' + this.report_id;
         var font_scale = d3.select(this.svg_selector).attr('font-scale');
-
         var table = d3.select('#' + this.uuid + ' #' + table_id + ' tbody');
 
         // Add content
         var row = table.selectAll('.content-row')
             .data(function(d) {return d[x]});
+        row.exit().remove();
         row.enter()
             .append('tr')
+            .merge(row)
             .attr('class', 'content-row');
-        row.exit().remove();
 
-        var cell = row.selectAll('.content-cell')
-            .data(function(d) {return d})
-            .text(function(d) {return d});
+        var cell = table.selectAll('.content-row').selectAll('.content-cell')
+            .data(function(d) {return d});
+        cell.exit().remove();
         cell.enter()
             .append('td')
+            .merge(cell)
             .text(function(d) {return d})
             .style('font-size', font_scale.toString() + 'em')
             .attr('class', 'content-cell');
@@ -1011,7 +1024,7 @@ class Legend extends Element {
             // Calculate discrete color bin scale
             var color_scale = this.conditions[0].color_scale;
             var scale_len = color_scale.range().length;
-            var x = d3.scale.linear()
+            var x = d3.scaleLinear()
                 .domain([0, scale_len])
                 .range([0, width]);
 
