@@ -5,37 +5,13 @@ class ElementContext {
         this.uuid = uuid;
         this.svg_sel = d3.select(`#${this.uuid} #ssv-svg`);
         this.svg_container_sel = d3.select(`#${this.uuid} .ssv-visual`);
-        this.zoom_layer_sel = d3.select(`#${this.uuid} #zoom-layer`);
-        this.info_layer_sel = d3.select(`#${this.uuid} #info-layer`);
+        this.x_val_sel = d3.select(`#${this.uuid} #x-series-val`);
+
         // -- Element_data is the 'y' data representing svg elements that corresponds to the x_series data
         this.x_series = x_series;
         this.element_data = element_data;
-
         this.elements = [];
-        // -- Simulation interface properties - control automatic play, play speed, etc
-        this.controls = {
-            // control state information
-            play_enabled: false,
-            pan_zoom_enabled: true,
-            slider_moving: false,
-            current_x: 0,
-            target_x: 0,
-            play_speed: 1,
-            max_speed: 8,
-            min_speed: 1,
-            speed_mult: 2,
-            // control selectors
-            play_selector: '#' + this.uuid + ' #play-button',
-            pan_zoom_selector: '#' + this.uuid + ' #pan-zoom-button',
-            slider_selector: '#' + this.uuid + ' .range-slider',
-            speed_selector: '#' + this.uuid + ' #speed-button',
-            x_val_selector: '#' + this.uuid + ' #x-series-val',
-            pause_icon_selector: '#' + this.uuid + ' #pause-icon',
-            play_icon_selector: '#' + this.uuid + ' #play-icon',
-            pan_zoom_enabled_icon_selector: '#' + this.uuid + ' #pan-zoom-enabled-icon',
-            pan_zoom_disabled_icon_selector: '#' + this.uuid + ' #pan-zoom-disabled-icon'
-        };
-
+        
         // -- Pattern overlay (e.g., water) data provided by Python
         // AHD see https://jsfiddle.net/96txdmnf/1/
         this.svg_overlays = svg_overlays;
@@ -43,10 +19,13 @@ class ElementContext {
         // Call all initialization functions
         this.initialize_overlays();
         this.set_font_scale();
-        this.initialize_controls();
+        //this.initialize_controls();
         this.initialize_elements();
-        this.initialize_pan_zoom();
+        //this.initialize_pan_zoom();
+        this.controls = new Controls(uuid, x_series.length, this.update_elements, this)
     }
+
+
 
     // Initializer of svg pattern overlays (e.g., water pattern overlays).  These are inserted into
     // the svg 'defs' child for reference by svg elements.
@@ -111,33 +90,69 @@ class ElementContext {
 
     // Function to tell all manipulated element classes to update rendering given index of this.x_series
     update_elements(x) {
-        d3.select(this.controls.x_val_selector).html(num_format(this.x_series[x]));
+        this.x_val_sel.html(num_format(this.x_series[x]));
         for (var element in this.elements) {
             this.elements[element].update(x);
         }
     };
+}
+
+class Controls {
+    constructor(uuid, x_series_length, update_callback, context) {
+        this.uuid = uuid;
+        this.x_series_length = x_series_length;
+        this.update_callback = update_callback;
+        this.context = context;
+
+        // control state information
+        this.play_enabled = false;
+        this.pan_zoom_enabled = true;
+        this.slider_moving = false;
+        this.current_x = 0;
+        this.target_x = 0;
+        this.play_speed = 1;
+        this.max_speed = 8;
+        this.min_speed = 1;
+        this.speed_mult = 2;
+
+        // control selectors
+        this.zoom_layer_sel = d3.select(`#${this.uuid} #zoom-layer`);
+        this.info_layer_sel = d3.select(`#${this.uuid} #info-layer`);
+        this.speed_btn_sel = d3.select(`#${this.uuid} #speed-button`);
+        this.play_btn_sel = d3.select(`#${this.uuid} #play-button`);
+        this.pan_zoom_btn_sel = d3.select(`#${this.uuid} #pan-zoom-button`);
+        this.modebar_sel = d3.select(`#${this.uuid} .modebar`);
+        this.modebar_group_sel = d3.select(`#${this.uuid} .modebar-group`);
+        this.modebar_slider_sel = d3.select(`#${this.uuid} .modebar-slider`);
+        this.pause_icon_sel = d3.select(`#${this.uuid} #pause-icon`);
+        this.play_icon_sel = d3.select(`#${this.uuid} #play-icon`);
+        this.pan_zoom_enabled_icon_sel = d3.select(`#${this.uuid} #pan-zoom-enabled-icon`);
+        this.pan_zoom_disabled_icon_sel = d3.select(`#${this.uuid} #pan-zoom-disabled-icon`);
+
+        // initialize controls
+        this.initialize()
+    }
 
     render_slider() {
-        var context = this;
-        var bbox = d3.select('#' + context.uuid + ' .modebar').node().getBoundingClientRect();
+        var bbox = this.modebar_sel.node().getBoundingClientRect();
         var height = bbox.height;
         var margin = 2;
         var handle_r = 8;
-        var width = bbox.width - d3.select('#' + context.uuid + " .modebar-group").node().getBoundingClientRect().width;
+        var width = bbox.width - this.modebar_group_sel.node().getBoundingClientRect().width;
 
         var x = d3.scaleLinear()
-            .domain([0, context.x_series.length - 1])
+            .domain([0, this.x_series_length - 1])
             .range([0, width - 2*(margin + handle_r)])
             .clamp(true);
 
-        var slider_div = d3.select('#' + context.uuid + " .modebar-slider");
-        slider_div.selectAll("svg").remove();
-        var slider = slider_div.append("svg")
+        this.modebar_slider_sel.selectAll("svg").remove();
+        var slider = this.modebar_slider_sel.append("svg")
             .attr("width", width)
             .append("g")
             .attr("transform",
-                "translate(" + (handle_r + margin).toString() + "," + (height/2 + margin).toString() + ")")
+                "translate(" + (handle_r + margin).toString() + "," + (height/2 + margin).toString() + ")");
 
+        var self = this;
         slider.append("line")
             .attr("class", "slider-track")
             .attr("x1", x.range()[0])
@@ -149,140 +164,142 @@ class ElementContext {
                 .call(d3.drag()
                     .on("start.interrupt", function() {slider.interrupt()})
                     .on("start drag", function() {
-                        context.controls.target_x = Math.round(x.invert(d3.event.x));
-                        context.move();
-                        handle.attr("cx", x(context.controls.target_x));
-                    }))
+                        self.target_x = Math.round(x.invert(d3.event.x));
+                        self.move();
+                    }));
 
         var handle = slider.append("circle")
             .attr("class", "slider-handle")
             .attr("r", handle_r);
+
+        // Register a dispatch for updating the handle
+        this.slider_dispatch = d3.dispatch("change");
+        this.slider_dispatch.on("change", function() {
+            handle.attr("cx", x(self.target_x));
+        });
     };
 
     play() {
-        var context = this;
-        if (context.controls.play_enabled) {
-                context.controls.play_enabled = false;
-                d3.select(context.controls.pause_icon_selector).attr('style', 'display:none');
-                d3.select(context.controls.play_icon_selector).attr('style', '');
+        if (this.play_enabled) {
+                this.play_enabled = false;
+                this.pause_icon_sel.attr('style', 'display:none');
+                this.play_icon_sel.attr('style', '');
             } else {
-                context.controls.play_enabled = true;
-                d3.select(context.controls.pause_icon_selector).attr('style', '');
-                d3.select(context.controls.play_icon_selector).attr('style', 'display:none');
-                if (context.controls.current_x >= context.x_series.length - 1) {
-                    context.controls.current_x = 0;
+                this.play_enabled = true;
+                this.pause_icon_sel.attr('style', '');
+                this.play_icon_sel.attr('style', 'display:none');
+                if (this.current_x >= this.x_series_length - 1) {
+                    this.current_x = 0;
                 }
-                context.x_series_forward()
+                this.x_series_forward()
         }
     }
 
     toggle_pan_zoom() {
-        var context = this;
-        if (context.controls.pan_zoom_enabled) {
-            context.controls.pan_zoom_enabled = false;
-            d3.select(context.controls.pan_zoom_disabled_icon_selector).attr('style', '');
-            d3.select(context.controls.pan_zoom_enabled_icon_selector).attr('style', 'display:none');
+        if (this.pan_zoom_enabled) {
+            this.pan_zoom_enabled = false;
+            this.pan_zoom_disabled_icon_sel.attr('style', '');
+            this.pan_zoom_enabled_icon_sel.attr('style', 'display:none');
         } else {
-            context.controls.pan_zoom_enabled = true;
-            d3.select(context.controls.pan_zoom_disabled_icon_selector).attr('style', 'display:none');
-            d3.select(context.controls.pan_zoom_enabled_icon_selector).attr('style', '');
+            this.pan_zoom_enabled = true;
+            this.pan_zoom_disabled_icon_sel.attr('style', 'display:none');
+            this.pan_zoom_enabled_icon_sel.attr('style', '');
         }
     }
 
     move() {
-        var context = this;
-        if (context.controls.slider_moving) return;
+        this.slider_dispatch.call("change");
+        if (this.slider_moving) return;
 
-        context.controls.slider_moving = true;
-        context.controls.current_x = context.controls.target_x;
-        context.update_elements(context.controls.current_x);
+        this.slider_moving = true;
+        this.current_x = this.target_x;
+        this.update_callback.call(this.context, this.current_x);
 
+        var self = this;
         d3.timer(function() {
-            context.controls.slider_moving = false;
-        },100);
+            self.slider_moving = false;
+        }, 100);
     };
 
     // Function to auto update elements based on current x_series position and selected play speed
     x_series_forward() {
-        var context = this;
+        var self = this;
         window.setTimeout(function() {
-            if (context.controls.play_enabled && context.controls.current_x < context.x_series.length - 1) {
-                context.controls.target_x = context.controls.current_x + 1;
-                context.move();
+            if (self.play_enabled && self.current_x < self.x_series_length - 1) {
+                self.target_x = self.current_x + 1;
+                
+                self.move();
 
-                if (context.controls.current_x < context.x_series.length - 1) {
-                    context.x_series_forward()
+                if (self.current_x < self.x_series_length - 1) {
+                    self.x_series_forward()
                 } else {
-                    context.play();
+                    self.play();
                 }
             }
-        }, 1000 / this.controls.play_speed);
+        }, 1000 / this.play_speed);
     };
 
     // Initialize controls for ssv control bar
-    initialize_controls() {
-        var context = this;
-        context.render_slider();
-        window.addEventListener("resize", context.render_slider);
+    initialize() {
+        this.render_slider();
+        var self = this;
+        d3.select(window).on('resize', function() {self.render_slider()});
 
         // Clicking on play button automates the forward run of the x_series
-        d3.select(this.controls.play_selector)
+        this.play_btn_sel
             .attr('ssv-id', this.uuid)
-            .on("click", function() {context.play()});
+            .on("click", function() {self.play()});
 
         // Clicking on zoom button toggles pan/zoom ability
-        d3.select(this.controls.pan_zoom_selector)
+        this.pan_zoom_btn_sel
             .attr('ssv-id', this.uuid)
-            .on("click", function() {context.toggle_pan_zoom()});
+            .on("click", function() {self.toggle_pan_zoom()});
 
         // Clicking on the speed button changes the speed of play
-        d3.select(this.controls.speed_selector).attr('ssv-id', this.uuid)
+        this.speed_btn_sel.attr('ssv-id', this.uuid)
             .on("click", function() {
-                var context = element_contexts[d3.select(this).attr('ssv-id')];
-                if (context.controls.play_speed == context.controls.max_speed) {
-                    context.controls.play_speed = context.controls.min_speed
+                if (self.play_speed == self.max_speed) {
+                    self.play_speed = self.min_speed
                 } else {
-                    context.controls.play_speed *= context.controls.speed_mult
+                    self.play_speed *= self.speed_mult
                 }
-            var speed = context.controls.play_speed.toString();
-            d3.select(context.controls.speed_selector + ' span')
-                .html("<b>" + speed + 'x</b>')
-        });
+
+                var speed = self.play_speed.toString();
+                self.speed_btn_sel.select('span')
+                    .html("<b>" + speed + 'x</b>')
+            });
+
+        this.initialize_pan_zoom();
     };
 
     // Initializer of pan and zoom functionality
     initialize_pan_zoom() {
-        // Get svg, svg parent div dimensions
-        var viewbox = this.svg_sel.attr('viewBox').split(' ');
-        var svg_bbox = this.svg_sel.node().getBBox();
-        var x1 = parseFloat(viewbox[0]);
-        var x2 = parseFloat(viewbox[2]);
-        var y1 = parseFloat(viewbox[1]);
-        var y2 = parseFloat(viewbox[3]);
-
-        var max_width = (x2 - x1);
-        var max_height = (y2 - y1);
-
-        var div_bbox = this.svg_container_sel.node().getBoundingClientRect();
-
-        // Apply overlay to control zoom/pan;
         this.info_layer_sel.attr('y', '0%')
             .attr('height', '100%')
             .attr('x', '0%')
             .attr('width', '100%');
 
-        // Apply zoom/pan features and pan limit
-        var context = this;
+        // Get dimensions
+        var bbox = this.info_layer_sel.node().getBBox();
+        var x1 = bbox.x;
+        var x2 = x1 + bbox.width;
+        var y1 = bbox.y;
+        var y2 = y1 + bbox.height;
+
+        var max_width = (x2 - x1);
+        var max_height = (y2 - y1);
+
+        var self = this;
         var zoom = d3.zoom()
             .scaleExtent([1, 8])
             .on('zoom', function() {
-                if (context.controls.pan_zoom_enabled) {
+                if (self.pan_zoom_enabled) {
                     var scale = d3.event.transform.k;
                     var tx = Math.max(d3.event.transform.x, -(x2 * scale - max_width));
                     var tx = Math.min(tx, x1);
                     var ty = Math.max(d3.event.transform.y, -(y2 * scale - max_height));
                     var ty = Math.min(ty, y1);
-                    context.zoom_layer_sel.attr("transform",
+                    self.zoom_layer_sel.attr("transform",
                         'translate(' + [tx,ty] + ')scale(' + scale + ')');
                 }
             });
