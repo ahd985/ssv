@@ -91,8 +91,7 @@ class Vis:
         self._svg_root = svg_root
         self._title = title
         self._x_series_unit = x_series_unit
-        self._elements = {element: {} for element in [cls.__name__.lower() for
-                                                      cls in elements.Element.__subclasses__()]}
+        self._elements = []
 
         base_path = os.path.dirname(os.path.abspath(__file__))
         with open(os.path.join(base_path, 'data', 'ssv-overlays.json'), 'r') as f:
@@ -136,12 +135,12 @@ class Vis:
 
         element_cls = elements.Element.create(element_type)
         element_entry = element_cls(element_ids, element_description, len(self._x_series), **kwargs)
-        self._elements[element_type].update({element_id: element_entry for element_id in element_ids})
+        self._elements.append(element_entry)
 
         return element_entry
 
     def del_element(self, element_id):
-        """Method to delete visualization element from internal class property.
+        """Method to delete visualization element id from internal class property.
 
         Args:
             element_ids (str): String id representing the id of the corresponding svg element in the
@@ -150,9 +149,12 @@ class Vis:
         if not isinstance(element_id, str):
             raise TypeError('\'element_id\' input must be a string.')
 
-        for element_type in self._elements:
-            if element_id in self._elements[element_type]:
-                del self._elements[element_type][element_id]
+        for i in range(len(self._elements)):
+            element_ids = self._elements[i]['ids']
+            if element_id in element_ids:
+                element_ids.remove(element_id)
+            if len(element_ids) < 1:
+                del self._elements[i]
 
     def save_visualization(self, file_path):
         """Method to save rendered visualization as html file.
@@ -184,18 +186,8 @@ class Vis:
             raise TypeError('Input for visualization height must be a number greater than 0')
 
         env = Environment(loader=PackageLoader('ssv', ''))
-        element_data = {element_type: [] for element_type in self._elements.keys()}
+        element_data = [element.dump_attr() for element in self._elements]
         self._prepare_svg()
-
-        for element_type, elements in self._elements.items():
-            for element in set(elements.values()):
-                element_dict = element.dump_attr()
-
-                if 'conditions' in element_dict:
-                    for i in range(len(element_dict['conditions'])):
-                        element_dict['conditions'][i] = element_dict['conditions'][i].dump_attr()
-
-                element_data[element_type].append(element_dict)
 
         render_vars = {
             'title': self._title, 'element_data': json.dumps(element_data),
@@ -254,9 +246,9 @@ class Vis:
         self._svg_root.insert(-1, g_popover)
 
         # Build dict of element ids and include report ids
-        elements = {k: v for e in list(self._elements.values()) for k, v in e.items()}
-        element_ids = list(elements.keys())
-        element_ids += [element.report_id for element in elements.values() if element.report_id is not None]
+        element_ids = [id for element in self._elements for id in element.ids]
+        element_ids += [element.report_id for element in self._elements if
+                        element.report_id is not None]
 
         # Loop through element ids and see what's in the xml tree under supported svg elements
         for element_id in element_ids:

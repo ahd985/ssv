@@ -34,6 +34,7 @@ class Element:
     _allowed_conditions = []
 
     def __init__(self, element_ids, element_description, x_series_len, element_report_id, popover_content):
+        self.type = type(self).__name__.lower()
         self.ids = element_ids
         if not isinstance(element_description, str):
             raise TypeError('\'element_description\' must be a string.')
@@ -99,7 +100,8 @@ class Element:
             self.conditions.append(condition)
 
     def dump_attr(self):
-        return {k: v for k, v in self.__dict__.items() if k[0] != '_'}
+        return {k: ([c.dump_attr() for c in v] if k == 'conditions' else v) for
+                k, v in self.__dict__.items() if k[0] != '_'}
 
 
 # Wrapper for cell
