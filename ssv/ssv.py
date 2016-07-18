@@ -219,31 +219,29 @@ class Vis:
     # Cleans svg of troublesome attributes and searches for user-provided element ids to bind data to
     def _prepare_svg(self):
         # Add container element for popovers
-        g_popover = ET.Element('rect')
-        g_popover.attrib['id'] = 'popover-container'
-        g_popover.attrib['height'] = '100%'
-        g_popover.attrib['width'] = '100%'
-        g_popover.attrib['fill'] = 'none'
+        popover_layer = ET.Element('rect')
+        popover_layer.attrib['id'] = 'popover-container'
 
-        # Add container element to allow for zooming and panning
+        # Add info container element and zoom element to allow for zooming and panning
         # Add id to svg to allow for identification on front end
-        g_zoom = ET.Element('g')
-        g_zoom.attrib['id'] = 'zoom-layer'
+        info_layer = ET.Element('g')
+        info_layer.attrib['id'] = 'info-layer'
 
         for element in list(self._svg_root):
             if self._namespace_strip(element.tag) in self._supported_svg + ['g']:
                 element_copy = element
-                g_zoom.append(element_copy)
+                info_layer.append(element_copy)
                 self._svg_root.remove(element)
 
-        overlay_rect = ET.Element('rect')
-        overlay_rect.attrib['id'] = 'info-layer'
+        zoom_layer = ET.Element('rect')
+        zoom_layer.attrib['id'] = 'zoom-layer'
 
         # Attach containers to root
         self._svg_root.attrib['id'] = 'ssv-svg'
-        self._svg_root.insert(-1, g_zoom)
-        self._svg_root.insert(-1, overlay_rect)
-        self._svg_root.insert(-1, g_popover)
+
+        self._svg_root.insert(-1, info_layer)
+        self._svg_root.insert(-1, zoom_layer)
+        self._svg_root.insert(-1, popover_layer)
 
         # Build dict of element ids and include report ids
         element_ids = [id for element in self._elements for id in element.ids]

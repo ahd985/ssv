@@ -41,11 +41,13 @@
     max-height: 100%;
     border-left: 1px solid #E0E0E0;
     border-right: 1px solid #E0E0E0;
+    pointer-events: all;
 }
 
-.ssv-panel #info-layer {
-    fill: none;
-    pointer-events: all;
+.ssv-panel #zoom-layer {
+    height:100%;
+    fill:none;
+    pointer-events:all;
 }
 
 .ssv-panel .ssv-x-series {

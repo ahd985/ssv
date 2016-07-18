@@ -17,6 +17,8 @@ class Controls {
         this.speed_mult = 2;
 
         // control selectors
+        this.svg_container_sel = d3.select(`#${this.uuid} .svg-container`);
+        this.svg_sel = d3.select(`#${this.uuid} #ssv-svg`);
         this.zoom_layer_sel = d3.select(`#${this.uuid} #zoom-layer`);
         this.info_layer_sel = d3.select(`#${this.uuid} #info-layer`);
         this.speed_btn_sel = d3.select(`#${this.uuid} #speed-button`);
@@ -143,8 +145,9 @@ class Controls {
     // Initialize controls for ssv control bar
     initialize() {
         this.render_slider();
+        this.update_viewbox();
         var self = this;
-        d3.select(window).on('resize', function() {self.render_slider()});
+        d3.select(window).on('resize', function() {self.render_slider(); self.update_viewbox();});
 
         // Clicking on play button automates the forward run of the x_series
         this.play_btn_sel
@@ -175,11 +178,6 @@ class Controls {
 
     // Initializer of pan and zoom functionality
     initialize_pan_zoom() {
-        this.info_layer_sel.attr('y', '0%')
-            .attr('height', '100%')
-            .attr('x', '0%')
-            .attr('width', '100%');
-
         // Get dimensions
         var bbox = this.info_layer_sel.node().getBBox();
         var x1 = bbox.x;
@@ -200,12 +198,24 @@ class Controls {
                     var tx = Math.min(tx, x1);
                     var ty = Math.max(d3.event.transform.y, -(y2 * scale - max_height));
                     var ty = Math.min(ty, y1);
-                    self.zoom_layer_sel.attr("transform",
+                    self.info_layer_sel.attr("transform",
                         'translate(' + [tx,ty] + ')scale(' + scale + ')');
                 }
             });
-        this.info_layer_sel.call(zoom)
+        this.zoom_layer_sel.call(zoom)
     };
+
+    update_viewbox() {
+        var bbox = this.svg_container_sel.node().getBoundingClientRect();
+        var view_box = this.svg_sel.attr('viewBox').split(' ').map(function(d) {return parseFloat(d)});
+        var vb_h_ratio = view_box[3] / bbox.height;
+        var vb_width_change = bbox.width * vb_h_ratio - view_box[2];
+        view_box[2] = view_box[2] + vb_width_change;
+        view_box[0] = view_box[0] - vb_width_change/2;
+        this.svg_sel.attr('viewBox', view_box.join(' '));
+        this.zoom_layer_sel.attr('transform', 'translate(' + view_box[0].toString() + ',0)')
+            .attr('width', view_box[2]);
+    }
 }
 
 module.exports = function(...args) {
