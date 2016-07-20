@@ -45,7 +45,6 @@
 }
 
 .ssv-panel #zoom-layer {
-    height:100%;
     fill:none;
     pointer-events:all;
 }
@@ -70,7 +69,6 @@
 .ssv-panel:hover .modebar {
     opacity: 0.7;
 }
-
 
 .ssv-panel .modebar-group {
     float: left;
@@ -97,6 +95,16 @@
     fill: #37474F;
     color: #37474F;
     opacity: 1;
+}
+
+.ssv-panel #speed-button span {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: -moz-none;
+    -ms-user-select: none;
+    -o-user-select: none;
+    user-select: none;
 }
 
 .ssv-panel #play-icon svg {

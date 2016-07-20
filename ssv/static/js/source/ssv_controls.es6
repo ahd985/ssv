@@ -15,6 +15,8 @@ class Controls {
         this.max_speed = 8;
         this.min_speed = 1;
         this.speed_mult = 2;
+        this.bbox_zoom = null;
+        this.bbox_info = null;
 
         // control selectors
         this.svg_container_sel = d3.select(`#${this.uuid} .svg-container`);
@@ -178,15 +180,7 @@ class Controls {
 
     // Initializer of pan and zoom functionality
     initialize_pan_zoom() {
-        // Get dimensions
-        var bbox = this.info_layer_sel.node().getBBox();
-        var x1 = bbox.x;
-        var x2 = x1 + bbox.width;
-        var y1 = bbox.y;
-        var y2 = y1 + bbox.height;
-
-        var max_width = (x2 - x1);
-        var max_height = (y2 - y1);
+        var bbox_info = this.info_layer_sel.node().getBBox();
 
         var self = this;
         var zoom = d3.zoom()
@@ -194,12 +188,33 @@ class Controls {
             .on('zoom', function() {
                 if (self.pan_zoom_enabled) {
                     var scale = d3.event.transform.k;
-                    var tx = Math.max(d3.event.transform.x, -(x2 * scale - max_width));
-                    var tx = Math.min(tx, x1);
-                    var ty = Math.max(d3.event.transform.y, -(y2 * scale - max_height));
-                    var ty = Math.min(ty, y1);
+                    var tx=0;
+                    var ty=0;
+                    if (bbox_info.width*scale <= self.bbox_zoom.width) {
+                        tx = Math.max(d3.event.transform.x, self.bbox_zoom.x - bbox_info.x);
+                        tx = Math.min(tx,
+                            self.bbox_zoom.width - (bbox_info.x - self.bbox_zoom.x) - bbox_info.width*scale);
+                    } else {
+                        tx = Math.max(d3.event.transform.x, bbox_info.x - self.bbox_zoom.x);
+                        tx = Math.min(tx,
+                            bbox_info.width*scale - (self.bbox_zoom.x - bbox_info.x) - self.bbox_zoom.width);
+                    }
+
+                    if (bbox_info.height*scale <=  self.bbox_zoom.height) {
+                        ty = Math.max(d3.event.transform.y, self.bbox_zoom.y - bbox_info.y);
+                        ty = Math.min(ty,
+                            self.bbox_zoom.height - (bbox_info.y - self.bbox_zoom.y)  - bbox_info.height*scale);
+                    } else {
+                        ty = Math.max(d3.event.transform.y, bbox_info.y - self.bbox_zoom.y);
+                        ty = Math.min(ty,
+                            bbox_info.height*scale - (self.bbox_zoom.y - bbox_info.y) - self.bbox_zoom.height);
+                    }
+
                     self.info_layer_sel.attr("transform",
                         'translate(' + [tx,ty] + ')scale(' + scale + ')');
+
+                    d3.event.transform.x = tx;
+                    d3.event.transform.y = ty;
                 }
             });
         this.zoom_layer_sel.call(zoom)
@@ -208,13 +223,17 @@ class Controls {
     update_viewbox() {
         var bbox = this.svg_container_sel.node().getBoundingClientRect();
         var view_box = this.svg_sel.attr('viewBox').split(' ').map(function(d) {return parseFloat(d)});
+        var margin = 0.05 * view_box[3];
         var vb_h_ratio = view_box[3] / bbox.height;
         var vb_width_change = bbox.width * vb_h_ratio - view_box[2];
         view_box[2] = view_box[2] + vb_width_change;
         view_box[0] = view_box[0] - vb_width_change/2;
         this.svg_sel.attr('viewBox', view_box.join(' '));
-        this.zoom_layer_sel.attr('transform', 'translate(' + view_box[0].toString() + ',0)')
-            .attr('width', view_box[2]);
+        this.zoom_layer_sel.attr('x', view_box[0] + margin)
+            .attr('width', view_box[2] - 2*margin)
+            .attr('y', view_box[1] + margin)
+            .attr('height', view_box[3] - 2*margin);
+        this.bbox_zoom = this.zoom_layer_sel.node().getBBox();
     }
 }
 
