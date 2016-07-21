@@ -26,6 +26,7 @@ class Controls {
         this.speed_btn_sel = d3.select(`#${this.uuid} #speed-button`);
         this.play_btn_sel = d3.select(`#${this.uuid} #play-button`);
         this.pan_zoom_btn_sel = d3.select(`#${this.uuid} #pan-zoom-button`);
+        this.center_btn_sel = d3.select(`#${this.uuid} #center-button`);
         this.modebar_sel = d3.select(`#${this.uuid} .modebar`);
         this.modebar_group_sel = d3.select(`#${this.uuid} .modebar-group`);
         this.modebar_slider_sel = d3.select(`#${this.uuid} .modebar-slider`);
@@ -181,6 +182,7 @@ class Controls {
     // Initializer of pan and zoom functionality
     initialize_pan_zoom() {
         var bbox_info = this.info_layer_sel.node().getBBox();
+        var offset = [bbox_info.x - 0, bbox_info.y - 0];
 
         var self = this;
         var zoom = d3.zoom()
@@ -191,22 +193,21 @@ class Controls {
                     var tx=0;
                     var ty=0;
                     if (bbox_info.width*scale <= self.bbox_zoom.width) {
-                        tx = Math.max(d3.event.transform.x, self.bbox_zoom.x - bbox_info.x);
+                        tx = Math.max(d3.event.transform.x, self.bbox_zoom.x - bbox_info.x - offset[0]*(scale-1));
                         tx = Math.min(tx,
-                            self.bbox_zoom.width - (bbox_info.x - self.bbox_zoom.x) - bbox_info.width*scale);
+                            self.bbox_zoom.width - (bbox_info.x - self.bbox_zoom.x + offset[0]*(scale-1)) - bbox_info.width*scale);
                     } else {
-                        tx = Math.max(d3.event.transform.x, (self.bbox_zoom.width) / 2);
-                        //tx = Math.min(tx, max_tx);
+                        tx = Math.max(d3.event.transform.x, self.bbox_zoom.x - bbox_info.x - (bbox_info.width*scale - self.bbox_zoom.width) - offset[0]*(scale-1));
+                        tx = Math.min(tx, bbox_info.x - offset[0]*(scale-1) - self.bbox_zoom.x );
                     }
 
                     if (bbox_info.height*scale <=  self.bbox_zoom.height) {
-                        ty = Math.max(d3.event.transform.y, self.bbox_zoom.y - bbox_info.y);
+                        ty = Math.max(d3.event.transform.y, self.bbox_zoom.y - bbox_info.y - offset[1]*(scale-1));
                         ty = Math.min(ty,
-                            self.bbox_zoom.height - (bbox_info.y - self.bbox_zoom.y)  - bbox_info.height*scale);
+                            self.bbox_zoom.height - (bbox_info.y - self.bbox_zoom.y + offset[1]*(scale-1))  - bbox_info.height*scale);
                     } else {
-                        var max_ty = Math.abs(bbox_info.height*scale - self.bbox_zoom.height) / 2;
-                        ty = Math.max(d3.event.transform.y, -max_ty);
-                        //ty = Math.min(ty, max_ty);
+                        ty = Math.max(d3.event.transform.y, self.bbox_zoom.y - bbox_info.y - (bbox_info.height*scale - self.bbox_zoom.height) - offset[1]*(scale-1));
+                        ty = Math.min(ty, bbox_info.y - offset[1]*(scale-1) - self.bbox_zoom.y);
                     }
 
                     self.info_layer_sel.attr("transform",
@@ -217,6 +218,15 @@ class Controls {
                 }
             });
         this.zoom_layer_sel.call(zoom)
+
+        // Clicking on center button re-centers svg
+        this.center_btn_sel
+            .attr('ssv-id', this.uuid)
+            .on("click", function() {
+                self.info_layer_sel.attr("transform",
+                        'translate(' + [bbox_info.x,bbox_info.y] + ')scale(1)');
+                zoom.transform(self.zoom_layer_sel, d3.zoomIdentity);
+            });
     };
 
     update_viewbox() {

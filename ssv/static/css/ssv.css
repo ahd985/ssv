@@ -123,6 +123,10 @@
     height:100%;
 }
 
+.ssv-panel #center-icon svg {
+    height:100%;
+}
+
 /* SSV mode bar slider components */
 .ssv-panel .slider-track {
     width: 100%;
