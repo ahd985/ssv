@@ -195,9 +195,8 @@ class Controls {
                         tx = Math.min(tx,
                             self.bbox_zoom.width - (bbox_info.x - self.bbox_zoom.x) - bbox_info.width*scale);
                     } else {
-                        tx = Math.max(d3.event.transform.x, bbox_info.x - self.bbox_zoom.x);
-                        tx = Math.min(tx,
-                            bbox_info.width*scale - (self.bbox_zoom.x - bbox_info.x) - self.bbox_zoom.width);
+                        tx = Math.max(d3.event.transform.x, (self.bbox_zoom.width) / 2);
+                        //tx = Math.min(tx, max_tx);
                     }
 
                     if (bbox_info.height*scale <=  self.bbox_zoom.height) {
@@ -205,9 +204,9 @@ class Controls {
                         ty = Math.min(ty,
                             self.bbox_zoom.height - (bbox_info.y - self.bbox_zoom.y)  - bbox_info.height*scale);
                     } else {
-                        ty = Math.max(d3.event.transform.y, bbox_info.y - self.bbox_zoom.y);
-                        ty = Math.min(ty,
-                            bbox_info.height*scale - (self.bbox_zoom.y - bbox_info.y) - self.bbox_zoom.height);
+                        var max_ty = Math.abs(bbox_info.height*scale - self.bbox_zoom.height) / 2;
+                        ty = Math.max(d3.event.transform.y, -max_ty);
+                        //ty = Math.min(ty, max_ty);
                     }
 
                     self.info_layer_sel.attr("transform",
