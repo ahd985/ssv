@@ -1,13 +1,13 @@
 var num_format = require("./ssv_utilities.es6");
 
-function get_report_update_func(outline_sel, font_scale, data, description) {
-    var parent = d3.select(outline_sel.node().parentNode);
+function get_report_update_func(node, font_scale, data, description) {
+    if (node) {
+        var parent = d3.select(node.parentNode);
 
-    if (!outline_sel.empty()) {
         // Get bounding box of placement element
         // Placement element height is not used - height of legend is ultimately determined by user specified
         // font size
-        var bbox = outline_sel.node().getBBox();
+        var bbox = node.getBBox();
         var width = bbox.width;
         var x = bbox.x;
         var y = bbox.y;
@@ -26,7 +26,7 @@ function get_report_update_func(outline_sel, font_scale, data, description) {
         var sizing_text = 'Sizing...';
 
         // Hide placement element
-        outline_sel.style('visibility', 'hidden');
+        d3.select(node).style('visibility', 'hidden');
 
         // Append new parent element for report
         var report = parent.append('g')
@@ -267,7 +267,152 @@ function get_pattern_update_func(node, pattern_id, prop_data, style_apply) {
     return update_func
 };
 
+function render_table(node, table_id, data, headers, font_scale) {
+    if (node) {
+        var parent = d3.select(node.parentNode);
+
+        // Get bounding box of placement element
+        // Placement element height is not used - height of legend is ultimately determined by user specified
+        // font size
+        var bbox = node.getBBox();
+        var width = bbox.width;
+        var x = bbox.x;
+        var y = bbox.y;
+
+        // Hide placement element
+        d3.select(node).style('visibility', 'hidden');
+
+        // Append new parent element for table
+        var table = parent.append('g')
+            .attr('transform', 'translate(' + x + ',' + y + ')')
+            .append('foreignObject')
+            .attr('id', 'ssv-table')
+            .attr("width", width)
+            .attr("height", 500)
+            .append('xhtml:table')
+            .attr('class', 'table')
+            .attr('id', table_id)
+            .datum(data);
+
+        // Add table header
+        table.append('thead').append('tr')
+            .selectAll()
+            .data(headers)
+            .enter()
+            .append('th')
+            .text(function (d) {
+                return d
+            })
+            .style('font-size', font_scale.toString() + 'em');
+
+        // Add tbody
+        table.append('tbody');
+
+        var update_func = function (x) {
+            // Add content
+            var row = table.selectAll('.content-row')
+                .data(function (d) {
+                    return d[x]
+                });
+            row.exit().remove();
+            row.enter()
+                .append('tr')
+                .merge(row)
+                .attr('class', 'content-row');
+
+            var cell = table.selectAll('.content-row').selectAll('.content-cell')
+                .data(function (d) {
+                    return d
+                });
+            cell.exit().remove();
+            cell.enter()
+                .append('td')
+                .merge(cell)
+                .text(function (d) {
+                    return d
+                })
+                .style('font-size', font_scale.toString() + 'em')
+                .attr('class', 'content-cell');
+        };
+        
+        return update_func
+    }
+};
+
+function render_color_scale(node, color_scale, description, opacity, font_scale) {
+    if (node) {
+        var parent = d3.select(node.parentNode);
+
+        // Hide original placement element
+        d3.select(node).style('visibility', 'hidden');
+
+        // Get bounding box of placement element
+        // Placement element height is not used - height of legend is ultimately determined by user specified
+        // font size
+        var bbox = node.getBBox();
+        var width = bbox.width;
+        var pos_x = bbox.x;
+        var pos_y = bbox.y;
+
+        // Append legend outline to parent of placement element
+        // Set legend font size to font scale property
+        var self = this;
+        var parent = d3.select(node.parentNode);
+        var legend = parent.append('g').attr('transform', 'translate(' + pos_x + ',' + pos_y + ')')
+            .append('g')
+            .attr('font-size', font_scale + 'em')
+            .attr('stroke', 'black')
+            .attr('stroke-width','0.01em');
+
+        // Calculate discrete color bin scale
+        var scale_len = color_scale.range().length;
+        var x = d3.scaleLinear()
+            .domain([0, scale_len])
+            .range([0, width]);
+
+        // Generate legend
+        // 'header_em' represents the color scale title font size
+        // 'label' represents the color scale bin values font size
+        var header_em = 1.5;
+        var label_em = 1;
+        var margin = 0.1;
+
+        // -- Append header text
+        var legend_text = legend.append('text')
+            .text(description)
+            .attr('x', (width/2))
+            .attr('y', '1em')
+            .attr('text-anchor', 'middle')
+            .attr('font-size', header_em.toString() + 'em');
+        var legend_text_height = legend_text.node().getBBox().height;
+
+        // -- Generate range of colors required for legend
+        var keys = legend.selectAll('rect').data(color_scale.range());
+
+        // -- Append a rect for every color on the legend
+        // -- Rects are same height as header text
+        keys.enter().append('rect')
+            .attr('x', function(d,i) {return x(i)})
+            .attr('y', (1 + margin) * legend_text_height)
+            .attr('width', function(d,i) {return x(i+1) - x(i)})
+            .attr('height', legend_text_height)
+            .attr('fill', function(d) {return d})
+            .style('fill-opacity', opacity)
+            .attr('font-size', header_em.toString() + 'em');
+
+        // -- Append value text immediately below the left-most area of every color rect
+        keys.enter().append('text')
+            .text(function(d) {return color_scale.invertExtent(d)[0].toFixed(0)})
+            .attr('x', function(d,i) {return x(i)})
+            .attr('y', legend_text_height*(2 + margin + label_em / header_em * (1 + margin)))
+            .attr('text-anchor', 'middle')
+            .attr('font-size', label_em.toString() + 'em');
+    }
+}
+
 module.exports = {
     get_report_update_func: get_report_update_func,
-    get_pattern_update_func: get_pattern_update_func
+    get_pattern_update_func: get_pattern_update_func,
+    render_color_scale: render_color_scale,
+    render_table: render_table
 };
