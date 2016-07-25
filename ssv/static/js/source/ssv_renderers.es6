@@ -267,6 +267,64 @@ function get_pattern_update_func(node, pattern_id, prop_data, style_apply) {
     return update_func
 };
 
+function render_rect_heatmap(node, data, color_scale, opacity) {
+    if (node) {
+        var parent = d3.select(node.parentNode);
+        var bbox = node.getBBox();
+
+        // Assume heatmap occupies entire placement element bounding box
+        var x = d3.scaleLinear().domain([0, data[0][0].length]).range([0, bbox.width]);
+        var y = d3.scaleLinear().domain([0, data[0].length]).range([0, bbox.height]);
+        var g = parent.append('g')
+            .attr('transform', 'translate(' + bbox.x + ',' + bbox.y + ')')
+            .append('g');
+
+        // go through data and apply color scale
+        var color_scale_data = data.map(function(arr_2d) {
+            return arr_2d.map(function(arr) {
+                return arr.map(function(d) {
+                    return color_scale(d)
+                });
+            });
+        });
+        g.data([color_scale_data]);
+
+        // Create cross-sectional slice along the x axis
+        var x_section = g.selectAll()
+            .data(function(d) {return d[0]})
+            .enter()
+            .append('g')
+            .attr('class', 'x_section')
+            .attr('stroke', 'black')
+            .attr('stroke-width','1px');
+
+        // Add a color bin for every y slot across the axis
+        x_section.selectAll('.bin')
+            .data(function (d) {return d})
+            .enter().append('rect')
+            .attr('class', 'bin')
+            .attr('x', function (d, i) {return x(i)})
+            .attr('width', function (d, i) {return  x(i + 1) - x(i)})
+            .style('fill', function (d) {return d})
+            .style('fill-opacity', function () {return opacity})
+            .attr('height', bbox.height / (data[0].length));
+
+        x_section.each(function (d, i) {d3.select(this).selectAll(".bin").attr("y", y(i))});
+
+        var update_heatmap = function(x) {
+            var g = parent.select('g').select('g');
+
+            var x_section = g.selectAll('.x_section').data(function(d) {return d[x]});
+            x_section.selectAll('.bin')
+                .data(function (d) {return d})
+                .transition()
+                .style('fill', function(d) {return d});
+        };
+
+        return update_heatmap
+    }
+};
+
 function render_table(node, table_id, data, headers, font_scale) {
     if (node) {
         var parent = d3.select(node.parentNode);
@@ -414,5 +472,6 @@ module.exports = {
     get_report_update_func: get_report_update_func,
     get_pattern_update_func: get_pattern_update_func,
     render_color_scale: render_color_scale,
-    render_table: render_table
+    render_table: render_table,
+    render_rect_heatmap: render_rect_heatmap
 };

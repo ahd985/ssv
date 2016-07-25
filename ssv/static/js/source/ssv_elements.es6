@@ -188,74 +188,17 @@ class Line extends Element {
 // Wrapper class for generating heatmaps
 class Heatmap extends Element {
     initialize_hook() {
-        this.conditions[0].data[0].constructor == Array ? this.conditions.num_sections =
-            this.conditions[0].data[0].length : this.conditions[0].num_sections = 1;
-
-        var initial_vals = this.conditions[0].data[0];
+        var data = this.conditions[0].data;
+        var color_scale = this.conditions[0].color_scale;
+        var opacity = this.opacity;
 
         var _heatmap = this;
         _heatmap.selectors.map(function(sel) {
-            var parent = d3.select(sel.node().parentNode);
-
-            var bbox = sel.node().getBBox();
-
-            // Assume heatmap occupies entire placement element bounding box
-            var x = d3.scaleLinear().domain([0, initial_vals[0].length]).range([0, bbox.width]);
-            var y = d3.scaleLinear().domain([0, initial_vals.length]).range([0, bbox.height]);
-            var g = parent.append('g')
-                .attr('transform', 'translate(' + bbox.x + ',' + bbox.y + ')')
-                .append('g');
-
-            // go through data and apply color scale
-            var scale = _heatmap.conditions[0].color_scale;
-            var data = _heatmap.conditions[0].data.map(function(arr_2d) {
-                return arr_2d.map(function(arr) {
-                    return arr.map(function(d) {
-                        return scale(d)
-                    });
-                });
+            sel.each(function() {
+                _heatmap.update_functions.push(renderers.render_rect_heatmap(this, data, color_scale, opacity));
             });
-            g.data([data]);
-
-            // Create cross-sectional slice along the x axis
-            var x_section = g.selectAll()
-                .data(function(d) {return d[0]})
-                .enter()
-                .append('g')
-                .attr('class', 'x_section')
-                .attr('stroke', 'black')
-                .attr('stroke-width','1px');
-
-            // Add a color bin for every y slot across the axis
-            x_section.selectAll('.bin')
-                .data(function (d) {return d})
-                .enter().append('rect')
-                .attr('class', 'bin')
-                .attr('x', function (d, i) {return x(i)})
-                .attr('width', function (d, i) {return  x(i + 1) - x(i)})
-                .style('fill', function (d) {return d})
-                .style('fill-opacity', function (d) {return _heatmap.conditions[0].opacity})
-                .attr('height', bbox.height / (initial_vals.length));
-
-            x_section.each(function (d, i) {d3.select(this).selectAll(".bin").attr("y", y(i))});
-        });
-
-        var update_heatmap = function(x) {
-            _heatmap.selectors.map(function(sel) {
-                var parent = d3.select(sel.node().parentNode);
-
-                var g = parent.select('g').select('g');
-
-                var x_section = g.selectAll('.x_section').data(function(d) {return d[x]});
-                x_section.selectAll('.bin')
-                    .data(function (d) { return d; })
-                    .transition()
-                    .style('fill', function(d) {return d});
-            });
-        }
-
-        _heatmap.update_functions.push(update_heatmap);
-    };
+        })
+    }
 }
 
 // Wrapper class for state-type elements (e.g., show/hide)
@@ -264,16 +207,12 @@ class Toggle extends Element {
         var _toggle = this;
         _toggle.selectors.map(function(sel) {
             if (_toggle.conditions[0].type == 'showhide') {
-                var data = _toggle.conditions[0].data
+                var data = _toggle.conditions[0].data;
                 sel.datum(data);
 
                 var update_func = function(x) {
-                    if (data[x] || data[x] > 0) {
-                        sel.transition().attr('opacity',1)
-                    } else {
-                        sel.transition().attr('opacity',0)
-                    }
-                }
+                    data[x] || data[x] > 0 ? sel.transition().attr('opacity',1) : sel.transition().attr('opacity',0);
+                };
 
                 _toggle.update_functions.push(update_func)
             }
