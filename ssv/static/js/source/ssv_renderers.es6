@@ -1,6 +1,6 @@
 var num_format = require("./ssv_utilities.es6");
 
-function get_report_update_func(node, font_scale, data, description) {
+function render_report(node, font_scale, data, description) {
     if (node) {
         var parent = d3.select(node.parentNode);
 
@@ -172,7 +172,7 @@ function get_report_update_func(node, font_scale, data, description) {
 };
 
 // Function to initialize patterns for element
-function get_pattern_update_func(node, pattern_id, prop_data, style_apply) {
+function render_pattern(node, pattern_id, prop_data, style_apply) {
     // Add defs section if none exist
     var parent = d3.select(node.parentNode);
     if (parent.select('defs').empty()) {
@@ -469,8 +469,8 @@ function render_color_scale(node, color_scale, description, opacity, font_scale)
 }
 
 module.exports = {
-    get_report_update_func: get_report_update_func,
-    get_pattern_update_func: get_pattern_update_func,
+    render_report: render_report,
+    render_pattern: render_pattern,
     render_color_scale: render_color_scale,
     render_table: render_table,
     render_rect_heatmap: render_rect_heatmap

@@ -48,11 +48,13 @@ class Element {
     initialize() {
         if (!this.report_sel.empty()) {
             this.update_functions.push(
-                renderers.get_report_update_func(this.report_sel.node(),
-                    this.font_scale, this.conditions, this.description));
+                renderers.render_report(this.report_sel.node(), this.font_scale, this.conditions, this.description));
         }
 
         this.initialize_hook();
+
+        // Delete conditions since data is now bound to DOM
+        delete this.conditions;
     }
 
     // General hook function for initialization
@@ -131,7 +133,7 @@ class Cell extends Element {
 
                 // Apply pattern to each in sel list
                 sel.each(function() {
-                    _cell.update_functions.push(renderers.get_pattern_update_func(this, pattern_id, prop_data, 'fill'));
+                    _cell.update_functions.push(renderers.render_pattern(this, pattern_id, prop_data, 'fill'));
                 });
 
             }
@@ -177,7 +179,7 @@ class Line extends Element {
                 prop_data = d3.zip.apply(this, prop_data);
 
                 sel.each(function() {
-                    _line.update_functions.push(renderers.get_pattern_update_func(this, pattern_id, prop_data, 'stroke'));
+                    _line.update_functions.push(renderers.render_pattern(this, pattern_id, prop_data, 'stroke'));
                 });
 
             };

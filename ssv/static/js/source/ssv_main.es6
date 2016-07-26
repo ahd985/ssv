@@ -54,11 +54,6 @@ class ElementContext {
 
         // Draw elements at x index of 0
         this.update_elements(0);
-
-        // We can delete conditions since the data are now bound to the DOM.
-        this.elements.map(function(d) {
-            if ('conditions' in d) {delete d.conditions}
-        })
     };
 
     // Function to tell all manipulated element classes to update rendering given index of this.x_series
