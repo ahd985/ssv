@@ -26,8 +26,6 @@ class ElementContext {
         add_controls(uuid, x_series.length, this.update_elements, this)
     }
 
-
-
     // Initializer of svg pattern overlays (e.g., water pattern overlays).  These are inserted into
     // the svg 'defs' child for reference by svg elements.
     initialize_overlays() {
@@ -51,15 +49,11 @@ class ElementContext {
 
     initialize_elements(element_data) {
         var uuid = this.uuid;
-        this.elements = element_data.map(function(d) {return create_element(uuid, d)});
+        var font_scale = this.font_scale;
+        this.elements = element_data.map(function(d) {return create_element(uuid, d, font_scale)});
 
         // Draw elements at x index of 0
         this.update_elements(0);
-
-        // We can delete conditions since the data are now bound to the DOM.
-        this.elements.map(function(d) {
-            if ('conditions' in d) {delete d.conditions}
-        })
     };
 
     // Function to tell all manipulated element classes to update rendering given index of this.x_series
