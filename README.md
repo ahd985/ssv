@@ -1,6 +1,6 @@
 # Simplified Simulation Visualization
 
-This package evolved from the need to present complex simulation results in a simplified format directly in a web browser.
+This package evolved from the need to present complex simulation results in a simplified format directly in a web browser (Chrome only, for now).
 
 ## Instructions
 
