@@ -11,6 +11,12 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+.. automodule:: ssv.ssv
+
+.. autoclass:: SSV
+    :members:
+.. autoclass:: Vis
+    :members:
 
 
 Indices and tables

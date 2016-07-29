@@ -43,6 +43,139 @@
 <ul class="simple">
 </ul>
 </div>
+<span class="target" id="module-ssv.ssv"></span><dl class="class">
+<dt id="ssv.ssv.SSV">
+<em class="property">class </em><code class="descclassname">ssv.ssv.</code><code class="descname">SSV</code><a class="headerlink" href="#ssv.ssv.SSV" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class factory for Vis.</p>
+<dl class="staticmethod">
+<dt id="ssv.ssv.SSV.create_vis">
+<em class="property">static </em><code class="descname">create_vis</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#ssv.ssv.SSV.create_vis" title="Permalink to this definition">¶</a></dt>
+<dd><p>method to create new Vis Class.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>*args</strong> &#8211; Variable length argument list.</li>
+<li><strong>**kwargs</strong> &#8211; Arbitrary keyword arguments.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">New instance of Vis</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ssv.ssv.Vis">
+<em class="property">class </em><code class="descclassname">ssv.ssv.</code><code class="descname">Vis</code><span class="sig-paren">(</span><em>x_series</em>, <em>x_series_unit</em>, <em>svg_file_path</em>, <em>title='My Simulation'</em>, <em>font_size=12</em><span class="sig-paren">)</span><a class="headerlink" href="#ssv.ssv.Vis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class representing SSV visualization.</p>
+<dl class="docutils">
+<dt>This class represents all parts required to generate an SSV visualization (Vis) object, including:</dt>
+<dd><a href="#id1"><span class="problematic" id="id2">*</span></a>Visualization Element Mapping
+<a href="#id3"><span class="problematic" id="id4">*</span></a>Visualization Rendering</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>x_series</strong> (<em>int, float</em>) &#8211; X-series data for simulation (e.g., time series).
+Must be castable as a numeric array by numpy.</li>
+<li><strong>x_series_unit</strong> (<em>string</em>) &#8211; X-series data unit (e.g., &#8216;hours&#8217;)</li>
+<li><strong>svg_file_path</strong> (<em>str</em>) &#8211; File path of svg outline used to support visualization layout.</li>
+<li><strong>title</strong> (<em>Optional[str]</em>) &#8211; Title of visualization.</li>
+<li><strong>font_size</strong> (<em>Optional[int,float]</em>) &#8211; Font size to be used post-render (relative to Web Browser)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="ssv.ssv.Vis.add_element">
+<code class="descname">add_element</code><span class="sig-paren">(</span><em>element_type</em>, <em>element_ids</em>, <em>element_description=''</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#ssv.ssv.Vis.add_element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to add visualization element to internal class property.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>element_type</strong> (<em>str</em>) &#8211; String representation of visualization element type (see Element Module for
+valid types).</li>
+<li><strong>element_ids</strong> (<em>list[str], str</em>) &#8211; String id(s) representing the id(s) of the corresponding svg element in the
+svg layout provided by the Vis class.</li>
+<li><strong>element_description</strong> (<em>Optional[str]</em>) &#8211; Description of the visualization element intended representation (e.g.,
+physical objects like &#8216;Reactor Vessel&#8217; and &#8216;Steam Pipe&#8217;).</li>
+<li><strong>**kwargs</strong> &#8211; Arbitrary keyword arguments dependant on element_type.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">New visualization element of element_type.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ssv.ssv.Vis.del_element">
+<code class="descname">del_element</code><span class="sig-paren">(</span><em>element_id</em><span class="sig-paren">)</span><a class="headerlink" href="#ssv.ssv.Vis.del_element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to delete visualization element id from internal class property.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>element_ids</strong> (<em>str</em>) &#8211; String id representing the id of the corresponding svg element in the
+svg layout provided by the Vis class.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ssv.ssv.Vis.render_model">
+<code class="descname">render_model</code><span class="sig-paren">(</span><em>mode='full'</em>, <em>height=400</em><span class="sig-paren">)</span><a class="headerlink" href="#ssv.ssv.Vis.render_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to render visualization.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>mode</strong> (<em>str</em>) &#8211; <p>Rendering mode:
+<a href="#id5"><span class="problematic" id="id6">*</span></a>&#8216;full&#8217; rendering creates full visualization that can be saved directly as an html file
+<a href="#id7"><span class="problematic" id="id8">*</span></a>&#8216;partial&#8217; rendering creates a subset of the visualization that requires external dependencies</p>
+<blockquote>
+<div>(i.e., javascript libraries) to be provided separately.  Use this option to support
+a dashboard layout.</div></blockquote>
+</li>
+<li><strong>height</strong> (<em>float, int</em>) &#8211; Base pixel height for visualization div.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ssv.ssv.Vis.save_visualization">
+<code class="descname">save_visualization</code><span class="sig-paren">(</span><em>file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#ssv.ssv.Vis.save_visualization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to save rendered visualization as html file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file_path</strong> (<em>str</em>) &#8211; Intended file path for saving rendered visualization as single encompassing html file.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
