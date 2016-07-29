@@ -33,9 +33,9 @@ class SSV:
 class Vis:
     """Class representing SSV visualization.
 
-        This class represents all parts required to generate an SSV visualization (Vis) object, including:
-            *Visualization Element Mapping
-            *Visualization Rendering
+        This class represents all parts required to generate an SSV visualization (Vis) object, including
+            * Visualization Element Mapping
+            * Visualization Rendering
 
         Args:
             x_series (int, float): X-series data for simulation (e.g., time series).
@@ -174,11 +174,11 @@ class Vis:
         """Method to render visualization.
 
         Args:
-            mode (str): Rendering mode:
-                *'full' rendering creates full visualization that can be saved directly as an html file
-                *'partial' rendering creates a subset of the visualization that requires external dependencies
-                    (i.e., javascript libraries) to be provided separately.  Use this option to support
-                    a dashboard layout.
+            mode (str): Rendering mode
+            *'full' rendering creates full visualization that can be saved directly as an html file
+            *'partial' rendering creates a subset of the visualization that requires external dependencies
+                (i.e., javascript libraries) to be provided separately.  Use this option to support
+                a dashboard layout.
             height (float, int): Base pixel height for visualization div.
         """
 

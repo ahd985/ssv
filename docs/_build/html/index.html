@@ -75,9 +75,12 @@
 <em class="property">class </em><code class="descclassname">ssv.ssv.</code><code class="descname">Vis</code><span class="sig-paren">(</span><em>x_series</em>, <em>x_series_unit</em>, <em>svg_file_path</em>, <em>title='My Simulation'</em>, <em>font_size=12</em><span class="sig-paren">)</span><a class="headerlink" href="#ssv.ssv.Vis" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class representing SSV visualization.</p>
 <dl class="docutils">
-<dt>This class represents all parts required to generate an SSV visualization (Vis) object, including:</dt>
-<dd><a href="#id1"><span class="problematic" id="id2">*</span></a>Visualization Element Mapping
-<a href="#id3"><span class="problematic" id="id4">*</span></a>Visualization Rendering</dd>
+<dt>This class represents all parts required to generate an SSV visualization (Vis) object, including</dt>
+<dd><ul class="first last simple">
+<li>Visualization Element Mapping</li>
+<li>Visualization Rendering</li>
+</ul>
+</dd>
 </dl>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -145,13 +148,10 @@ svg layout provided by the Vis class.</td>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>mode</strong> (<em>str</em>) &#8211; <p>Rendering mode:
-<a href="#id5"><span class="problematic" id="id6">*</span></a>&#8216;full&#8217; rendering creates full visualization that can be saved directly as an html file
-<a href="#id7"><span class="problematic" id="id8">*</span></a>&#8216;partial&#8217; rendering creates a subset of the visualization that requires external dependencies</p>
-<blockquote>
-<div>(i.e., javascript libraries) to be provided separately.  Use this option to support
-a dashboard layout.</div></blockquote>
-</li>
+<li><strong>mode</strong> (<em>str</em>) &#8211; Rendering mode</li>
+<li><strong>rendering creates full visualization that can be saved directly as an html file</strong> (<em>*&#8217;full&#8217;</em>) &#8211; </li>
+<li><strong>rendering creates a subset of the visualization that requires external dependencies</strong> (<em>*&#8217;partial&#8217;</em>) &#8211; (i.e., javascript libraries) to be provided separately.  Use this option to support
+a dashboard layout.</li>
 <li><strong>height</strong> (<em>float, int</em>) &#8211; Base pixel height for visualization div.</li>
 </ul>
 </td>
