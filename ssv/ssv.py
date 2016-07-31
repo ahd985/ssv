@@ -219,7 +219,7 @@ class Vis:
     # Cleans svg of troublesome attributes and searches for user-provided element ids to bind data to
     def _prepare_svg(self):
         # Add container element for popovers
-        popover_layer = ET.Element('rect')
+        popover_layer = ET.Element('g')
         popover_layer.attrib['id'] = 'popover-container'
 
         # Add info container element and zoom element to allow for zooming and panning
@@ -239,8 +239,8 @@ class Vis:
         # Attach containers to root
         self._svg_root.attrib['id'] = 'ssv-svg'
 
-        self._svg_root.insert(-1, info_layer)
         self._svg_root.insert(-1, zoom_layer)
+        self._svg_root.insert(-1, info_layer)
         self._svg_root.insert(-1, popover_layer)
 
         # Build dict of element ids and include report ids
