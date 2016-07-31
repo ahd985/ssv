@@ -2,6 +2,9 @@
 
 This package evolved from the need to present complex simulation results in a simplified format directly in a web browser (Chrome only, for now).
 
+## Docs
+http://ssv.readthedocs.io/en/latest/
+
 ## Instructions
 
 See examples for practical instructions.  Rendered examples can be viewed here:
@@ -11,7 +14,8 @@ See examples for practical instructions.  Rendered examples can be viewed here:
 * [Example 4](http://htmlpreview.github.com/?https://github.com/ahd985/ssv/blob/master/examples/example_4/example_4.html)
 
 ## Future Enhancements
-* Documentation and more examples
+* Better documentation and more examples
+* Better support for mobile
 * Development of a web-based tool for generating svg layout (with templates, common components, etc)
 * Compatibility with the DashSim dashboard framework (https://github.com/ahd985/dashsim)
 * Implementation of coordinate placement system
