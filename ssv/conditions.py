@@ -1,4 +1,4 @@
-from ssv.data_validators import validate_array, validate_colors, validate_array_slices, validate_color, validate_heights
+from .data_validators import validate_array, validate_colors, validate_array_slices, validate_color, validate_heights
 
 
 # Common validators
