@@ -24,7 +24,7 @@ class Element:
                 svg layout provided by the Vis class.
             element_description (Optional[str]): Description of the visualization element intended representation (e.g.,
                 physical objects like 'Reactor Vessel' and 'Steam Pipe').
-            x_series_len (int): Length of x-series data for simulation (e.g., time series).
+            x_series (int, float): X-series data for simulation (e.g., time series).
             element_report_id (str): id representing id of corresponding svg element in svg outline provided by
                 the Vis class.
 
@@ -34,7 +34,7 @@ class Element:
 
     _allowed_conditions = []
 
-    def __init__(self, element_ids, element_description, x_series_len, element_report_id):
+    def __init__(self, element_ids, element_description, x_series, element_report_id):
         self.type = type(self).__name__.lower()
         self.ids = element_ids
         if not isinstance(element_description, str):
@@ -42,7 +42,7 @@ class Element:
         self.description = element_description
         if not element_report_id is None and not isinstance(element_report_id, str):
             raise TypeError('\'element_report_id\' for \'%s\' must be a string.' % element_description)
-        self.x_series_len = x_series_len
+        self.x_series = x_series
         self.report_id = element_report_id
         self._max_conditions = -1
         self.conditions = []
@@ -82,11 +82,11 @@ class Element:
             raise TypeError("condition_type must be of type str")
 
         condition_id = '%s_%d' % ('_'.join(self.ids), len(self.conditions))
-        condition = Condition.create(condition_cls, self.x_series_len, *args, id=condition_id, **kwargs)
+        condition = Condition.create(condition_cls, len(self.x_series), *args, id=condition_id, **kwargs)
 
         # If "additional_info" exists as attr, add it as separate "Info" Condition
         if hasattr(condition, 'additional_info'):
-            info = Condition.create('info', self.x_series_len,
+            info = Condition.create('info', len(self.x_series),
                                     condition.additional_info['data'],
                                     description=condition.additional_info['description'],
                                     unit=condition.additional_info['unit'],
@@ -99,7 +99,7 @@ class Element:
             self.conditions.append(condition)
 
     def add_popover(self, cls_name, data, *args, **kwargs):
-        self.popover = Popover.create(cls_name, self.x_series_len, data, *args, **kwargs)
+        self.popover = Popover.create(cls_name, self.x_series, data, *args, **kwargs)
 
     def dump_attr(self):
         return {k: ([c.dump_attr() for c in v] if k == 'conditions' else
@@ -133,15 +133,15 @@ class Cell(Element):
         Args:
             cell_id (str): unique id of the cell used in conjunction with an svg layout to map the cell.
             cell_description (str): Description of the what the cell physically represents (e.g., a reactor vessel)
-            x_series_len (int): Length of x-series data for simulation (e.g., time series).
+            x_series (int, float): X-series data for simulation (e.g., time series).
             cell_report_id (Optional[str]): id representing id of corresponding svg element in svg outline
                 provided by the Vis class.
     """
 
     _allowed_conditions = ['Info', 'Background', 'StaticLevel', 'DynamicLevel', 'Logical', 'ZonalY']
 
-    def __init__(self, cell_id, cell_description, x_series_len, cell_report_id=None):
-        super(Cell, self).__init__(cell_id, cell_description, x_series_len, cell_report_id)
+    def __init__(self, cell_id, cell_description, x_series, cell_report_id=None):
+        super(Cell, self).__init__(cell_id, cell_description, x_series, cell_report_id)
 
     # Overwrite super's add_condition_post_hook function to handle special conditions
     def _add_condition_post_hook(self, **kwargs):
@@ -174,15 +174,15 @@ class Line(Element):
         Args:
             line_id (str): unique id of the line used in conjunction with an svg layout to map the line.
             line_description (str): Description of the what the line physically represents (e.g., a vessel wall)
-            x_series_len (int): Length of x-series data for simulation (e.g., time series).
+            x_series (int, float): X-series data for simulation (e.g., time series).
             line_report_id (Optional[str]): id representing id of corresponding svg element in svg outline
                 provided by the Vis class.
     """
 
     _allowed_conditions = ['EqualY']
 
-    def __init__(self, line_id, line_description, x_series_len, line_report_id=None):
-        super(Line, self).__init__(line_id, line_description, x_series_len, line_report_id)
+    def __init__(self, line_id, line_description, x_series, line_report_id=None):
+        super(Line, self).__init__(line_id, line_description, x_series, line_report_id)
 
         self._max_conditions = 1
 
@@ -201,15 +201,15 @@ class Heatmap(Element):
         Args:
             heatmap_id (str): unique id of the heatmap used in conjunction with an svg layout to map the heatmap.
             heatmap_description (str): Description of the what the heatmap physically represents (e.g., a reactor core)
-            x_series_len (int): Length of x-series data for simulation (e.g., time series).
+            x_series (int, float): X-series data for simulation (e.g., time series).
             heatmap_report_id (Optional[str]): id representing id of corresponding svg element in svg outline
                 provided by the Vis class.
     """
 
     _allowed_conditions = ['Rect']
 
-    def __init__(self, heatmap_id, heatmap_description, x_series_len, heatmap_report_id=None):
-        super(Heatmap, self).__init__(heatmap_id, heatmap_description, x_series_len, heatmap_report_id)
+    def __init__(self, heatmap_id, heatmap_description, x_series, heatmap_report_id=None):
+        super(Heatmap, self).__init__(heatmap_id, heatmap_description, x_series, heatmap_report_id)
 
         self._max_conditions = 1
 
@@ -227,15 +227,15 @@ class Toggle(Element):
         Args:
             toggle_id (str): unique id of the heatmap used in conjunction with an svg layout to map the heatmap.
             heatmap_description (str): Description of the what the heatmap physically represents (e.g., a reactor core)
-            x_series_len (int): Length of x-series data for simulation (e.g., time series).
+            x_series (int, float): X-series data for simulation (e.g., time series).
             heatmap_report_id (Optional[str]): id representing id of corresponding svg element in svg outline
                 provided by the Vis class.
     """
 
     _allowed_conditions = ['Info', 'ShowHide']
 
-    def __init__(self, toggle_id, toggle_description, x_series_len, toggle_report_id=None):
-        super(Toggle, self).__init__(toggle_id, toggle_description, x_series_len, toggle_report_id)
+    def __init__(self, toggle_id, toggle_description, x_series, toggle_report_id=None):
+        super(Toggle, self).__init__(toggle_id, toggle_description, x_series, toggle_report_id)
 
         self._max_conditions = 1
 
@@ -250,13 +250,13 @@ class Report(Element):
         Args:
             report_id (str): unique id of the report used in conjunction with an svg layout to map the report.
             report_description (str): Description of the what the report physically represents (e.g., external inputs)
-            x_series_len (int): Length of x-series data for simulation (e.g., time series).
+            x_series (int, float): X-series data for simulation (e.g., time series).
     """
 
     _allowed_conditions = ['Info']
 
-    def __init__(self, report_id, report_description, x_series_len):
-        super(Report, self).__init__('', report_description, x_series_len, report_id[0])
+    def __init__(self, report_id, report_description, x_series):
+        super(Report, self).__init__('', report_description, x_series, report_id[0])
 
 
 # Wrapper for table
@@ -268,15 +268,15 @@ class Table(Element):
         Args:
             table_id (str): unique id of the table used in conjunction with an svg layout to map the table.
             table_description (str): Description of the what the table physically represents (e.g., summary results)
-            x_series_len (int): Length of x-series data for simulation (e.g., time series).
+            x_series (int, float): X-series data for simulation (e.g., time series).
             tabular_data (array): Data able to be cast as str by numpy to represent table content
             headers (array): Data able to be cast as str by numpy to represent table headers
     """
 
     _allowed_conditions = ['TabularInfo']
 
-    def __init__(self, table_id, table_description, x_series_len, tabular_data, headers):
-        super(Table, self).__init__('', table_description, x_series_len, table_id[0])
+    def __init__(self, table_id, table_description, x_series, tabular_data, headers):
+        super(Table, self).__init__('', table_description, x_series, table_id[0])
 
         # Add info and remove ability to add additional conditions to element
         self.add_condition('TabularInfo', data=tabular_data, headers=headers)
@@ -293,13 +293,13 @@ class Legend(Element):
             color_scale_id (str): unique id of the scale used in conjunction with an svg layout to map the color scale.
             color_scale_desc (str): Description of the what the color scale physically represents
                 (e.g., gas temperature)
-            x_series_len (int): Length of x-series data for simulation (e.g., time series).
+            x_series (int, float): X-series data for simulation (e.g., time series).
             color_scale (array): Data able to be cast as numeric by numpy to represent color scale
             color_levels (array): Data able to be cast as str by numpy to represent color levels
     """
 
-    def __init__(self, color_scale_id, color_scale_desc, x_series_len, color_scale, color_levels, opacity=1):
-        super(Legend, self).__init__('', color_scale_desc, x_series_len, color_scale_id[0])
+    def __init__(self, color_scale_id, color_scale_desc, x_series, color_scale, color_levels, opacity=1):
+        super(Legend, self).__init__('', color_scale_desc, x_series, color_scale_id[0])
 
         # Add color scale and remove ability to add additional conditions to element
         self.add_condition('ColorScale', color_scale=color_scale, color_levels=color_levels, opacity=opacity)

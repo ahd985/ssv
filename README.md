@@ -15,7 +15,7 @@ See examples for practical instructions.  Rendered examples can be viewed here:
 
 ## Future Enhancements
 * Better documentation and more examples
-* Better support for mobile
+* Support for mobile
 * Development of a web-based tool for generating svg layout (with templates, common components, etc)
 * Compatibility with the DashSim dashboard framework (https://github.com/ahd985/dashsim)
 * Implementation of coordinate placement system

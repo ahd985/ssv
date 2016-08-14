@@ -1,0 +1,203 @@
+$ssv_panel_margin: 5px;
+$ssv_panel_padding: 30px;
+
+/* SSV main panel */
+.ssv-panel {
+    position: relative;
+    margin: $ssv_panel_margin;
+    overflow: hidden;
+
+    /* SSV panel children*/
+    .ssv-header {
+        position: absolute;
+        top: 0;
+        height: 25px;
+        margin: 2px;
+        width: 100%;
+        font-size: 16px;
+        border-bottom: 1px solid black;
+    }
+
+    .ssv-title {
+        position: relative;
+        float: left;
+        padding: 5px;
+    }
+
+    .ssv-visual {
+        height: 100%;
+        width: 100%;
+        padding-top: $ssv_panel_padding;
+        padding-bottom: $ssv_panel_padding;
+        box-sizing: border-box;
+        overflow: hidden;
+        display: table;
+    }
+
+    .svg-container {
+        display: table-cell;
+        vertical-align: middle;
+    }
+
+    #ssv-svg {
+        max-height: 100%;
+        border-left: 1px solid #E0E0E0;
+        border-right: 1px solid #E0E0E0;
+        pointer-events: all;
+    }
+
+    #zoom-layer {
+        fill:none;
+        pointer-events:all;
+    }
+
+    .ssv-x-series {
+        position: relative;
+        float: right;
+        padding: 5px;
+    }
+
+    /* SSV mode bar components */
+    .modebar {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        z-index: 1001;
+        height: 25px;
+        opacity: 0;
+        transition: opacity 0.3s ease 0s;
+    }
+
+    .modebar-group {
+        float: left;
+        box-sizing: border-box;
+        position: relative;
+        vertical-align: middle;
+        white-space: nowrap;
+        height:100%;
+    }
+
+    .modebar-button, path {
+        float: left;
+        position: relative;
+        font-size: 14px;
+        cursor: pointer;
+        box-sizing: border-box;
+        margin: 2px;
+        height: 100%;
+        color: #CFD8DC;
+        fill: #CFD8DC;
+    }
+
+    .modebar-button:hover, .modebar-button:hover path {
+        fill: #37474F;
+        color: #37474F;
+        opacity: 1;
+    }
+
+    #speed-button span {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: -moz-none;
+        -ms-user-select: none;
+        -o-user-select: none;
+        user-select: none;
+    }
+
+    .modebar-button  svg {
+        height:100%;
+    }
+
+    /* SSV mode bar slider components */
+    .slider-track {
+        width: 100%;
+        height: 100%;
+        stroke-width: 8px;
+        vertical-align: center;
+    }
+
+    .slider-inset {
+        fill: none;
+        stroke: #CFD8DC;
+        stroke-width: 8px;
+        stroke-linecap: round;
+        stroke-opacity: 0.4;
+    }
+
+    .slider-overlay {
+        pointer-events: stroke;
+        stroke: #FFF;
+        stroke-opactiy: 0;
+        opacity: 0;
+        stroke-width: 50px;
+        cursor: crosshair;
+    }
+
+    .slider-handle {
+        fill: #CFD8DC;
+        stroke: #000;
+        opacity: 0.4;
+        stroke-width: 1.25px;
+        pointer-events: none;
+    }
+
+    .slider-overlay:hover + .slider-handle {
+        fill: #37474F;
+        opacity: 1;
+    }
+
+    /* Popovers */
+    .popover-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        pointer-events:none;
+        fill: white;
+    }
+
+    .ssv-popover {
+        position:absolute;
+        border: 1px solid grey;
+        border-radius: 4px;
+        margin:5px;
+    }
+
+    /* Animation support */
+    .bubble-container{
+        -webkit-animation: ssv-bubbles-move-up 1s linear infinite;
+        -moz-animation: ssv-bubbles-move-up 1s linear infinite;
+        -o-animation: ssv-bubbles-move-up 1s linear infinite;
+        animation: ssv-bubbles-move-up 1s linear infinite;
+    }
+
+    .bubble {
+      fill: white;
+    }
+}
+
+
+.ssv-panel:hover .modebar {
+    opacity: 0.7;
+}
+
+@keyframes ssv-bubbles-move-up {
+    100% {
+        transform: translateY(-100px);
+    }
+}
+@-webkit-keyframes ssv-bubbles-move-up {
+    100% {
+        transform: translateY(-100px);
+    }
+}
+@-moz-keyframes ssv-bubbles-move-up {
+    100% {
+        transform: translateY(-100px);
+    }
+}
+@-o-keyframes ssv-bubbles-move-up {
+    100% {
+        transform: translateY(-100px);
+    }
+}

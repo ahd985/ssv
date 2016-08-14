@@ -134,7 +134,7 @@ class Vis:
             self._reserved_element_ids.update(set(element_ids))
 
         element_cls = elements.Element.create(element_type)
-        element_entry = element_cls(element_ids, element_description, len(self._x_series), **kwargs)
+        element_entry = element_cls(element_ids, element_description, self._x_series, **kwargs)
         self._elements.append(element_entry)
 
         return element_entry
@@ -218,10 +218,6 @@ class Vis:
     # Function to clean and ready svg for output
     # Cleans svg of troublesome attributes and searches for user-provided element ids to bind data to
     def _prepare_svg(self):
-        # Add container element for popovers
-        popover_layer = ET.Element('g')
-        popover_layer.attrib['id'] = 'popover-container'
-
         # Add info container element and zoom element to allow for zooming and panning
         # Add id to svg to allow for identification on front end
         info_layer = ET.Element('g')
@@ -241,7 +237,6 @@ class Vis:
 
         self._svg_root.insert(-1, zoom_layer)
         self._svg_root.insert(-1, info_layer)
-        self._svg_root.insert(-1, popover_layer)
 
         # Build dict of element ids and include report ids
         element_ids = [id for element in self._elements for id in element.ids]

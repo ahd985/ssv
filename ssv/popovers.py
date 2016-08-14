@@ -14,7 +14,13 @@ class Popover:
                 raise ValueError("Input for popover dimensions must be a tuple with two floats")
             self.dims = kwargs["dims"]
         else:
-            self.dims = (0.2, 0.2)
+            self.dims = (150, 50)
+
+        # Check for label
+        if 'label' in kwargs:
+            if not isinstance(kwargs['label'], str):
+                raise TypeError('%s input must be a string' % k)
+            self.label = kwargs['label']
 
 
     @staticmethod
@@ -40,17 +46,18 @@ class Popover:
 
 
 # Chart Subclasses
-class LineChart(Popover):
+class SparkLine(Popover):
     """Class representing "" only (no visualization).
 
         Info is used to display data in a report.
 
         Args:
-            x_len (int): Length of x-series.
+            x_series (int, float): X-series data for simulation (e.g., time series).
             data (array): input data representing input values along x-series
             **kwargs: arbitrary keyword arguments for Popover super class.
     """
 
-    def __init__(self, x_len, data, *args, **kwargs):
-        super(LineChart, self).__init__(*args, **kwargs)
-        self.data = validate_array(data, 'float', 1, 1, x_len)
+    def __init__(self, x_series, data, **kwargs):
+        super(SparkLine, self).__init__(**kwargs)
+        self.x_series = x_series
+        self.data = validate_array(data, 'float', 1, 2, len(x_series))

@@ -17,9 +17,9 @@ def get_element_input(valid, element_type):
             'valid': ['Description', ''],
             'invalid': {'TypeError': [True, 1]}
         },
-        # x_series_len
+        # x_series
         {
-            'valid': [10],
+            'valid': [[i for i in range(10)]],
             'invalid': {}
         },
     ]
