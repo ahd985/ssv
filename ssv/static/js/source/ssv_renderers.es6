@@ -1,4 +1,4 @@
-var num_format = require("./ssv_utilities.es6");
+var num_format = require("./ssv_utilities.es6").num_format;
 
 function render_report(node, font_scale, data, description) {
     if (node) {
@@ -48,7 +48,7 @@ function render_report(node, font_scale, data, description) {
             .attr('width', width)
             .attr('fill-opacity', '1')
             .attr('text-anchor', 'middle')
-            .attr('alignment-baseline', 'after-edge')
+            .attr('alignment-baseline', 'baseline')
             .attr('x', width / 2)
             .attr('fill', header_color)
             .style('font-size', header_em.toString() + 'em')
@@ -468,10 +468,101 @@ function render_color_scale(node, color_scale, description, opacity, font_scale)
     }
 }
 
+function render_popover(popover_div_sel, sels, popover, font_scale) {
+    var div = popover_div_sel.append("div").style("background", "#9E9E9E");
+    var dims = [150, 50];
+    if ("dims" in popover) {
+        dims = popover.dims;
+    }
+
+    var g = div.append("svg")
+        .attr("width", dims[0] + "px")
+        .attr("height", dims[1] + "px")
+        .append("g");
+
+    div.attr("class","ssv-popover")
+        .style("visibility", "hidden");
+
+    if (popover.type == "sparkline") {
+        var update_func = render_sparkline(g, dims, popover.x_series, popover.data, popover.label);
+    }
+
+    sels.map(function(d) {
+        d.on("mouseover", function() {
+            div.style("visibility", "visible");
+        });
+        d.on("mousemove", function() {
+            div.style("top", d3.event.pageY + "px")
+                .style("left", d3.event.pageX + "px")
+        });
+        d.on("mouseout", function() {
+            div.style("visibility", "hidden");
+        });
+    });
+
+    return update_func
+}
+
+function render_sparkline(sel, dims, x_series, data, label) {
+    var width = dims[0];
+    var height = dims[1];
+    var margin_x = width * 0.05;
+    var margin_y = margin_x;
+
+    // Define the line
+    var value_line = d3.line()
+        .x(function(d,i) {return x(i)})
+        .y(function(d) {return y(d)});
+
+    // Add label text (if any)
+    if (label) {
+        var text = sel.append("text")
+            .attr("x", margin_x)
+            .attr("y", "1.05em")
+            .attr("fill","#FFFFFF")
+            .text(label);
+
+        var bbox = text.node().getBBox();
+        margin_y += 2*bbox.y + bbox.height;
+    }
+
+    // Set the ranges
+    var x = d3.scaleLinear().range([0, width-2*margin_x]);
+    var y = d3.scaleLinear().range([height-margin_y-margin_x, 0]);
+
+    var g = sel.append("g")
+        .attr("transform", "translate("+margin_x+","+margin_y+")");
+
+    x.domain([0, x_series.length]);
+    y.domain([d3.min(data), d3.max(data)]);
+
+    // Add the valueline path.
+    g.append("path")
+        .style("fill", "none")
+        .style("stroke", "#FFFFFF")
+        .style("stroke-width", "0.1em")
+        .attr("d", value_line(data));
+
+    // Append the indicator circle
+    var indicator = g.append("circle")
+        .attr("r", "0.5em")
+        .attr("fill", "orange");
+
+    // return the current slice indicator update function
+    var update_func = function (t) {
+        indicator.transition()
+            .attr("cx", x(t))
+            .attr("cy", y(data[t]));
+    };
+
+    return update_func
+}
+
 module.exports = {
     render_report: render_report,
     render_pattern: render_pattern,
     render_color_scale: render_color_scale,
     render_table: render_table,
-    render_rect_heatmap: render_rect_heatmap
+    render_rect_heatmap: render_rect_heatmap,
+    render_popover: render_popover
 };

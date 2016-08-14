@@ -7,4 +7,6 @@ function num_format(val) {
     }
 };
 
-module.exports = num_format;
+module.exports = {
+    num_format: num_format,
+};

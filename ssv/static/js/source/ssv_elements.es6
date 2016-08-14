@@ -2,7 +2,7 @@ var renderers = require("./ssv_renderers.es6");
 
 // Inheritable parent class of every element type
 class Element {
-    constructor(uuid, element_ids, element_description, element_conditions, report_id, font_scale) {
+    constructor(uuid, element_ids, element_description, element_conditions, report_id, popover, font_scale) {
         this.uuid = uuid;
 
         // -- Build list of selectors from ids
@@ -17,15 +17,16 @@ class Element {
 
         // -- Report id represents id of placement element for element report - Optional property
         this.report_sel = d3.select(`#${uuid} #${report_id}`);
+        this.popover_div_sel = d3.select(`#${uuid} .popover-spacer`);
         // -- Element description is printed at top of optional report
         this.description = element_description;
         // -- Array of element conditions - data types that describe simulation characteristics such as
         //    temperature and water levels
         this.conditions = element_conditions;
+        this.popover = popover;
         this.font_scale = font_scale;
 
         this.patterns_initialized = false;
-        this.report_initialized = false;
         this.gen_color_scales();
         this.initialize();
     }
@@ -51,6 +52,11 @@ class Element {
                 renderers.render_report(this.report_sel.node(), this.font_scale, this.conditions, this.description));
         }
 
+        if (this.popover) {
+            this.update_functions.push(renderers.render_popover(this.popover_div_sel, this.selectors,
+                this.popover, this.font_scale));
+        };
+
         this.initialize_hook();
 
         // Delete conditions since data is now bound to DOM
@@ -62,7 +68,7 @@ class Element {
 
     // Update function called at every time step
     update(x) {
-        if (this.update_functions) {this.update_functions.map(function(f) {f(x)})};
+        if (this.update_functions) {this.update_functions.map(function(f) {if (typeof f === "function"){f(x)}})};
     }
 }
 
@@ -261,7 +267,8 @@ var class_map = {
 };
 
 function create_element(uuid, data, font_scale) {
-    return new class_map[data.type](uuid, data.ids, data.description, data.conditions, data.report_id, font_scale);
+    return new class_map[data.type](uuid, data.ids, data.description, data.conditions, data.report_id, 
+        data.popover, font_scale)
 }
 
 module.exports = create_element;

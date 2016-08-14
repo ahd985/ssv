@@ -1,85 +1,64 @@
 /* SSV main panel */
 .ssv-panel {
-    position: relative;
-    margin: 5px;
-    overflow: hidden;
-}
-
-/* SSV panel children*/
-.ssv-panel .ssv-header {
+  position: relative;
+  margin: 5px;
+  overflow: hidden;
+  /* SSV panel children*/
+  /* SSV mode bar components */
+  /* SSV mode bar slider components */
+  /* Popovers */
+  /* Animation support */ }
+  .ssv-panel .ssv-header {
     position: absolute;
     top: 0;
     height: 25px;
     margin: 2px;
     width: 100%;
     font-size: 16px;
-    border-bottom: 1px solid black;
-}
-
-.ssv-panel .ssv-title {
+    border-bottom: 1px solid black; }
+  .ssv-panel .ssv-title {
     position: relative;
     float: left;
-    padding: 5px;
-}
-
-.ssv-panel .ssv-visual {
+    padding: 5px; }
+  .ssv-panel .ssv-visual {
     height: 100%;
     width: 100%;
     padding-top: 30px;
     padding-bottom: 30px;
     box-sizing: border-box;
     overflow: hidden;
-    display: table;
-}
-
-.ssv-panel .svg-container {
+    display: table; }
+  .ssv-panel .svg-container {
     display: table-cell;
-    vertical-align: middle;
-}
-
-.ssv-panel #ssv-svg {
+    vertical-align: middle; }
+  .ssv-panel #ssv-svg {
     max-height: 100%;
     border-left: 1px solid #E0E0E0;
     border-right: 1px solid #E0E0E0;
-    pointer-events: all;
-}
-
-.ssv-panel #zoom-layer {
-    fill:none;
-    pointer-events:all;
-}
-
-.ssv-panel .ssv-x-series {
+    pointer-events: all; }
+  .ssv-panel #zoom-layer {
+    fill: none;
+    pointer-events: all; }
+  .ssv-panel .ssv-x-series {
     position: relative;
     float: right;
-    padding: 5px;
-}
-
-/* SSV mode bar components */
-.ssv-panel .modebar {
+    padding: 5px; }
+  .ssv-panel .modebar {
     position: absolute;
     bottom: 0;
     width: 100%;
     z-index: 1001;
-    height:25px;
+    height: 25px;
     opacity: 0;
-    transition: opacity 0.3s ease 0s;
-}
-
-.ssv-panel:hover .modebar {
-    opacity: 0.7;
-}
-
-.ssv-panel .modebar-group {
+    transition: opacity 0.3s ease 0s; }
+  .ssv-panel .modebar-group {
     float: left;
     box-sizing: border-box;
     position: relative;
     vertical-align: middle;
     white-space: nowrap;
-    height:100%;
-}
-
-.ssv-panel .modebar-button, path {
+    height: 100%; }
+  .ssv-panel .modebar-button, .ssv-panel path {
     float: left;
     position: relative;
     font-size: 14px;
@@ -88,91 +67,82 @@
     margin: 2px;
     height: 100%;
     color: #CFD8DC;
-    fill: #CFD8DC;
-}
-
-.ssv-panel .modebar-button:hover, .modebar-button:hover path {
+    fill: #CFD8DC; }
+  .ssv-panel .modebar-button:hover, .ssv-panel .modebar-button:hover path {
     fill: #37474F;
     color: #37474F;
-    opacity: 1;
-}
-
-.ssv-panel #speed-button span {
+    opacity: 1; }
+  .ssv-panel #speed-button span {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
     -moz-user-select: -moz-none;
     -ms-user-select: none;
     -o-user-select: none;
-    user-select: none;
-}
-
-.ssv-panel #play-icon svg {
-    height:100%;
-}
-
-.ssv-panel #pause-icon svg {
-    height:100%;
-}
-
-.ssv-panel #pan-zoom-enabled-icon svg {
-    height:100%;
-}
-
-.ssv-panel #pan-zoom-disabled-icon svg {
-    height:100%;
-}
-
-.ssv-panel #center-icon svg {
-    height:100%;
-}
-
-/* SSV mode bar slider components */
-.ssv-panel .slider-track {
+    user-select: none; }
+  .ssv-panel .modebar-button svg {
+    height: 100%; }
+  .ssv-panel .slider-track {
     width: 100%;
     height: 100%;
     stroke-width: 8px;
-    vertical-align: center;
-}
-
-.ssv-panel .slider-inset {
+    vertical-align: center; }
+  .ssv-panel .slider-inset {
     fill: none;
     stroke: #CFD8DC;
     stroke-width: 8px;
     stroke-linecap: round;
-    stroke-opacity: 0.4;
-}
-
-.ssv-panel .slider-overlay {
+    stroke-opacity: 0.4; }
+  .ssv-panel .slider-overlay {
     pointer-events: stroke;
+    stroke: #FFF;
+    stroke-opactiy: 0;
+    opacity: 0;
     stroke-width: 50px;
-    cursor: crosshair;
-}
-
-.ssv-panel .slider-handle {
+    cursor: crosshair; }
+  .ssv-panel .slider-handle {
     fill: #CFD8DC;
     stroke: #000;
     opacity: 0.4;
     stroke-width: 1.25px;
-    pointer-events: none;
-}
-
-.ssv-panel .slider-overlay:hover + .slider-handle {
+    pointer-events: none; }
+  .ssv-panel .slider-overlay:hover + .slider-handle {
     fill: #37474F;
-    opacity: 1;
-}
+    opacity: 1; }
+  .ssv-panel .popover-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    fill: white; }
+  .ssv-panel .ssv-popover {
+    position: absolute;
+    border: 1px solid grey;
+    border-radius: 4px;
+    margin: 5px; }
+  .ssv-panel .bubble-container {
+    -webkit-animation: ssv-bubbles-move-up 1s linear infinite;
+    -moz-animation: ssv-bubbles-move-up 1s linear infinite;
+    -o-animation: ssv-bubbles-move-up 1s linear infinite;
+    animation: ssv-bubbles-move-up 1s linear infinite; }
+  .ssv-panel .bubble {
+    fill: white; }
 
-/* Animation support */
-.ssv-panel .bubble-container{
-  animation: ssv-bubbles-move-up 1s linear infinite;
-}
-
-.ssv-panel .bubble {
-  fill: white;
-}
+.ssv-panel:hover .modebar {
+  opacity: 0.7; }
 
 @keyframes ssv-bubbles-move-up {
-    100% {
-        transform: translateY(-100px);
-    }
-}
+  100% {
+    transform: translateY(-100px); } }
+
+@-webkit-keyframes ssv-bubbles-move-up {
+  100% {
+    transform: translateY(-100px); } }
+
+@-moz-keyframes ssv-bubbles-move-up {
+  100% {
+    transform: translateY(-100px); } }
+
+@-o-keyframes ssv-bubbles-move-up {
+  100% {
+    transform: translateY(-100px); } }

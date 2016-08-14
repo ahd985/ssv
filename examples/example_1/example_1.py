@@ -180,6 +180,7 @@ def run():
                        max_height=10, description_dynamic='Water Temp', unit_dynamic='K', overlay='bubbles',
                        min_height=0)
     tank.add_condition('info', data=sim_data['press'], description='Press', unit='MPa')
+    tank.add_popover("sparkline", sim_data['wtr_lvl'], label='Tank #1 Wtr Lvl')
 
     relief_valve = ssv_model.add_element('cell', 'relief-valve', 'Relief Valve')
     relief_valve.add_condition('logical', data=sim_data['rv'], true_color='#4CAF50', false_color='#F44336')

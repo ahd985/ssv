@@ -1,6 +1,6 @@
 var add_controls = require("./ssv_controls.es6");
 var create_element = require("./ssv_elements.es6");
-var num_format = require("./ssv_utilities.es6");
+var utilities = require("./ssv_utilities.es6");
 
 // Main class to generate contextual information of ssv setup
 class ElementContext {
@@ -8,6 +8,7 @@ class ElementContext {
         // Initialize properties
         this.uuid = uuid;
         this.svg_sel = d3.select(`#${this.uuid} #ssv-svg`);
+        this.info_layer_sel = d3.select(`#${this.uuid} #info-layer`);
         this.svg_container_sel = d3.select(`#${this.uuid} .ssv-visual`);
         this.x_val_sel = d3.select(`#${this.uuid} #x-series-val`);
 
@@ -23,7 +24,7 @@ class ElementContext {
         this.initialize_overlays();
         this.set_font_scale();
         this.initialize_elements(element_data);
-        add_controls(uuid, x_series.length, this.update_elements, this)
+        add_controls(uuid, x_series.length, this.update_elements, this);
     }
 
     // Initializer of svg pattern overlays (e.g., water pattern overlays).  These are inserted into
@@ -58,7 +59,7 @@ class ElementContext {
 
     // Function to tell all manipulated element classes to update rendering given index of this.x_series
     update_elements(x) {
-        this.x_val_sel.html(num_format(this.x_series[x]));
+        this.x_val_sel.html(utilities.num_format(this.x_series[x]));
         this.elements.map(function(d) {d.update(x)});
     };
 }

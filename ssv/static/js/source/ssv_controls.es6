@@ -7,7 +7,7 @@ class Controls {
 
         // control state information
         this.play_enabled = false;
-        this.pan_zoom_enabled = true;
+        this.pan_zoom_enabled = false;
         this.slider_moving = false;
         this.current_x = 0;
         this.target_x = 0;
@@ -16,7 +16,6 @@ class Controls {
         this.min_speed = 1;
         this.speed_mult = 2;
         this.bbox_zoom = null;
-        this.bbox_info = null;
 
         // control selectors
         this.svg_container_sel = d3.select(`#${this.uuid} .svg-container`);
@@ -124,7 +123,7 @@ class Controls {
         var self = this;
         d3.timer(function() {
             self.slider_moving = false;
-        }, 100);
+        }, 500);
     };
 
     // Function to auto update elements based on current x_series position and selected play speed
@@ -182,7 +181,7 @@ class Controls {
     // Initializer of pan and zoom functionality
     initialize_pan_zoom() {
         var bbox_info = this.info_layer_sel.node().getBBox();
-        var offset = [bbox_info.x - 0, bbox_info.y - 0];
+        var offset = [bbox_info.x, bbox_info.y];
 
         var self = this;
         var zoom = d3.zoom()
@@ -217,7 +216,7 @@ class Controls {
                     d3.event.transform.y = ty;
                 }
             });
-        this.zoom_layer_sel.call(zoom)
+        this.svg_sel.call(zoom);
 
         // Clicking on center button re-centers svg
         this.center_btn_sel
@@ -225,7 +224,7 @@ class Controls {
             .on("click", function() {
                 self.info_layer_sel.attr("transform",
                         'translate(' + [bbox_info.x,bbox_info.y] + ')scale(1)');
-                zoom.transform(self.zoom_layer_sel, d3.zoomIdentity);
+                zoom.transform(self.svg_sel, d3.zoomIdentity);
             });
     };
 
