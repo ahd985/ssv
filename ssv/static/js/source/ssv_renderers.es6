@@ -478,6 +478,7 @@ function render_popover(popover_div_sel, sels, popover, font_scale) {
     var g = div.append("svg")
         .attr("width", dims[0] + "px")
         .attr("height", dims[1] + "px")
+        .style("font-size", font_scale.toString() + 'em')
         .append("g");
 
     div.attr("class","ssv-popover")

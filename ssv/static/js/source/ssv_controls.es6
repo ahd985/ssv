@@ -26,6 +26,7 @@ class Controls {
         this.play_btn_sel = d3.select(`#${this.uuid} #play-button`);
         this.pan_zoom_btn_sel = d3.select(`#${this.uuid} #pan-zoom-button`);
         this.center_btn_sel = d3.select(`#${this.uuid} #center-button`);
+        this.save_btn_sel = d3.select(`#${this.uuid} #save-button`);
         this.modebar_sel = d3.select(`#${this.uuid} .modebar`);
         this.modebar_group_sel = d3.select(`#${this.uuid} .modebar-group`);
         this.modebar_slider_sel = d3.select(`#${this.uuid} .modebar-slider`);
@@ -176,6 +177,11 @@ class Controls {
             });
 
         this.initialize_pan_zoom();
+        
+        // Clicking on save button saves the current slice as a picture
+        this.save_btn_sel
+            .attr('ssv-id', this.uuid)
+            .on("click", function() {self.to_image()});
     };
 
     // Initializer of pan and zoom functionality
@@ -240,8 +246,50 @@ class Controls {
         this.zoom_layer_sel.attr('x', view_box[0] + margin)
             .attr('width', view_box[2] - 2*margin)
             .attr('y', view_box[1] + margin)
-            .attr('height', view_box[3] - 2*margin);
+            .attr('height', view_box[3] - 2*margin)
+            .style('fill', 'none');
         this.bbox_zoom = this.zoom_layer_sel.node().getBBox();
+    }
+
+    to_image() {
+        var doctype = '<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" ' +
+            '"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">';
+
+        // serialize our SVG XML to a string.
+        var source = (new XMLSerializer()).serializeToString(this.svg_sel.node());
+
+        // create a file blob of our SVG.
+        var blob = new Blob([ doctype + source], { type: 'image/svg+xml;charset=utf-8' });
+
+        var url = window.URL.createObjectURL(blob);
+
+        // Put the svg into an image tag so that the Canvas element can read it in.
+        var img = d3.select('body').append('img')
+            .attr('width', 930)
+            .attr('height', 340)
+            .node();
+
+        img.onload = function(){
+            // Now that the image has loaded, put the image into a canvas element.
+            var canvas = d3.select('body').append('canvas').node()
+            canvas.width = 933*4;
+            canvas.height = 340*4;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            ctx.scale(2,2);
+            var canvasUrl = canvas.toDataURL();
+
+            var a = document.createElement("a");
+            a.download = "sample.jpeg";
+            a.href = canvasUrl;
+            a.click();
+        };
+
+        // start loading the image.
+        img.src = url;
+
+        // Delete the element
+        img.remove()
     }
 }
 

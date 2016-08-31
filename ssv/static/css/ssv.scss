@@ -47,7 +47,6 @@ $ssv_panel_padding: 30px;
     }
 
     #zoom-layer {
-        fill:none;
         pointer-events:all;
     }
 
@@ -169,10 +168,6 @@ $ssv_panel_padding: 30px;
         -moz-animation: ssv-bubbles-move-up 1s linear infinite;
         -o-animation: ssv-bubbles-move-up 1s linear infinite;
         animation: ssv-bubbles-move-up 1s linear infinite;
-    }
-
-    .bubble {
-      fill: white;
     }
 }
 

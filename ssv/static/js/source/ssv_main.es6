@@ -4,13 +4,17 @@ var utilities = require("./ssv_utilities.es6");
 
 // Main class to generate contextual information of ssv setup
 class ElementContext {
-    constructor(uuid, x_series, element_data, svg_overlays) {
+    constructor(uuid, x_series, element_data, svg_overlays, font_size) {
         // Initialize properties
         this.uuid = uuid;
         this.svg_sel = d3.select(`#${this.uuid} #ssv-svg`);
+        this.popover_div_sel = d3.select(`#${uuid} .popover-spacer`);
         this.info_layer_sel = d3.select(`#${this.uuid} #info-layer`);
         this.svg_container_sel = d3.select(`#${this.uuid} .ssv-visual`);
         this.x_val_sel = d3.select(`#${this.uuid} #x-series-val`);
+
+        // -- Set font size in  container
+        this.svg_container_sel.style("font-size", font_size.toString() + "px");
 
         // -- Element_data is the 'y' data representing svg elements that corresponds to the x_series data
         this.x_series = x_series;
@@ -72,7 +76,7 @@ window.onerror=function(msg){
 var element_contexts = {};
 
 module.exports = {
-    add_element_context: function(uuid, x_series, element_data, svg_overlays) {
-        element_contexts[uuid] = new ElementContext(uuid, x_series, element_data, svg_overlays);
+    add_element_context: function(uuid, x_series, element_data, svg_overlays, font_size) {
+        element_contexts[uuid] = new ElementContext(uuid, x_series, element_data, svg_overlays, font_size);
     }
 };
