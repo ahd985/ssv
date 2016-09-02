@@ -1,11 +1,11 @@
 <div class="ssv-panel" id="{{ uuid }}" style="height:{{ height }}px;">
     <div class="ssv-header">
         <div class="ssv-title">
-            <span id="title">{{ title }}</span>
+            <span id="title"></span>
         </div>
         <div class="ssv-x-series">
             <span id="x-series-val"></span>
-            <span><i><b>{{ x_series_unit }}</b></i></span>
+            <span><i><b><span id="x-series-unit"></span></b></i></span>
         </div>
     </div>
     <div class="ssv-visual" align="center">
@@ -45,10 +45,12 @@
 </div>
 <script>
     var uuid = "{{ uuid }}";
+    var title = "{{ title }}";
     var x_series = {{ x_series }};
+    var x_series_unit = "{{ x_series_unit }}";
     var svg_overlays = {{ svg_overlays }};
     var element_data = {{ element_data }};
     var font_size = {{ font_size }};
-    ssv.add_element_context(uuid, x_series, element_data, svg_overlays, font_size);
+    ssv.add_element_context(uuid, title, x_series, x_series_unit, element_data, svg_overlays, font_size);
 </script>
 

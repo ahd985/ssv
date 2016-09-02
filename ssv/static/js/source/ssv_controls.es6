@@ -1,7 +1,11 @@
+var utilities = require("./ssv_utilities.es6");
+
 class Controls {
-    constructor(uuid, x_series_length, update_callback, context) {
+    constructor(uuid, title, x_series, x_series_unit, update_callback, context) {
         this.uuid = uuid;
-        this.x_series_length = x_series_length;
+        this.title = title;
+        this.x_series = x_series;
+        this.x_series_unit = x_series_unit;
         this.update_callback = update_callback;
         this.context = context;
 
@@ -18,6 +22,9 @@ class Controls {
         this.bbox_zoom = null;
 
         // control selectors
+        this.title_sel = d3.select(`#${this.uuid} #title`);
+        this.x_val_sel = d3.select(`#${this.uuid} #x-series-val`);
+        this.x_val_unit_sel = d3.select(`#${this.uuid} #x-series-unit`);
         this.svg_container_sel = d3.select(`#${this.uuid} .svg-container`);
         this.svg_sel = d3.select(`#${this.uuid} #ssv-svg`);
         this.zoom_layer_sel = d3.select(`#${this.uuid} #zoom-layer`);
@@ -47,7 +54,7 @@ class Controls {
         var width = bbox.width - this.modebar_group_sel.node().getBoundingClientRect().width;
 
         var x = d3.scaleLinear()
-            .domain([0, this.x_series_length - 1])
+            .domain([0, this.x_series.length - 1])
             .range([0, width - 2*(margin + handle_r)])
             .clamp(true);
 
@@ -94,7 +101,7 @@ class Controls {
                 this.play_enabled = true;
                 this.pause_icon_sel.attr('style', '');
                 this.play_icon_sel.attr('style', 'display:none');
-                if (this.current_x >= this.x_series_length - 1) {
+                if (this.current_x >= this.x_series.length - 1) {
                     this.current_x = 0;
                 }
                 this.x_series_forward()
@@ -115,6 +122,7 @@ class Controls {
 
     move() {
         this.slider_dispatch.call("change");
+        this.set_x_series_display(this.current_x);
         if (this.slider_moving) return;
 
         this.slider_moving = true;
@@ -131,12 +139,12 @@ class Controls {
     x_series_forward() {
         var self = this;
         window.setTimeout(function() {
-            if (self.play_enabled && self.current_x < self.x_series_length - 1) {
+            if (self.play_enabled && self.current_x < self.x_series.length - 1) {
                 self.target_x = self.current_x + 1;
 
                 self.move();
 
-                if (self.current_x < self.x_series_length - 1) {
+                if (self.current_x < self.x_series.length - 1) {
                     self.x_series_forward()
                 } else {
                     self.play();
@@ -145,10 +153,21 @@ class Controls {
         }, 1000 / this.play_speed);
     };
 
+    set_x_series_display(x) {
+        this.x_val_sel.html(utilities.num_format(this.x_series[x]));
+    }
+
     // Initialize controls for ssv control bar
     initialize() {
         this.render_slider();
         this.update_viewbox();
+        
+        // Set title and x-series display
+        this.title_sel.html(this.title);
+        this.set_x_series_display(0);
+        this.x_val_unit_sel.html(this.x_series_unit);
+        
+        // Set window resize function for svg viewbox
         var self = this;
         d3.select(window).on('resize', function() {self.render_slider(); self.update_viewbox();});
 
@@ -269,6 +288,7 @@ class Controls {
             .attr('height', 340)
             .node();
 
+        var self = this;
         img.onload = function(){
             // Now that the image has loaded, put the image into a canvas element.
             var canvas = d3.select('body').append('canvas').node()
@@ -280,7 +300,8 @@ class Controls {
             var canvasUrl = canvas.toDataURL();
 
             var a = document.createElement("a");
-            a.download = "sample.jpeg";
+            var x_series_current = utilities.num_format(self.x_series[self.current_x]) + "_" + self.x_series_unit;
+            a.download = self.title.replace(" ", "_") + "_" + x_series_current + ".jpeg";
             a.href = canvasUrl;
             a.click();
         };
