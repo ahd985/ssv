@@ -156,7 +156,7 @@ class Vis:
             if len(element_ids) < 1:
                 del self._elements[i]
 
-    def save_visualization(self, file_path):
+    def save_visualization(self, file_path, **kwargs):
         """Method to save rendered visualization as html file.
 
         Args:
@@ -167,7 +167,7 @@ class Vis:
             file_path += ext
 
         with open(file_path, 'w') as f:
-            f.write(self.render_model())
+            f.write(self.render_model(**kwargs))
 
     # Render ssv model using javascript, html, and css
     def render_model(self, mode='full', height=400):

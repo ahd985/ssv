@@ -27,6 +27,8 @@ class Controls {
         this.x_val_unit_sel = d3.select(`#${this.uuid} #x-series-unit`);
         this.svg_container_sel = d3.select(`#${this.uuid} .svg-container`);
         this.svg_sel = d3.select(`#${this.uuid} #ssv-svg`);
+        this.img_sel = d3.select(`#${this.uuid} #img-space`);
+        this.render_sel = d3.select(`#${this.uuid} #render-space`);
         this.zoom_layer_sel = d3.select(`#${this.uuid} #zoom-layer`);
         this.info_layer_sel = d3.select(`#${this.uuid} #info-layer`);
         this.speed_btn_sel = d3.select(`#${this.uuid} #speed-button`);
@@ -34,6 +36,7 @@ class Controls {
         this.pan_zoom_btn_sel = d3.select(`#${this.uuid} #pan-zoom-button`);
         this.center_btn_sel = d3.select(`#${this.uuid} #center-button`);
         this.save_btn_sel = d3.select(`#${this.uuid} #save-button`);
+        this.vid_btn_sel = d3.select(`#${this.uuid} #video-button`);
         this.modebar_sel = d3.select(`#${this.uuid} .modebar`);
         this.modebar_group_sel = d3.select(`#${this.uuid} .modebar-group`);
         this.modebar_slider_sel = d3.select(`#${this.uuid} .modebar-slider`);
@@ -78,7 +81,7 @@ class Controls {
                     .on("start.interrupt", function() {slider.interrupt()})
                     .on("start drag", function() {
                         self.target_x = Math.round(x.invert(d3.event.x));
-                        self.move();
+                        self.move(250);
                     }));
 
         var handle = slider.append("circle")
@@ -120,14 +123,14 @@ class Controls {
         }
     }
 
-    move() {
+    move(trans_dur) {
         this.slider_dispatch.call("change");
         this.set_x_series_display(this.current_x);
         if (this.slider_moving) return;
 
         this.slider_moving = true;
         this.current_x = this.target_x;
-        this.update_callback.call(this.context, this.current_x);
+        this.update_callback.call(this.context, this.current_x, trans_dur);
 
         var self = this;
         d3.timer(function() {
@@ -142,7 +145,7 @@ class Controls {
             if (self.play_enabled && self.current_x < self.x_series.length - 1) {
                 self.target_x = self.current_x + 1;
 
-                self.move();
+                self.move(250);
 
                 if (self.current_x < self.x_series.length - 1) {
                     self.x_series_forward()
@@ -201,6 +204,11 @@ class Controls {
         this.save_btn_sel
             .attr('ssv-id', this.uuid)
             .on("click", function() {self.to_image()});
+
+        // Clicking on video button saves the visualization as a video
+        this.vid_btn_sel
+            .attr('ssv-id', this.uuid)
+            .on("click", function() {self.to_video()});
     };
 
     // Initializer of pan and zoom functionality
@@ -270,47 +278,99 @@ class Controls {
         this.bbox_zoom = this.zoom_layer_sel.node().getBBox();
     }
 
-    to_image() {
+    render_slice(mode, render_func) {
         var doctype = '<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" ' +
             '"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">';
 
-        // serialize our SVG XML to a string.
+        // serialize svg xml
         var source = (new XMLSerializer()).serializeToString(this.svg_sel.node());
 
-        // create a file blob of our SVG.
+        // create a file blob of the svg and get a url reference
         var blob = new Blob([ doctype + source], { type: 'image/svg+xml;charset=utf-8' });
-
         var url = window.URL.createObjectURL(blob);
 
-        // Put the svg into an image tag so that the Canvas element can read it in.
-        var img = d3.select('body').append('img')
-            .attr('width', 930)
-            .attr('height', 340)
+        // Put the svg into an image tag so that the canvas element can read it in.
+        var bbox = this.svg_sel.node().getBoundingClientRect();
+        var img = this.img_sel
+            .attr('width', bbox.width)
+            .attr('height', bbox.height)
             .node();
 
-        var self = this;
-        img.onload = function(){
-            // Now that the image has loaded, put the image into a canvas element.
-            var canvas = d3.select('body').append('canvas').node()
-            canvas.width = 933*4;
-            canvas.height = 340*4;
-            var ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            ctx.scale(2,2);
-            var canvasUrl = canvas.toDataURL();
+        var scale = 4;
+        // Generate canvas context
+        var canvas = this.render_sel.node();
+        canvas.width = bbox.width * scale;
+        canvas.height = bbox.height * scale;
+        var ctx = canvas.getContext('2d');
 
+        // Add in background - videos can't handle transparency
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, bbox.width * scale, bbox.height * scale);
+
+        img.onload = function() {
+            ctx.drawImage(img, 0, 0);
+
+            if (mode == "image") {
+                render_func(canvas.toDataURL());
+            } else if (mode == "video") {
+                render_func(canvas.toDataURL('image/webp'))
+            }
+        };
+        img.src = url;
+    }
+
+    to_image() {
+        var render_func = function(canvas_url) {
+            // Save the image
             var a = document.createElement("a");
             var x_series_current = utilities.num_format(self.x_series[self.current_x]) + "_" + self.x_series_unit;
             a.download = self.title.replace(" ", "_") + "_" + x_series_current + ".jpeg";
-            a.href = canvasUrl;
+            a.href = canvas_url;
             a.click();
         };
+        this.render_slice("image", render_func);
+    }
 
-        // start loading the image.
-        img.src = url;
+    to_video() {
+        // Track frames and slice index
+        var self = this;
+        self.frames = [];
+        var i = 0;
 
-        // Delete the element
-        img.remove()
+        // Set render function
+        var render_func = function(canvas_url) {
+            self.frames.push(canvas_url);
+        };
+
+        // Set loop function
+        var rendering = false;
+        function loop() {
+            rendering = i > self.frames.length;
+            if (rendering) {return}
+
+            self.target_x = i;
+            self.move(0);
+            self.set_x_series_display(i);
+
+            self.render_slice("video", render_func);
+            rendering = true;
+            i += 1;
+        }
+
+        var interval = setInterval(function(){
+            if (i < self.x_series.length) {
+                loop()
+            } else {
+                var output = Whammy.fromImageArray(self.frames, 15);
+                var url = window.URL.createObjectURL(output);
+
+                var a = document.createElement("a");
+                a.download = self.title.replace(" ", "_") + ".webm";
+                a.href = url;
+                a.click();
+                clearInterval(interval)
+            }
+        }, 100);
     }
 }
 

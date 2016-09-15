@@ -239,11 +239,12 @@ function render_pattern(node, pattern_id, prop_data, style_apply) {
     sel.style('fill-opacity', 1);
     sel.style('opacity', 1);
 
-    var update_func = function(x) {
+    var update_func = function(x, trans_dur) {
         // Update base pattern
         pattern.selectAll('#base')
             .data(function(t) {return t[x]})
             .transition()
+            .duration(trans_dur)
             .attr('y', function(d) {return d[0]})
             .style('fill', function(d) {return d[1]})
             .style('opacity', function(d) {return d[2]});
@@ -252,6 +253,7 @@ function render_pattern(node, pattern_id, prop_data, style_apply) {
         pattern.selectAll('#transition')
             .data(function(t) {return t[x]})
             .transition()
+            .duration(trans_dur)
             .attr('y', function(d) {if (d[0] > 0) {return d[0]} else {return '-1%' }})
             .style('opacity', function(d) {return d[2]});
 
@@ -259,6 +261,7 @@ function render_pattern(node, pattern_id, prop_data, style_apply) {
         pattern.selectAll('#overlay')
             .data(function(t) {return t[x]})
             .transition()
+            .duration(trans_dur)
             .attr('fill', function(d) {if(d[3] == null) {return 'none'} else {return 'url(#' + d[3] + ')'}})
             .attr('y', function(d) {return d[0]})
             .style('opacity', function(d) {return d[2]});
@@ -311,13 +314,14 @@ function render_rect_heatmap(node, data, color_scale, opacity) {
 
         x_section.each(function (d, i) {d3.select(this).selectAll(".bin").attr("y", y(i))});
 
-        var update_heatmap = function(x) {
+        var update_heatmap = function(x, trans_dur) {
             var g = parent.select('g').select('g');
 
             var x_section = g.selectAll('.x_section').data(function(d) {return d[x]});
             x_section.selectAll('.bin')
                 .data(function (d) {return d})
                 .transition()
+                .duration(trans_dur)
                 .style('fill', function(d) {return d});
         };
 
@@ -550,8 +554,9 @@ function render_sparkline(sel, dims, x_series, data, label) {
         .attr("fill", "orange");
 
     // return the current slice indicator update function
-    var update_func = function (t) {
+    var update_func = function (t, trans_dur) {
         indicator.transition()
+            .duration(trans_dur)
             .attr("cx", x(t))
             .attr("cy", y(data[t]));
     };

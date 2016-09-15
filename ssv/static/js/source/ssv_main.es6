@@ -60,8 +60,8 @@ class ElementContext {
     };
 
     // Function to tell all manipulated element classes to update rendering given index of x-series
-    update_elements(x) {
-        this.elements.map(function(d) {d.update(x)});
+    update_elements(x, trans_dur) {
+        this.elements.map(function(d) {d.update(x, trans_dur)});
     };
 }
 

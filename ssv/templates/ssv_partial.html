@@ -37,10 +37,17 @@
             <a class="modebar-button" id="save-button">
                 <span id="save-icon">{% include 'static/svg/photo-camera.svg' %}</span>
             </a>
+            <a class="modebar-button" id="video-button">
+                <span id="video-icon">{% include 'static/svg/video-camera.svg' %}</span>
+            </a>
         </div>
         <div class="modebar-group">
             <div class="modebar-slider"></div>
         </div>
+    </div>
+    <div id="render-container">
+        <canvas id="render-space"></canvas>
+        <img id="img-space">
     </div>
 </div>
 <script>

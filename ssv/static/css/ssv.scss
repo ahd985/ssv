@@ -163,14 +163,19 @@ $ssv_panel_padding: 30px;
     }
 
     /* Animation support */
-    .bubble-container{
+    .bubble-container {
         -webkit-animation: ssv-bubbles-move-up 1s linear infinite;
         -moz-animation: ssv-bubbles-move-up 1s linear infinite;
         -o-animation: ssv-bubbles-move-up 1s linear infinite;
         animation: ssv-bubbles-move-up 1s linear infinite;
     }
-}
 
+    /* Rendering space */
+    #render-container {
+        position: absolute;
+        top:-10000px;
+    }
+}
 
 .ssv-panel:hover .modebar {
     opacity: 0.7;
