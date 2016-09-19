@@ -1,19 +1,17 @@
 var add_controls = require("./ssv_controls.es6");
 var create_element = require("./ssv_elements.es6");
+var generate_sels= require("./ssv_selectors.es6");
 
 // Main class to generate contextual information of ssv setup
 class ElementContext {
     constructor(uuid, title, x_series, x_series_unit, element_data, svg_overlays, font_size) {
         // Initialize properties
         this.uuid = uuid;
-        this.svg_sel = d3.select(`#${this.uuid} #ssv-svg`);
-        this.popover_div_sel = d3.select(`#${uuid} .popover-spacer`);
-        this.info_layer_sel = d3.select(`#${this.uuid} #info-layer`);
-        this.svg_container_sel = d3.select(`#${this.uuid} .ssv-visual`);
+        this.sels = generate_sels(uuid);
 
         // -- Set font size in  container and svg
-        this.svg_container_sel.style("font-size", font_size.toString() + "px");
-        this.svg_sel.style("font-size", font_size.toString() + "px");
+        this.sels.containers.svg_container.style("font-size", font_size.toString() + "px");
+        this.sels.containers.svg.style("font-size", font_size.toString() + "px");
 
         // -- Element_data
         this.elements = [];
@@ -26,28 +24,29 @@ class ElementContext {
         this.initialize_overlays();
         this.set_font_scale();
         this.initialize_elements(element_data);
-        add_controls(uuid, title, x_series, x_series_unit, this.update_elements, this);
+        add_controls(title, x_series, x_series_unit, this.update_elements, this);
     }
 
     // Initializer of svg pattern overlays (e.g., water pattern overlays).  These are inserted into
     // the svg 'defs' child for reference by svg elements.
     initialize_overlays() {
-        if (this.svg_sel.select('defs').empty()) {
-            this.svg_sel.append('defs')
+        if (this.sels.containers.svg.select('defs').empty()) {
+            this.sels.containers.svg.append('defs')
         }
 
         for (var k in this.svg_overlays) {
-            this.svg_sel.select('defs').html(this.svg_sel.select('defs').html() + this.svg_overlays[k])
+            this.sels.containers.svg.select('defs')
+                .html(this.sels.containers.svg.select('defs').html() + this.svg_overlays[k])
         }
     };
 
     // Function to calculate scale of svg view box to parent svg div
     // This is required to scale user input font size correctly
     set_font_scale() {
-        var font_scale = parseFloat(this.svg_sel.attr('viewBox').split(' ')[3]) /
-            this.svg_container_sel.node().getBoundingClientRect().height;
+        var font_scale = parseFloat(this.sels.containers.svg.attr('viewBox').split(' ')[3]) /
+            this.sels.containers.svg_container.node().getBoundingClientRect().height;
         this.font_scale = font_scale;
-        this.svg_sel.attr('font-scale', font_scale)
+        this.sels.containers.svg.attr('font-scale', font_scale)
     };
 
     initialize_elements(element_data) {

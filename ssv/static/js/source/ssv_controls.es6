@@ -1,13 +1,14 @@
 var utilities = require("./ssv_utilities.es6");
 
 class Controls {
-    constructor(uuid, title, x_series, x_series_unit, update_callback, context) {
+    constructor(title, x_series, x_series_unit, update_callback, context) {
         this.uuid = uuid;
         this.title = title;
         this.x_series = x_series;
         this.x_series_unit = x_series_unit;
         this.update_callback = update_callback;
         this.context = context;
+        this.sels = context.sels;
 
         // control state information
         this.play_enabled = false;
@@ -21,48 +22,24 @@ class Controls {
         this.speed_mult = 2;
         this.bbox_zoom = null;
 
-        // control selectors
-        this.title_sel = d3.select(`#${this.uuid} #title`);
-        this.x_val_sel = d3.select(`#${this.uuid} #x-series-val`);
-        this.x_val_unit_sel = d3.select(`#${this.uuid} #x-series-unit`);
-        this.svg_container_sel = d3.select(`#${this.uuid} .svg-container`);
-        this.svg_sel = d3.select(`#${this.uuid} #ssv-svg`);
-        this.img_sel = d3.select(`#${this.uuid} #img-space`);
-        this.render_sel = d3.select(`#${this.uuid} #render-space`);
-        this.zoom_layer_sel = d3.select(`#${this.uuid} #zoom-layer`);
-        this.info_layer_sel = d3.select(`#${this.uuid} #info-layer`);
-        this.speed_btn_sel = d3.select(`#${this.uuid} #speed-button`);
-        this.play_btn_sel = d3.select(`#${this.uuid} #play-button`);
-        this.pan_zoom_btn_sel = d3.select(`#${this.uuid} #pan-zoom-button`);
-        this.center_btn_sel = d3.select(`#${this.uuid} #center-button`);
-        this.save_btn_sel = d3.select(`#${this.uuid} #save-button`);
-        this.vid_btn_sel = d3.select(`#${this.uuid} #video-button`);
-        this.modebar_sel = d3.select(`#${this.uuid} .modebar`);
-        this.modebar_group_sel = d3.select(`#${this.uuid} .modebar-group`);
-        this.modebar_slider_sel = d3.select(`#${this.uuid} .modebar-slider`);
-        this.pause_icon_sel = d3.select(`#${this.uuid} #pause-icon`);
-        this.play_icon_sel = d3.select(`#${this.uuid} #play-icon`);
-        this.pan_zoom_enabled_icon_sel = d3.select(`#${this.uuid} #pan-zoom-enabled-icon`);
-        this.pan_zoom_disabled_icon_sel = d3.select(`#${this.uuid} #pan-zoom-disabled-icon`);
-
         // initialize controls
         this.initialize()
     }
 
     render_slider() {
-        var bbox = this.modebar_sel.node().getBoundingClientRect();
+        var bbox = this.sels.controls.modebar.node().getBoundingClientRect();
         var height = bbox.height;
         var margin = 2;
         var handle_r = 8;
-        var width = bbox.width - this.modebar_group_sel.node().getBoundingClientRect().width;
+        var width = bbox.width - this.sels.controls.modebar_group.node().getBoundingClientRect().width;
 
         var x = d3.scaleLinear()
             .domain([0, this.x_series.length - 1])
             .range([0, width - 2*(margin + handle_r)])
             .clamp(true);
 
-        this.modebar_slider_sel.selectAll("svg").remove();
-        var slider = this.modebar_slider_sel.append("svg")
+        this.sels.controls.modebar_slider.selectAll("svg").remove();
+        var slider = this.sels.controls.modebar_slider.append("svg")
             .attr("width", width)
             .append("g")
             .attr("transform",
@@ -98,12 +75,12 @@ class Controls {
     play() {
         if (this.play_enabled) {
                 this.play_enabled = false;
-                this.pause_icon_sel.attr('style', 'display:none');
-                this.play_icon_sel.attr('style', '');
+                this.sels.controls.pause_icon.attr('style', 'display:none');
+                this.sels.controls.play_icon.attr('style', '');
             } else {
                 this.play_enabled = true;
-                this.pause_icon_sel.attr('style', '');
-                this.play_icon_sel.attr('style', 'display:none');
+                this.sels.controls.pause_icon.attr('style', '');
+                this.sels.controls.play_icon.attr('style', 'display:none');
                 if (this.current_x >= this.x_series.length - 1) {
                     this.current_x = 0;
                 }
@@ -114,28 +91,28 @@ class Controls {
     toggle_pan_zoom() {
         if (this.pan_zoom_enabled) {
             this.pan_zoom_enabled = false;
-            this.pan_zoom_disabled_icon_sel.attr('style', '');
-            this.pan_zoom_enabled_icon_sel.attr('style', 'display:none');
+            this.sels.controls.pan_zoom_disabled_icon.attr('style', '');
+            this.sels.controls.pan_zoom_enabled_icon.attr('style', 'display:none');
         } else {
             this.pan_zoom_enabled = true;
-            this.pan_zoom_disabled_icon_sel.attr('style', 'display:none');
-            this.pan_zoom_enabled_icon_sel.attr('style', '');
+            this.sels.controls.pan_zoom_disabled_icon.attr('style', 'display:none');
+            this.sels.controls.pan_zoom_enabled_icon.attr('style', '');
         }
     }
 
     move(trans_dur) {
         this.slider_dispatch.call("change");
-        this.set_x_series_display(this.current_x);
+        this.current_x = this.target_x;
         if (this.slider_moving) return;
 
         this.slider_moving = true;
-        this.current_x = this.target_x;
         this.update_callback.call(this.context, this.current_x, trans_dur);
+        this.set_x_series_display(this.current_x);
 
         var self = this;
         d3.timer(function() {
             self.slider_moving = false;
-        }, 500);
+        }, 100);
     };
 
     // Function to auto update elements based on current x_series position and selected play speed
@@ -157,7 +134,7 @@ class Controls {
     };
 
     set_x_series_display(x) {
-        this.x_val_sel.html(utilities.num_format(this.x_series[x]));
+        this.sels.title.x_val.html(utilities.num_format(this.x_series[x]));
     }
 
     // Initialize controls for ssv control bar
@@ -166,26 +143,26 @@ class Controls {
         this.update_viewbox();
         
         // Set title and x-series display
-        this.title_sel.html(this.title);
+        this.sels.title.title.html(this.title);
         this.set_x_series_display(0);
-        this.x_val_unit_sel.html(this.x_series_unit);
+        this.sels.title.x_val_unit.html(this.x_series_unit);
         
         // Set window resize function for svg viewbox
         var self = this;
         d3.select(window).on('resize', function() {self.render_slider(); self.update_viewbox();});
 
         // Clicking on play button automates the forward run of the x_series
-        this.play_btn_sel
+        this.sels.controls.play_btn
             .attr('ssv-id', this.uuid)
             .on("click", function() {self.play()});
 
         // Clicking on zoom button toggles pan/zoom ability
-        this.pan_zoom_btn_sel
+        this.sels.controls.pan_zoom_btn
             .attr('ssv-id', this.uuid)
             .on("click", function() {self.toggle_pan_zoom()});
 
         // Clicking on the speed button changes the speed of play
-        this.speed_btn_sel.attr('ssv-id', this.uuid)
+        this.sels.controls.speed_btn.attr('ssv-id', this.uuid)
             .on("click", function() {
                 if (self.play_speed == self.max_speed) {
                     self.play_speed = self.min_speed
@@ -194,26 +171,26 @@ class Controls {
                 }
 
                 var speed = self.play_speed.toString();
-                self.speed_btn_sel.select('span')
+                self.sels.controls.speed_btn.select('span')
                     .html("<b>" + speed + 'x</b>')
             });
 
         this.initialize_pan_zoom();
         
         // Clicking on save button saves the current slice as a picture
-        this.save_btn_sel
+        this.sels.controls.save_btn
             .attr('ssv-id', this.uuid)
             .on("click", function() {self.to_image()});
 
         // Clicking on video button saves the visualization as a video
-        this.vid_btn_sel
+        this.sels.controls.vid_btn
             .attr('ssv-id', this.uuid)
             .on("click", function() {self.to_video()});
     };
 
     // Initializer of pan and zoom functionality
     initialize_pan_zoom() {
-        var bbox_info = this.info_layer_sel.node().getBBox();
+        var bbox_info = this.sels.containers.info_layer.node().getBBox();
         var offset = [bbox_info.x, bbox_info.y];
 
         var self = this;
@@ -242,40 +219,40 @@ class Controls {
                         ty = Math.min(ty, bbox_info.y - offset[1]*(scale-1) - self.bbox_zoom.y);
                     }
 
-                    self.info_layer_sel.attr("transform",
+                    self.sels.containers.info_layer.attr("transform",
                         'translate(' + [tx,ty] + ')scale(' + scale + ')');
 
                     d3.event.transform.x = tx;
                     d3.event.transform.y = ty;
                 }
             });
-        this.svg_sel.call(zoom);
+        this.sels.containers.svg.call(zoom);
 
         // Clicking on center button re-centers svg
-        this.center_btn_sel
+        this.sels.controls.center_btn
             .attr('ssv-id', this.uuid)
             .on("click", function() {
-                self.info_layer_sel.attr("transform",
+                self.sels.containers.info_layer.attr("transform",
                         'translate(' + [bbox_info.x,bbox_info.y] + ')scale(1)');
-                zoom.transform(self.svg_sel, d3.zoomIdentity);
+                zoom.transform(self.sels.containers.svg, d3.zoomIdentity);
             });
     };
 
     update_viewbox() {
-        var bbox = this.svg_container_sel.node().getBoundingClientRect();
-        var view_box = this.svg_sel.attr('viewBox').split(' ').map(function(d) {return parseFloat(d)});
+        var bbox = this.sels.containers.svg_container.node().getBoundingClientRect();
+        var view_box = this.sels.containers.svg.attr('viewBox').split(' ').map(function(d) {return parseFloat(d)});
         var margin = 0.05 * view_box[3];
         var vb_h_ratio = view_box[3] / bbox.height;
         var vb_width_change = bbox.width * vb_h_ratio - view_box[2];
         view_box[2] = view_box[2] + vb_width_change;
         view_box[0] = view_box[0] - vb_width_change/2;
-        this.svg_sel.attr('viewBox', view_box.join(' '));
-        this.zoom_layer_sel.attr('x', view_box[0] + margin)
+        this.sels.containers.svg.attr('viewBox', view_box.join(' '));
+        this.sels.containers.zoom_layer.attr('x', view_box[0] + margin)
             .attr('width', view_box[2] - 2*margin)
             .attr('y', view_box[1] + margin)
             .attr('height', view_box[3] - 2*margin)
             .style('fill', 'none');
-        this.bbox_zoom = this.zoom_layer_sel.node().getBBox();
+        this.bbox_zoom = this.sels.containers.zoom_layer.node().getBBox();
     }
 
     render_slice(mode, render_func) {
@@ -283,22 +260,22 @@ class Controls {
             '"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">';
 
         // serialize svg xml
-        var source = (new XMLSerializer()).serializeToString(this.svg_sel.node());
+        var source = (new XMLSerializer()).serializeToString(this.sels.containers.svg.node());
 
         // create a file blob of the svg and get a url reference
         var blob = new Blob([ doctype + source], { type: 'image/svg+xml;charset=utf-8' });
         var url = window.URL.createObjectURL(blob);
 
         // Put the svg into an image tag so that the canvas element can read it in.
-        var bbox = this.svg_sel.node().getBoundingClientRect();
-        var img = this.img_sel
+        var bbox = this.sels.containers.svg.node().getBoundingClientRect();
+        var img = this.sels.containers.img
             .attr('width', bbox.width)
             .attr('height', bbox.height)
             .node();
 
         var scale = 4;
         // Generate canvas context
-        var canvas = this.render_sel.node();
+        var canvas = this.sels.containers.render.node();
         canvas.width = bbox.width * scale;
         canvas.height = bbox.height * scale;
         var ctx = canvas.getContext('2d');
@@ -320,6 +297,7 @@ class Controls {
     }
 
     to_image() {
+        var self = this;
         var render_func = function(canvas_url) {
             // Save the image
             var a = document.createElement("a");

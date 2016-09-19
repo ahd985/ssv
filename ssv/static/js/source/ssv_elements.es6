@@ -67,8 +67,10 @@ class Element {
     initialize_hook() {};
 
     // Update function called at every time step
-    update(x) {
-        if (this.update_functions) {this.update_functions.map(function(f) {if (typeof f === "function"){f(x)}})};
+    update(x, trans_dur) {
+        if (this.update_functions) {this.update_functions.map(function(f) {
+            if (typeof f === "function"){f(x, trans_dur)}})
+        };
     }
 }
 
