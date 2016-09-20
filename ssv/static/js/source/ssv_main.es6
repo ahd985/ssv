@@ -23,8 +23,8 @@ class ElementContext {
         // Call all initialization functions
         this.initialize_overlays();
         this.set_font_scale();
-        this.initialize_elements(element_data);
         add_controls(title, x_series, x_series_unit, this.update_elements, this);
+        this.initialize_elements(element_data);
     }
 
     // Initializer of svg pattern overlays (e.g., water pattern overlays).  These are inserted into
@@ -52,11 +52,32 @@ class ElementContext {
     initialize_elements(element_data) {
         var uuid = this.uuid;
         var font_scale = this.font_scale;
-        this.elements = element_data.map(function(d) {return create_element(uuid, d, font_scale)});
 
-        // Draw elements at x index of 0
-        this.update_elements(0);
+        // Async element loading
+        this.elements = [];
+        var len = element_data.length;
+        var self = this;
+        element_data.forEach(function(d) {
+            setTimeout(function(){
+                self.elements.push(create_element(uuid, d, font_scale));
+                self.update_loading_progress(len);
+            }, 0)
+        });
     };
+    
+    update_loading_progress(len) {
+        // Hide the progress screen if we are done else update the progress bar
+        if (this.elements.length == len) {
+            this.sels.containers.progress.select(".progress-bar").style("width", 0)
+            this.sels.containers.progress.style("display", "none");
+            
+            // Draw elements at x index of 0
+            this.update_elements(0);
+        } else {
+            var progress = Math.ceil(this.elements.length / len * 100).toString() + "%";
+            this.sels.containers.progress.select(".progress-bar").style("width", progress)
+        }
+    }
 
     // Function to tell all manipulated element classes to update rendering given index of x-series
     update_elements(x, trans_dur) {

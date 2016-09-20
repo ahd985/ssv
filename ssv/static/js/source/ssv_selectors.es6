@@ -37,7 +37,8 @@ var generate_sels = function(uuid) {
             popover_div: uuid_sel.select(`.popover-spacer`),
             svg: uuid_sel.select(`#ssv-svg`),
             img: uuid_sel.select(`#img-space`),
-            render: uuid_sel.select(`#render-space`)
+            render: uuid_sel.select(`#render-space`),
+            progress: uuid_sel.select(`.ssv-progress`)
         }
     };
 

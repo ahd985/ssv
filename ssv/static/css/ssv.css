@@ -3,12 +3,24 @@
   position: relative;
   margin: 5px;
   overflow: hidden;
+  /* Loading icon */
   /* SSV panel children*/
   /* SSV mode bar components */
   /* SSV mode bar slider components */
   /* Popovers */
   /* Animation support */
   /* Rendering space */ }
+  .ssv-panel .ssv-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: #E0E0E0;
+    width: 100%;
+    height: 100%;
+    z-index: 10001;
+    padding: 10px;
+    border-radius: 3px;
+    display: table; }
   .ssv-panel .ssv-header {
     position: absolute;
     top: 0;

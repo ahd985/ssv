@@ -315,6 +315,10 @@ class Controls {
         self.frames = [];
         var i = 0;
 
+        // Show progress bar
+        self.sels.containers.progress.style("display", "table");
+        self.sels.containers.progress.select(".progress-bar").html("Generating Video");
+
         // Set render function
         var render_func = function(canvas_url) {
             self.frames.push(canvas_url);
@@ -337,7 +341,11 @@ class Controls {
 
         var interval = setInterval(function(){
             if (i < self.x_series.length) {
-                loop()
+                loop();
+
+                // Update progress
+                var progress = Math.ceil(i / self.x_series.length * 100).toString() + "%";
+                self.sels.containers.progress.select(".progress-bar").style("width", progress)
             } else {
                 var output = Whammy.fromImageArray(self.frames, 15);
                 var url = window.URL.createObjectURL(output);
@@ -346,7 +354,11 @@ class Controls {
                 a.download = self.title.replace(" ", "_") + ".webm";
                 a.href = url;
                 a.click();
-                clearInterval(interval)
+                clearInterval(interval);
+
+                // Clear and hide progress bar
+                self.sels.containers.progress.select(".progress-bar").style("width", 0);
+                self.sels.containers.progress.style("display", "none");
             }
         }, 100);
     }
