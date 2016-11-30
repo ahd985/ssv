@@ -1,4 +1,5 @@
-var num_format = require("./ssv_utilities.es6").num_format;
+var num_format = require("./ssv_utilities.js").num_format;
+var d3 = require("d3");
 
 function render_report(node, font_scale, data, description) {
     if (node) {

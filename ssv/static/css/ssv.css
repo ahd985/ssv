@@ -87,7 +87,6 @@
   .ssv-panel #speed-button span {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
-    -khtml-user-select: none;
     -moz-user-select: -moz-none;
     -ms-user-select: none;
     -o-user-select: none;
@@ -133,9 +132,6 @@
     border-radius: 4px;
     margin: 5px; }
   .ssv-panel .bubble-container {
-    -webkit-animation: ssv-bubbles-move-up 1s linear infinite;
-    -moz-animation: ssv-bubbles-move-up 1s linear infinite;
-    -o-animation: ssv-bubbles-move-up 1s linear infinite;
     animation: ssv-bubbles-move-up 1s linear infinite; }
   .ssv-panel #render-container {
     position: absolute;
@@ -145,17 +141,5 @@
   opacity: 0.7; }
 
 @keyframes ssv-bubbles-move-up {
-  100% {
-    transform: translateY(-100px); } }
-
-@-webkit-keyframes ssv-bubbles-move-up {
-  100% {
-    transform: translateY(-100px); } }
-
-@-moz-keyframes ssv-bubbles-move-up {
-  100% {
-    transform: translateY(-100px); } }
-
-@-o-keyframes ssv-bubbles-move-up {
   100% {
     transform: translateY(-100px); } }

@@ -1,3 +1,5 @@
+var d3 = require("d3");
+
 var generate_sels = function(uuid) {
     var uuid_sel = d3.select(`#${uuid}`);
 

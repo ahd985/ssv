@@ -1,36 +1,98 @@
-var gulp        = require('gulp');
-var browserify  = require('browserify');
-var babelify    = require('babelify');
-var source      = require('vinyl-source-stream');
-var buffer      = require('vinyl-buffer');
-var uglify      = require('gulp-uglify');
-var sourcemaps  = require('gulp-sourcemaps');
-var sass = require('gulp-sass');
+////////////////////////////////
+		//Setup//
+////////////////////////////////
 
-gulp.task('build', function () {
-    return browserify({entries: './ssv/static/js/source/ssv_main.es6', debug: true, standalone:'ssv'})
-        .transform("babelify", { presets: ["es2015"] })
-        .bundle()
+// Plugins
+var gulp = require('gulp'),
+      browserify = require('browserify');
+      pjson = require('./package.json'),
+      gutil = require('gulp-util'),
+      sass = require('gulp-sass'),
+      autoprefixer = require('gulp-autoprefixer'),
+      cssnano = require('gulp-cssnano'),
+      rename = require('gulp-rename'),
+      del = require('del'),
+      plumber = require('gulp-plumber'),
+      pixrem = require('gulp-pixrem'),
+      uglify = require('gulp-uglify'),
+      imagemin = require('gulp-imagemin'),
+      exec = require('child_process').exec,
+      runSequence = require('run-sequence'),
+      browserSync = require('browser-sync'),
+      babel = require('gulp-babel');
+      source = require('vinyl-source-stream');
+      buffer = require('vinyl-buffer');
+
+// Relative paths function
+var pathsConfig = function (appName) {
+  this.app = "./" + (appName || pjson.name);
+
+  return {
+    app: this.app,
+    templates: this.app + '/templates',
+    css: this.app + '/static/css',
+    sass: this.app + '/static/sass',
+    fonts: this.app + '/static/fonts',
+    images: this.app + '/static/images',
+    js: this.app + '/static/js',
+  }
+};
+
+var paths = pathsConfig();
+console.log(paths);
+
+////////////////////////////////
+		//Tasks//
+////////////////////////////////
+
+// Styles autoprefixing and minification
+gulp.task('styles', function() {
+  return gulp.src(paths.sass + '/ssv.scss')
+    .pipe(sass().on('error', sass.logError))
+    .pipe(plumber()) // Checks for errors
+    .pipe(autoprefixer({browsers: ['last 2 version']})) // Adds vendor prefixes
+    .pipe(pixrem())  // add fallbacks for rem units
+    .pipe(gulp.dest(paths.css))
+    .pipe(rename({ suffix: '.min' }))
+    .pipe(cssnano()) // Minifies the result
+    .pipe(gulp.dest(paths.css));
+});
+
+// Javascript downgrading and minification
+gulp.task('scripts', function() {
+    gulp.src(paths.js + '/source/*.es6')
+        .pipe(babel({presets: ['es2015']}))
+        .pipe(gulp.dest(paths.js + '/source'));
+
+    return browserify({entries: paths.js + '/source/ssv_main.js', debug: true})
+        .bundle({standalone: 'ssv'})
         .pipe(source('ssv.min.js'))
         .pipe(buffer())
-        .pipe(sourcemaps.init())
         .pipe(uglify())
-        .pipe(sourcemaps.write('./maps'))
-        .pipe(gulp.dest('./ssv/static/js'))
+        .pipe(plumber()) // Checks for errors
+        .pipe(gulp.dest(paths.js))
 });
 
-gulp.task('watch', ['build'], function () {
-    gulp.watch('./ssv/static/js/source/*.es6', ['build']);
+// Image compression
+gulp.task('imgCompression', function(){
+  return gulp.src(paths.images + '/*')
+    .pipe(imagemin()) // Compresses PNG, JPEG, GIF and SVG images
+    .pipe(gulp.dest(paths.images))
 });
 
-gulp.task('sass', function () {
-  return gulp.src('./ssv/static/css/*.scss')
-    .pipe(sass().on('error', sass.logError))
-    .pipe(gulp.dest('./ssv/static/css'));
+// Default task
+gulp.task('default', function() {
+    runSequence(['styles', 'scripts', 'imgCompression']);
 });
 
-gulp.task('sass:watch', function () {
-  gulp.watch('./ssv/static/css/*.scss', ['sass']);
-});
+////////////////////////////////
+		//Watch//
+////////////////////////////////
 
-gulp.task('default', ['build', 'watch', 'sass', 'sass:watch']);
+// Watch
+gulp.task('watch', ['default'], function() {
+  gulp.watch(paths.sass + '/*.scss', ['styles']);
+  gulp.watch(paths.js + '/*.js', ['scripts']);
+  gulp.watch(paths.images + '/*', ['imgCompression']);
+  gulp.watch('templates/*.html');
+});

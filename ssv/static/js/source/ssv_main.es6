@@ -1,6 +1,6 @@
-var add_controls = require("./ssv_controls.es6");
-var create_element = require("./ssv_elements.es6");
-var generate_sels= require("./ssv_selectors.es6");
+var add_controls = require("./ssv_controls.js");
+var create_element = require("./ssv_elements.js");
+var generate_sels= require("./ssv_selectors.js");
 
 // Main class to generate contextual information of ssv setup
 class ElementContext {
@@ -87,7 +87,7 @@ class ElementContext {
 
 // Error catching
 window.onerror=function(msg){
-    d3.select("body").attr("JSError",msg);
+    document.body.setAttribute("JSError", msg);
 };
 
 var element_contexts = {};

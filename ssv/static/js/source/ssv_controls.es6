@@ -1,4 +1,5 @@
-var utilities = require("./ssv_utilities.es6");
+var utilities = require("./ssv_utilities.js");
+var d3 = require("d3");
 
 class Controls {
     constructor(title, x_series, x_series_unit, update_callback, context) {

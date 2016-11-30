@@ -1,4 +1,5 @@
-var renderers = require("./ssv_renderers.es6");
+var renderers = require("./ssv_renderers.js");
+var d3 = require("d3");
 
 // Inheritable parent class of every element type
 class Element {
