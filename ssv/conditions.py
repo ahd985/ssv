@@ -1,4 +1,5 @@
 from .data_validators import validate_array, validate_colors, validate_array_slices, validate_color, validate_heights
+from .type_check import type_check
 
 # Common validators
 def _validate_color_scale(arr): return validate_array(arr, 'str', 1, 1) if validate_colors(arr) else None
@@ -34,6 +35,7 @@ class Condition:
         # If we get to end of function raise error
         raise ValueError('condition type \'%s\' is not a supported type.' % cls_name)
 
+    @type_check
     def __init__(self, id='', description='', unit='', opacity=1.0, report=True, overlay=None, section_label='Zone'):
         if not isinstance(description, str):
             raise TypeError("description must be of type str")
