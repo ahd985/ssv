@@ -1,6 +1,5 @@
 from .data_validators import validate_array, validate_colors, validate_array_slices, validate_color, validate_heights
 
-
 # Common validators
 def _validate_color_scale(arr): return validate_array(arr, 'str', 1, 1) if validate_colors(arr) else None
 def _validate_color_levels(arr): return validate_array(arr, 'float', 1, 1)
