@@ -1,9 +1,7 @@
-from .data_validators import validate_array, validate_colors, validate_array_slices, validate_color, validate_heights
+from .data_validators import validate_array, validate_array_slices
 from .type_check import type_check
 
 # Common validators
-def _validate_color_scale(arr): return validate_array(arr, 'str', 1, 1) if validate_colors(arr) else None
-def _validate_color_levels(arr): return validate_array(arr, 'float', 1, 1)
 def _validate_1d_numeric(arr, arr_len): return validate_array(arr, 'float', 1, 1, arr_len)
 
 
@@ -35,21 +33,8 @@ class Condition:
         # If we get to end of function raise error
         raise ValueError('condition type \'%s\' is not a supported type.' % cls_name)
 
-    @type_check
+    @type_check()
     def __init__(self, id='', description='', unit='', opacity=1.0, report=True, overlay=None, section_label='Zone'):
-        if not isinstance(description, str):
-            raise TypeError("description must be of type str")
-        if not isinstance(unit, str):
-            raise TypeError("unit must be of type str")
-        if not isinstance(opacity, (int, float)):
-            raise TypeError("opacity must be a float or an int")
-        if not isinstance(report, bool):
-            raise TypeError("report must be of type boolean")
-        if overlay is not None and not isinstance(overlay, str):
-            raise TypeError("overlay must be of type str")
-        if not isinstance(section_label, str):
-            raise TypeError("section_label must be of type str")
-
         self.id = id
         self.type = self.__class__.__name__.lower()
         self.description = description
@@ -75,6 +60,7 @@ class Info(Condition):
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
+    @type_check("data.1-2.float")
     def __init__(self, x_len, data, **kwargs):
         super(Info, self).__init__(**kwargs)
         self.data = validate_array(data, 'float', 1, 2, x_len)
@@ -95,11 +81,10 @@ class Background(Condition):
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
+    @type_check("data.1.float")
     def __init__(self, x_len, data, color_scale, color_levels, **kwargs):
         super(Background, self).__init__(**kwargs)
         self.data = _validate_1d_numeric(data, x_len)
-        self.color_scale = _validate_color_scale(color_scale)
-        self.color_levels = _validate_color_levels(color_levels)
 
 
 class StaticLevel(Condition):
@@ -116,12 +101,10 @@ class StaticLevel(Condition):
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
+    @type_check("data.1.float")
     def __init__(self, x_len, data, color_scale, color_levels, min_height, max_height, **kwargs):
         super(StaticLevel, self).__init__(**kwargs)
         self.data = _validate_1d_numeric(data, x_len)
-        self.color_scale = _validate_color_scale(color_scale)
-        self.color_levels = _validate_color_levels(color_levels)
-        self.min_height, self.max_height = validate_heights(min_height, max_height)
 
 
 class DynamicLevel(Condition):
@@ -141,14 +124,12 @@ class DynamicLevel(Condition):
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
+    @type_check("data.1.float")
     def __init__(self, x_len, data, data_dynamic, color_scale, color_levels, min_height, max_height,
                  description_dynamic='', unit_dynamic='', **kwargs):
         super(DynamicLevel, self).__init__(**kwargs)
         self.data = _validate_1d_numeric(data, x_len)
         self.data_dynamic = _validate_1d_numeric(data_dynamic, x_len)
-        self.color_scale = _validate_color_scale(color_scale)
-        self.color_levels = _validate_color_levels(color_levels)
-        self.min_height, self.max_height = validate_heights(min_height, max_height)
 
         if description_dynamic != '' or unit_dynamic != '':
             self.additional_info = Condition.create('info', x_len, data_dynamic, description=description_dynamic,
@@ -169,11 +150,10 @@ class Logical(Condition):
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
+    @type_check("data.1.float")
     def __init__(self, x_len, data, true_color, false_color, **kwargs):
         super(Logical, self).__init__(**kwargs)
         self.data = _validate_1d_numeric(data, x_len)
-        self.true_color = validate_color(true_color)
-        self.false_color = validate_color(false_color)
 
 
 class ZonalY(Condition):
@@ -193,14 +173,12 @@ class ZonalY(Condition):
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
+    @type_check("data.2.float", "data_dynamic.2.float")
     def __init__(self, x_len, data, data_dynamic, color_scale, color_levels, min_height, max_height,
                  description_dynamic='', unit_dynamic='', **kwargs):
         super(ZonalY, self).__init__(**kwargs)
         self.data = validate_array(data, 'float', 2, 2, x_len)
         self.data_dynamic = validate_array(data_dynamic, 'float', 2, 2, x_len)
-        self.color_scale = _validate_color_scale(color_scale)
-        self.color_levels = _validate_color_levels(color_levels)
-        self.min_height, self.max_height = validate_heights(min_height, max_height)
 
         if len(self.data[0]) != len(self.data_dynamic[0]):
             raise ValueError("length of data inputs must be equal")
@@ -225,11 +203,10 @@ class EqualY(Condition):
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
+    @type_check("data.2.float")
     def __init__(self, x_len, data, color_scale, color_levels, **kwargs):
         super(EqualY, self).__init__(**kwargs)
         self.data = validate_array(data, 'float', 2, 2, x_len)
-        self.color_scale = _validate_color_scale(color_scale)
-        self.color_levels = _validate_color_levels(color_levels)
 
 
 #Heatmap-specific classes
@@ -247,11 +224,10 @@ class Rect(Condition):
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
+    @type_check("data.3.float")
     def __init__(self, x_len, data, color_scale, color_levels, **kwargs):
         super(Rect, self).__init__(**kwargs)
         self.data = validate_array(data, 'float', 3, 3, x_len)
-        self.color_scale = _validate_color_scale(color_scale)
-        self.color_levels = _validate_color_levels(color_levels)
 
 
 #Toggle-specific classes
@@ -267,6 +243,7 @@ class ShowHide(Condition):
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
+    @type_check("data.1.float")
     def __init__(self, x_len, data, **kwargs):
         super(ShowHide, self).__init__(**kwargs)
         self.data = _validate_1d_numeric(data, x_len)
@@ -286,26 +263,7 @@ class TabularInfo(Condition):
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
-    def __init__(self, x_len, data, headers, **kwargs):
-        super(TabularInfo, self).__init__(**kwargs)
-        self.tabular_data = validate_array_slices(data, 'str', x_len),
-        self.headers = validate_array(headers, 'str', 1, 1, x_len)
-
-
-# Table-specific classes
-class TabularInfo(Condition):
-    """Class representing tabular data output.
-
-        Represents info in a tabular configuration.
-
-        Args:
-            x_len (int): Length of x-series.
-            data (array): input representing tabular data
-            data (array): Data able to be cast as str by numpy to represent table content
-            headers (array): Data able to be cast as str by numpy to represent table headers
-            **kwargs: arbitrary keyword arguments for Condition super class.
-    """
-
+    @type_check("data.1.str", "headers.1.str")
     def __init__(self, x_len, data, headers, **kwargs):
         super(TabularInfo, self).__init__(**kwargs)
         self.data = validate_array_slices(data, 'str', x_len)
@@ -323,7 +281,6 @@ class ColorScale(Condition):
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
+    @type_check()
     def __init__(self, x_len, color_scale, color_levels, **kwargs):
         super(ColorScale, self).__init__(**kwargs)
-        self.color_scale = _validate_color_scale(color_scale)
-        self.color_levels = _validate_color_levels(color_levels)
