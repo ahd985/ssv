@@ -330,7 +330,7 @@ function render_rect_heatmap(node, data, color_scale, opacity) {
     }
 };
 
-function render_table(node, table_id, data, headers, font_scale) {
+function render_table(node, table_id, tabular_data, headers, font_scale) {
     if (node) {
         var parent = d3.select(node.parentNode);
 
@@ -355,7 +355,7 @@ function render_table(node, table_id, data, headers, font_scale) {
             .append('xhtml:table')
             .attr('class', 'table')
             .attr('id', table_id)
-            .datum(data);
+            .datum(tabular_data);
 
         // Add table header
         table.append('thead').append('tr')

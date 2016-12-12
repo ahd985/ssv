@@ -17,7 +17,7 @@ class Element {
         this.update_functions = [];
 
         // -- Report id represents id of placement element for element report - Optional property
-        this.report_sel = d3.select(`#${uuid} #${report_id}`);
+        report_id == "" ? this.report_sel = false : this.report_sel = d3.select(`#${uuid} #${report_id}`);
         this.popover_div_sel = d3.select(`#${uuid} .popover-spacer`);
         // -- Element description is printed at top of optional report
         this.description = element_description;
@@ -48,7 +48,7 @@ class Element {
 
     // General initialze function
     initialize() {
-        if (!this.report_sel.empty()) {
+        if (this.report_sel && !this.report_sel.empty()) {
             this.update_functions.push(
                 renderers.render_report(this.report_sel.node(), this.font_scale, this.conditions, this.description));
         }
@@ -242,9 +242,9 @@ class Table extends Element {
     initialize() {
         var node = this.report_sel.node();
         var table_id = 'table_' + this.report_id;
-        var data = this.conditions[0].data;
+        var tabular_data = this.conditions[0].tabular_data;
         var headers = this.conditions[0].headers;
-        this.update_functions.push(renderers.render_table(node, table_id, data, headers, this.font_scale));
+        this.update_functions.push(renderers.render_table(node, table_id, tabular_data, headers, this.font_scale));
     }
 }
 

@@ -170,7 +170,7 @@ def run():
     gas_color_levels = np.linspace(min(sim_data['temp']), max(sim_data['temp']), len(gas_color_scale))
 
     # Wire up svg elements
-    tank = ssv_model.add_element('cell', 'tank-1', 'Quench Tank', cell_report_id='tank-1-report')
+    tank = ssv_model.add_element('cell', 'tank-1', 'Quench Tank', report_id='tank-1-report')
     tank.add_condition('background', description='Vapor Temp', unit='K', data=sim_data['temp'],
                        color_scale=gas_color_scale,
                        color_levels=gas_color_levels)
@@ -185,7 +185,7 @@ def run():
     relief_valve = ssv_model.add_element('cell', 'relief-valve', 'Relief Valve')
     relief_valve.add_condition('logical', data=sim_data['rv'], true_color='#4CAF50', false_color='#F44336')
 
-    steam_discharge = ssv_model.add_element('cell', 'steam-discharge', 'Steam Discharge', cell_report_id='disch-report')
+    steam_discharge = ssv_model.add_element('cell', 'steam-discharge', 'Steam Discharge', report_id='disch-report')
     steam_discharge.add_condition('logical', description='Flowrate', data=sim_data['disch'], true_color='#4CAF50', false_color='#F44336', unit='kg/s')
 
     steam_toggle = ssv_model.add_element('toggle', 'steam-toggle', 'Steam Toggle')
@@ -198,7 +198,7 @@ def run():
                           color_scale=water_color_scale,
                           color_levels=water_color_levels)
 
-    x = ssv_model.add_element('legend', 'color-scale-gas', 'Gas Temperature (F)',
+    ssv_model.add_element('legend', 'color-scale-gas', 'Gas Temperature (F)',
                           color_scale=gas_color_scale,
                           color_levels=gas_color_levels)
 

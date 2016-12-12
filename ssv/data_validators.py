@@ -19,6 +19,17 @@ def validate_array(arr, arr_type, min_dim, max_dim=None, dim1_len=None):
     except ValueError:
         raise ValueError("Each element in input array must be allowed to be cast as type %s" % arr_type)
 
+    # Cast min_dim, max_dim, and dim1_len to int
+    try:
+        if min_dim:
+            min_dim = int(min_dim)
+        if max_dim:
+            max_dim = int(max_dim)
+        if dim1_len:
+            dim1_len = int(dim1_len)
+    except ValueError:
+        raise ValueError("Dimensions must be castable as ints")
+
     if min_dim is not None and len([i for i in arr.shape if i > 0]) < min_dim or \
                             max_dim is not None and len([i for i in arr.shape if i > 0]) > max_dim:
         raise ValueError("Input array(s) should have between %d and %d dimensions" % (min_dim, max_dim))
@@ -58,6 +69,22 @@ def validate_colors(arr):
         raise ValueError("Input array should include only hex colors")
 
     return arr.tolist()
+
+
+# Helper function to validate a color scale
+def validate_color_scale(color_scale, color_levels):
+    color_scale = validate_colors(validate_array(color_scale, 'str', 1, 1))
+    if len(color_scale) != len(color_levels):
+        raise ValueError("Length of color scale must match length of color levels")
+
+    return color_scale
+
+
+# Helper function to validate a color scale
+def validate_color_levels(color_levels):
+    color_levels = validate_array(color_levels, 'float', 1, 1)
+
+    return color_levels
 
 
 # Helper function to validate single color

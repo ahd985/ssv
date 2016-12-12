@@ -150,7 +150,7 @@ class Vis:
             raise TypeError('\'element_id\' input must be a string.')
 
         for i in range(len(self._elements)):
-            element_ids = self._elements[i]['ids']
+            element_ids = self._elements[i].ids
             if element_id in element_ids:
                 element_ids.remove(element_id)
             if len(element_ids) < 1:
@@ -241,7 +241,7 @@ class Vis:
         # Build dict of element ids and include report ids
         element_ids = [id for element in self._elements for id in element.ids]
         element_ids += [element.report_id for element in self._elements if
-                        element.report_id is not None]
+                        element.report_id]
 
         # Loop through element ids and see what's in the xml tree under supported svg elements
         for element_id in element_ids:

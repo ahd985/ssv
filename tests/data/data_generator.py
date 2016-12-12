@@ -24,7 +24,6 @@ def get_element_input(valid, element_type):
         },
     ]
 
-    report_id_args = [{'valid': ['REPORT_ID'], 'invalid': {'TypeError': [True, 1]}}]
     data_args = [{'valid': [np.random.rand(10, 3)], 'invalid': {}}]
     headers_args = [{'valid': [['H1', '', 'H3']], 'invalid': {}}]
     color_scale_args = [{'valid': [['#DDDDDD','#DDDDDD']], 'invalid': {'ValueError': ['#ZZZ', 'RGB(1,1,1)']}}]
@@ -32,10 +31,10 @@ def get_element_input(valid, element_type):
     opacity_args = [{'valid': [1, 1.0], 'invalid': {'TypeError': ['X']}}]
 
     element_args = {
-        'cell': base_element_args + report_id_args,
-        'line': base_element_args + report_id_args,
-        'heatmap': base_element_args + report_id_args,
-        'toggle': base_element_args + report_id_args,
+        'cell': base_element_args,
+        'line': base_element_args,
+        'heatmap': base_element_args,
+        'toggle': base_element_args,
         'report': base_element_args,
         'table': base_element_args + data_args + headers_args,
         'legend': base_element_args + color_scale_args + color_level_args + opacity_args
