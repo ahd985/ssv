@@ -1,16 +1,6 @@
-from .data_validators import validate_array, validate_colors, validate_array_slices, validate_color
 from .conditions import Condition
 from .popovers import Popover
 from .type_check import type_check
-
-# Flexible validator wrappers
-# Validators get passed 3 arguments:
-#   1: parameter being validated
-#   2: parameter name
-#   3: length of x_series of element(not always used)
-_validate_color_scale = lambda a, b, c: validate_array(a, b, 'str', 1, 1) if validate_colors(a, b) else None
-_validate_color_levels = lambda a, b, c: validate_array(a, b, 'float', 1, 1)
-_validate_1d_numeric = lambda a, b, c: validate_array(a, b, 'float', 1, 1, c)
 
 
 class Element:
@@ -34,6 +24,7 @@ class Element:
     """
 
     _allowed_conditions = []
+    _max_conditions = -1
 
     @type_check()
     def __init__(self, element_ids, element_description, x_series, report_id=''):
@@ -42,7 +33,6 @@ class Element:
         self.description = element_description
         self.x_series = x_series
         self.report_id = report_id
-        self._max_conditions = -1
         self.conditions = []
         self.popover = None
 
@@ -174,11 +164,10 @@ class Line(Element):
     """
 
     _allowed_conditions = ['EqualY']
+    _max_conditions = 1
 
     def __init__(self, line_id, line_description, x_series, **kwargs):
         super(Line, self).__init__(line_id, line_description, x_series, **kwargs)
-
-        self._max_conditions = 1
 
 
 # Wrapper for heatmap
@@ -199,11 +188,11 @@ class Heatmap(Element):
     """
 
     _allowed_conditions = ['Rect']
+    _max_conditions = 1
 
     def __init__(self, heatmap_id, heatmap_description, x_series, **kwargs):
         super(Heatmap, self).__init__(heatmap_id, heatmap_description, x_series, **kwargs)
 
-        self._max_conditions = 1
 
 # Wrapper for toggle
 class Toggle(Element):
@@ -223,11 +212,10 @@ class Toggle(Element):
     """
 
     _allowed_conditions = ['Info', 'ShowHide']
+    _max_conditions = 1
 
     def __init__(self, toggle_id, toggle_description, x_series, **kwargs):
         super(Toggle, self).__init__(toggle_id, toggle_description, x_series, **kwargs)
-
-        self._max_conditions = 1
 
 
 # Wrapper for report
@@ -264,13 +252,10 @@ class Table(Element):
     """
 
     _allowed_conditions = ['TabularInfo']
+    _max_conditions = 1
 
-    def __init__(self, table_id, table_description, x_series, tabular_data, headers, **kwargs):
+    def __init__(self, table_id, table_description, x_series, **kwargs):
         super(Table, self).__init__('', table_description, x_series, table_id[0], **kwargs)
-
-        # Add info and remove ability to add additional conditions to element
-        self.add_condition('TabularInfo', tabular_data=tabular_data, headers=headers)
-        self.add_condition = None
 
 
 # Wrapper for legend
@@ -288,9 +273,8 @@ class Legend(Element):
             color_levels (array): Data able to be cast as str by numpy to represent color levels
     """
 
-    def __init__(self, color_scale_id, color_scale_desc, x_series, color_scale, color_levels, opacity=1, **kwargs):
-        super(Legend, self).__init__('', color_scale_desc, x_series, color_scale_id[0], **kwargs)
+    _allowed_conditions = ['ColorScale']
+    _max_conditions = 1
 
-        # Add color scale and remove ability to add additional conditions to element
-        self.add_condition('ColorScale', color_scale=color_scale, color_levels=color_levels, opacity=opacity)
-        self.add_condition = None
+    def __init__(self, color_scale_id, color_scale_desc, x_series, **kwargs):
+        super(Legend, self).__init__('', color_scale_desc, x_series, color_scale_id[0], **kwargs)

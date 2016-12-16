@@ -24,20 +24,14 @@ def get_element_input(valid, element_type):
         },
     ]
 
-    data_args = [{'valid': [np.random.rand(10, 3)], 'invalid': {}}]
-    headers_args = [{'valid': [['H1', '', 'H3']], 'invalid': {}}]
-    color_scale_args = [{'valid': [['#DDDDDD','#DDDDDD']], 'invalid': {'ValueError': ['#ZZZ', 'RGB(1,1,1)']}}]
-    color_level_args = [{'valid': [[100, 200]], 'invalid': {}}]
-    opacity_args = [{'valid': [1, 1.0], 'invalid': {'TypeError': ['X']}}]
-
     element_args = {
         'cell': base_element_args,
         'line': base_element_args,
         'heatmap': base_element_args,
         'toggle': base_element_args,
         'report': base_element_args,
-        'table': base_element_args + data_args + headers_args,
-        'legend': base_element_args + color_scale_args + color_level_args + opacity_args
+        'table': base_element_args,
+        'legend': base_element_args
     }
 
     valid_args = [i['valid'] for i in element_args[element_type.lower()]]
@@ -104,6 +98,7 @@ def get_condition_input(valid, condition_type):
         'equaly': data_2d_arg + color_legend_args,
         'rect': data_3d_arg + color_legend_args,
         'showhide': data_1d_arg,
+        'colorscale': color_legend_args
     }
 
     valid_args = [i['valid'] for i in condition_args[condition_type.lower()]]

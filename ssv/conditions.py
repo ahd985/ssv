@@ -30,7 +30,7 @@ class Condition:
         raise ValueError('condition type \'%s\' is not a supported type.' % cls_name)
 
     @type_check()
-    def __init__(self, id='', description='', unit='', opacity=1.0, report=True, overlay=None, section_label='Zone'):
+    def __init__(self, id='', description='', unit='', opacity=1.0, report=True, overlay='', section_label='Zone'):
         self.id = id
         self.type = self.__class__.__name__.lower()
         self.description = description
@@ -126,7 +126,8 @@ class DynamicLevel(Condition):
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
-    @type_check("data.float.1.1&x_len", "color_scale&color_levels", "min_height&max_height")
+    @type_check("data.float.1.1&x_len", "data_dynamic.float.1.1&x_len", "color_scale&color_levels",
+                "min_height&max_height")
     def __init__(self, x_len, data, data_dynamic, color_scale, color_levels, min_height, max_height,
                  description_dynamic='', unit_dynamic='', **kwargs):
         super(DynamicLevel, self).__init__(**kwargs)

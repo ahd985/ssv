@@ -143,6 +143,7 @@ class TestElements:
                 error_cls = get_subclass_from_name(Exception, error_name)
                 for args_kwargs in combos:
                     with pytest.raises(error_cls):
+                        print(error_cls, condition_type, args_kwargs[0], args_kwargs[1])
                         cls(*cls_args).add_condition(condition_type, *args_kwargs[0], **args_kwargs[1])
 
     """

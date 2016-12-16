@@ -78,9 +78,8 @@ def run():
     report.add_condition('info', description='Avg Temp', unit='F', data=core_temp_avg)
     report.add_condition('info', description='Max Temp', unit='F', data=core_temp_max)
 
-    ssv_model.add_element('legend', 'core-color-scale', 'Core Temperature (K)',
-                          color_scale=core_color_scale,
-                          color_levels=core_color_levels)
+    core_temp_legend = ssv_model.add_element('legend', 'core-color-scale', 'Core Temperature (K)')
+    core_temp_legend.add_condition("colorscale", core_color_scale, core_color_levels)
 
     ssv_model.save_visualization(os.path.join('examples', 'example_3', 'example_3'))
 

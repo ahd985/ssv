@@ -102,4 +102,4 @@ def validate_heights(min_height, max_height):
     elif max_height <= min_height:
         raise ValueError('min_height must be less than max_height')
 
-    return min_height, max_height
+    return min_height

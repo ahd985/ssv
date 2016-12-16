@@ -49,6 +49,7 @@ class Element {
     // General initialze function
     initialize() {
         if (this.report_sel && !this.report_sel.empty()) {
+            console.log(this.report_sel.node(), this.font_scale, this.conditions, this.description)
             this.update_functions.push(
                 renderers.render_report(this.report_sel.node(), this.font_scale, this.conditions, this.description));
         }
@@ -91,7 +92,7 @@ class Cell extends Element {
                     var order_val, color, opacity, overlay;
                     var max_order = 1.01;
 
-                    'overlay' in condition ? overlay = condition.overlay : overlay = null;
+                    'overlay' in condition && condition.overlay ? overlay = condition.overlay : overlay = null;
                     if (condition.type == 'background') {
                         // background represents a changing cell background color only
                         // always 100% of the element height

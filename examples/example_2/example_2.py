@@ -49,9 +49,8 @@ def run():
     fire_2.add_condition('showhide', data=data['HRR, Wood_Wall'])
 
     # Show gas color scale
-    ssv_model.add_element('legend', 'color-scale', 'Gas Temperature (C)',
-                          color_scale=gas_color_scale,
-                          color_levels=gas_color_levels)
+    gas_temp_legend = ssv_model.add_element('legend', 'color-scale', 'Gas Temperature (C)')
+    gas_temp_legend.add_condition("colorscale", gas_color_scale, gas_color_levels)
 
     ssv_model.save_visualization(os.path.join('examples', 'example_2', 'example_2'))
 

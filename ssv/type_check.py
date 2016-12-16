@@ -1,4 +1,5 @@
 import inspect
+from functools import wraps
 
 from .data_validators import validate_color_scale, validate_heights, \
     validate_color, validate_array_slices, validate_array, validate_color_levels
@@ -8,6 +9,8 @@ input_map = {
     "x_len": int,
     "description": str,
     "unit": str,
+    "min_height": (int, float),
+    "max_height": (int, float),
     "opacity": (int, float),
     "report": bool,
     "overlay": str,
@@ -25,19 +28,33 @@ input_map = {
     "headers.str.1.1": validate_array,
     "data.float.1.2&x_len": validate_array,
     "data.float.1.1&x_len": validate_array,
+    "data_dynamic.float.1.1&x_len": validate_array,
     "data.float.2.2&x_len": validate_array,
     "data_dynamic.float.2.2&x_len": validate_array,
     "data.float.3.3&x_len": validate_array,
 }
 
-
 def type_check(*type_args):
     def type_check_decorator(f):
+        # Bind any arg types to function
+        f.type_args = type_args
+
+        @wraps(f)
         def wrapper(*args, **kwargs):
-            arg_names = [a for a in inspect.getargspec(f).args[1:]]
+            argspec = inspect.getargspec(f)
+
+            # First, populate args with default values
+            arg_kvs = ({a: v for a, v in zip(argspec.args[-len(argspec.defaults):], argspec.defaults)} if
+                       argspec.defaults else {})
+
+            # Update with user provided args
+            arg_names = [a for a in argspec.args[1:]]
             arg_vals = [a for a in args[1:]]
-            arg_kvs = {name: val for name, val in zip(arg_names, arg_vals)}
+            arg_kvs.update({name: val for name, val in zip(arg_names, arg_vals)})
+
+            # Update with kwargs
             arg_kvs.update(kwargs)
+
             arg_keys = set(arg_kvs.keys())
 
             # Process normal inputs
@@ -66,4 +83,5 @@ def type_check(*type_args):
 
             return f(*args, **kwargs)
         return wrapper
+        wrapper.type_args = type_args
     return type_check_decorator

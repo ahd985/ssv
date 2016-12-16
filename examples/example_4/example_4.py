@@ -41,8 +41,8 @@ def run():
                     title="Cutset Visualization", font_size=8)
 
     # Add tablular data
-    ssv_model.add_element('table', 'cutset-report', tabular_data=report,
-                          headers=['Basic Event', 'Description', 'Probability'])
+    table = ssv_model.add_element('table', 'cutset-report', 'Cutset Table')
+    table.add_condition("tabularinfo", report, ['Basic Event', 'Description', 'Probability'])
 
     # Wire up svg elements
     svg_id = ''
