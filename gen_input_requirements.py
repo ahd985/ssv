@@ -1,4 +1,5 @@
 import inspect
+import json
 
 import ssv.elements as elements
 import ssv.conditions as conditions
@@ -14,8 +15,8 @@ for cls in conditions.Condition.__subclasses__():
 element_args = {}
 element_args_base = [a for a in inspect.getargspec(elements.Element.__init__).args if a not in invalid_args]
 for cls in elements.Element.__subclasses__():
-    element_args[cls.__name__] = set([a for a in inspect.getargspec(cls.__init__).args if a not in invalid_args] +
-                                       element_args_base)
+    element_args[cls.__name__] = list(set([a for a in inspect.getargspec(cls.__init__).args if a not in invalid_args] +
+                                       element_args_base))
 
 element_conditions = {}
 for cls in elements.Element.__subclasses__():
@@ -33,8 +34,15 @@ def get_name(o):
 
 input_types = {k: get_name(v) for k, v in type_check.input_map.items()}
 
-print(condition_args)
-print(element_args)
-print(element_conditions)
-print(element_max_conditions)
-print(input_types)
+
+def gen():
+    return json.dumps({
+        "condition_args": condition_args,
+        "element_args": element_args,
+        "element_conditions": element_conditions,
+        "element_max_conditions": element_max_conditions,
+        "input_types": input_types,
+    })
+
+if __name__ == '__main__':
+    print(gen())

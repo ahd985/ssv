@@ -16,12 +16,14 @@ var gulp = require('gulp'),
       pixrem = require('gulp-pixrem'),
       uglify = require('gulp-uglify'),
       imagemin = require('gulp-imagemin'),
-      exec = require('child_process').exec,
+      execSync = require('child_process').execSync,
       runSequence = require('run-sequence'),
       browserSync = require('browser-sync'),
-      babel = require('gulp-babel');
-      source = require('vinyl-source-stream');
-      buffer = require('vinyl-buffer');
+      babel = require('gulp-babel'),
+      source = require('vinyl-source-stream'),
+      buffer = require('vinyl-buffer'),
+      handlebars = require('Handlebars'),
+      fs = require('fs');
 
 // Relative paths function
 var pathsConfig = function (appName) {
@@ -60,6 +62,15 @@ gulp.task('styles', function() {
 
 // Javascript downgrading and minification
 gulp.task('scripts', function() {
+    // Get template context
+    var type_requirements = execSync('/Users/Alex/anaconda/envs/simvis/bin/python3.5 gen_input_requirements.py')
+        .toString('utf8');
+
+    var template_path = fs.readFileSync(paths.js + '/source/ssv_main.template', 'utf8');
+    var template = handlebars.compile(template_path);
+    var js_out = template({"type_requirements": type_requirements});
+    fs.writeFileSync(paths.js + '/source/ssv_main.es6', js_out);
+
     gulp.src(paths.js + '/source/*.es6')
         .pipe(babel({presets: ['es2015']}))
         .pipe(gulp.dest(paths.js + '/source'));
