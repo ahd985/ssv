@@ -3,14 +3,14 @@ var d3 = require("d3");
 
 // Inheritable parent class of every element type
 class Element {
-    constructor(uuid, element_ids, element_description, element_conditions, report_id, popover, font_scale) {
+    constructor(uuid, ids, description, conditions, report_id, popover, font_scale) {
         this.uuid = uuid;
 
         // -- Build list of selectors from ids
         this.selectors = [];
-        if (element_ids) {
-            this.ids = element_ids;
-            this.selectors = element_ids.map(function(d) {
+        if (ids) {
+            this.ids = ids;
+            this.selectors = ids.map(function(d) {
                 return d3.select(`#${uuid} #${d}`)
             });
         }
@@ -20,10 +20,10 @@ class Element {
         report_id == "" ? this.report_sel = false : this.report_sel = d3.select(`#${uuid} #${report_id}`);
         this.popover_div_sel = d3.select(`#${uuid} .popover-spacer`);
         // -- Element description is printed at top of optional report
-        this.description = element_description;
+        this.description = description;
         // -- Array of element conditions - data types that describe simulation characteristics such as
         //    temperature and water levels
-        this.conditions = element_conditions;
+        this.conditions = conditions;
         this.popover = popover;
         this.font_scale = font_scale;
 

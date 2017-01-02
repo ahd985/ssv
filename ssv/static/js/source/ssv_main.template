@@ -97,7 +97,7 @@ module.exports = {
         element_contexts[uuid] = new ElementContext(uuid, ...args);
     },
     create_demo_element: function(uuid, element_data, font_size) {
-        recreate_element(uuid, element_data, 1)
+        return create_element(uuid, element_data, 1)
     },
     get_type_requirements: function() {
         return {{{ type_requirements }}}

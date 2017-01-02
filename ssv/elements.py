@@ -11,7 +11,7 @@ class Element:
             quantities representing by the cell like pressure and temperature).
 
         Args:
-            element_ids (list[str], str): String id(s) representing the id(s) of the corresponding svg element in the
+            ids (list[str], str): String id(s) representing the id(s) of the corresponding svg element in the
                 svg layout provided by the Vis class.
             element_description (Optional[str]): Description of the visualization element intended representation (e.g.,
                 physical objects like 'Reactor Vessel' and 'Steam Pipe').
@@ -27,10 +27,10 @@ class Element:
     _max_conditions = -1
 
     @type_check()
-    def __init__(self, element_ids, element_description, x_series, report_id=''):
+    def __init__(self, ids, description, x_series, report_id=''):
         self.type = type(self).__name__.lower()
-        self.ids = element_ids
-        self.description = element_description
+        self.ids = ids
+        self.description = description
         self.x_series = x_series
         self.report_id = report_id
         self.conditions = []
@@ -119,15 +119,15 @@ class Cell(Element):
             Users should take take care to account for this ordering in the code.
 
         Args:
-            cell_id (str): unique id of the cell used in conjunction with an svg layout to map the cell.
-            cell_description (str): Description of the what the cell physically represents (e.g., a reactor vessel)
+            id (str): unique id of the cell used in conjunction with an svg layout to map the cell.
+            description (str): Description of the what the cell physically represents (e.g., a reactor vessel)
             x_series (int, float): X-series data for simulation (e.g., time series).
     """
 
     _allowed_conditions = ['Info', 'Background', 'StaticLevel', 'DynamicLevel', 'Logical', 'ZonalY']
 
-    def __init__(self, cell_id, cell_description, x_series, **kwargs):
-        super(Cell, self).__init__(cell_id, cell_description, x_series, **kwargs)
+    def __init__(self, id, description, x_series, **kwargs):
+        super(Cell, self).__init__(id, description, x_series, **kwargs)
 
     # Overwrite super's add_condition_post_hook function to handle special conditions
     def _add_condition_post_hook(self, **kwargs):
@@ -158,8 +158,8 @@ class Line(Element):
             *EqualY
 
         Args:
-            line_id (str): unique id of the line used in conjunction with an svg layout to map the line.
-            line_description (str): Description of the what the line physically represents (e.g., a vessel wall)
+            id (str): unique id of the line used in conjunction with an svg layout to map the line.
+            description (str): Description of the what the line physically represents (e.g., a vessel wall)
             x_series (int, float): X-series data for simulation (e.g., time series).
     """
 
@@ -182,16 +182,16 @@ class Heatmap(Element):
             *Rect
 
         Args:
-            heatmap_id (str): unique id of the heatmap used in conjunction with an svg layout to map the heatmap.
-            heatmap_description (str): Description of the what the heatmap physically represents (e.g., a reactor core)
+            id (str): unique id of the heatmap used in conjunction with an svg layout to map the heatmap.
+            description (str): Description of the what the heatmap physically represents (e.g., a reactor core)
             x_series (int, float): X-series data for simulation (e.g., time series).
     """
 
     _allowed_conditions = ['Rect']
     _max_conditions = 1
 
-    def __init__(self, heatmap_id, heatmap_description, x_series, **kwargs):
-        super(Heatmap, self).__init__(heatmap_id, heatmap_description, x_series, **kwargs)
+    def __init__(self, id, description, x_series, **kwargs):
+        super(Heatmap, self).__init__(id, description, x_series, **kwargs)
 
 
 # Wrapper for toggle
@@ -206,16 +206,16 @@ class Toggle(Element):
             *show_hide
 
         Args:
-            toggle_id (str): unique id of the heatmap used in conjunction with an svg layout to map the heatmap.
-            heatmap_description (str): Description of the what the heatmap physically represents (e.g., a reactor core)
+            id (str): unique id of the toggle used in conjunction with an svg layout to map the toggle.
+            description (str): Description of the what the heatmap physically represents (e.g., an indicator)
             x_series (int, float): X-series data for simulation (e.g., time series).
     """
 
     _allowed_conditions = ['Info', 'ShowHide']
     _max_conditions = 1
 
-    def __init__(self, toggle_id, toggle_description, x_series, **kwargs):
-        super(Toggle, self).__init__(toggle_id, toggle_description, x_series, **kwargs)
+    def __init__(self, id, description, x_series, **kwargs):
+        super(Toggle, self).__init__(id, description, x_series, **kwargs)
 
 
 # Wrapper for report
@@ -226,15 +226,15 @@ class Report(Element):
             class can only implement an "Info" condition.
 
         Args:
-            report_id (str): unique id of the report used in conjunction with an svg layout to map the report.
-            report_description (str): Description of the what the report physically represents (e.g., external inputs)
+            id (str): unique id of the report used in conjunction with an svg layout to map the report.
+            description (str): Description of the what the report physically represents (e.g., external inputs)
             x_series (int, float): X-series data for simulation (e.g., time series).
     """
 
     _allowed_conditions = ['Info']
 
-    def __init__(self, report_id, report_description, x_series, **kwargs):
-        super(Report, self).__init__('', report_description, x_series, report_id[0])
+    def __init__(self, id, description, x_series, **kwargs):
+        super(Report, self).__init__('', description, x_series, id[0])
 
 
 # Wrapper for table
@@ -244,8 +244,8 @@ class Table(Element):
         A 'Table' element is an element that only provides tabular output (i.e., only indicates data values).
 
         Args:
-            table_id (str): unique id of the table used in conjunction with an svg layout to map the table.
-            table_description (str): Description of the what the table physically represents (e.g., summary results)
+            id (str): unique id of the table used in conjunction with an svg layout to map the table.
+            description (str): Description of the what the table physically represents (e.g., summary results)
             x_series (int, float): X-series data for simulation (e.g., time series).
             tabular_data (array): Data able to be cast as str by numpy to represent table content
             headers (array): Data able to be cast as str by numpy to represent table headers
@@ -254,8 +254,8 @@ class Table(Element):
     _allowed_conditions = ['TabularInfo']
     _max_conditions = 1
 
-    def __init__(self, table_id, table_description, x_series, **kwargs):
-        super(Table, self).__init__('', table_description, x_series, table_id[0], **kwargs)
+    def __init__(self, id, description, x_series, **kwargs):
+        super(Table, self).__init__('', description, x_series, id[0], **kwargs)
 
 
 # Wrapper for legend
@@ -265,9 +265,8 @@ class Legend(Element):
         A 'Legend' element is an element that only provides a color scale.
 
         Args:
-            color_scale_id (str): unique id of the scale used in conjunction with an svg layout to map the color scale.
-            color_scale_desc (str): Description of the what the color scale physically represents
-                (e.g., gas temperature)
+            id (str): unique id of the scale used in conjunction with an svg layout to map the color scale.
+            desc (str): Description of the what the color scale physically represents (e.g., gas temperature)
             x_series (int, float): X-series data for simulation (e.g., time series).
             color_scale (array): Data able to be cast as numeric by numpy to represent color scale
             color_levels (array): Data able to be cast as str by numpy to represent color levels
@@ -276,5 +275,5 @@ class Legend(Element):
     _allowed_conditions = ['ColorScale']
     _max_conditions = 1
 
-    def __init__(self, color_scale_id, color_scale_desc, x_series, **kwargs):
-        super(Legend, self).__init__('', color_scale_desc, x_series, color_scale_id[0], **kwargs)
+    def __init__(self, id, desc, x_series, **kwargs):
+        super(Legend, self).__init__('', desc, x_series, id[0], **kwargs)
