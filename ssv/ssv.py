@@ -29,6 +29,22 @@ class SSV:
 
         return Vis(*args, **kwargs)
 
+    @staticmethod
+    def from_json(json):
+        try:
+            ssv = SSV.create_vis(json['x_series'], json['x_series_unit'], json['tree'], json['title'], json['font_size'])
+            for element_data in json['elemens']:
+                element = ssv.add_element(element_data['element_type'], element_data['element_ids'],
+                                element_data['element_description'], **element_data['kwargs'])
+                for condition_data in element['conditions']:
+                    element.add_condition(condition_data['condition_cls'], *condition_data['args'],
+                                          **condition_data['kwargs'])
+
+        except KeyError as e:
+            raise KeyError("Missing attribute from json input: ", e)
+
+        return ssv
+
 
 class Vis:
     """Class representing SSV visualization.
@@ -50,7 +66,7 @@ class Vis:
     _supported_svg_attribs = ['viewBox', 'xmlns']
     _supported_svg = ['path', 'circle', 'rect', 'ellipse']
 
-    def __init__(self, x_series, x_series_unit, svg_file_path, title='My Simulation', font_size=12):
+    def __init__(self, x_series, x_series_unit, svg_filepath_or_json, title='My Simulation', font_size=12):
         # Validate inputs
         if not isinstance(x_series_unit, str):
             raise TypeError('\'x_series_unit\' input must be a string.')
@@ -67,7 +83,11 @@ class Vis:
             raise ValueError('\'x_series\' input must be provided in an array-like numeric format')
 
         try:
-            tree = ET.parse(svg_file_path)
+            if isinstance(svg_filepath_or_json, str):
+                tree = ET.parse(svg_filepath_or_json)
+            else:
+                tree = ET.parse(svg_filepath_or_json['tree'])
+
             ET.register_namespace('', self._svg_namespace)
             svg_root = tree.getroot()
             if not svg_root.tag == '{%s}svg' % self._svg_namespace:
@@ -80,15 +100,18 @@ class Vis:
                     del svg_root.attrib[attrib]
             if not 'viewBox' in attribs:
                 print('Warning: svg element has no viewBox attribute.  SVG will not scale to fit window.')
+            self._svg_root = svg_root
 
         except ET.ParseError:
             raise ET.ParseError('Invalid SVG file.')
+        except KeyError as e:
+            raise KeyError("Input json does not have the proper attributes: ", e)
 
         if not isinstance(font_size, (int, float)):
             raise TypeError('\'font_size\' must be provided as an integer or a float.')
 
-        # Set properties
-        self._svg_root = svg_root
+        # Set other properties
+
         self._title = title
         self._x_series_unit = x_series_unit
         self._elements = []
