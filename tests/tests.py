@@ -1,4 +1,5 @@
 import itertools
+import json
 import os
 import random
 import string
@@ -223,6 +224,11 @@ class TestSSV:
             vis = SSV.create_vis(*[i[0] for i in self._valid_inputs])
             vis.add_element('cell', 'id_1')
             vis.add_element('heatmap', 'id_1')
+
+    def test_from_json(self):
+        with open('tests/data/data.json') as f:
+            data = json.load(f)
+        SSV.from_json(data)
 
 
 class TestSystem:

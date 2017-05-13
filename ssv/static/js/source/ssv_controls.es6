@@ -198,34 +198,32 @@ class Controls {
         var zoom = d3.zoom()
             .scaleExtent([1, 8])
             .on('zoom', function() {
-                if (self.pan_zoom_enabled) {
-                    var scale = d3.event.transform.k;
-                    var tx=0;
-                    var ty=0;
-                    if (bbox_info.width*scale <= self.bbox_zoom.width) {
-                        tx = Math.max(d3.event.transform.x, self.bbox_zoom.x - bbox_info.x - offset[0]*(scale-1));
-                        tx = Math.min(tx,
-                            self.bbox_zoom.width - (bbox_info.x - self.bbox_zoom.x + offset[0]*(scale-1)) - bbox_info.width*scale);
-                    } else {
-                        tx = Math.max(d3.event.transform.x, self.bbox_zoom.x - bbox_info.x - (bbox_info.width*scale - self.bbox_zoom.width) - offset[0]*(scale-1));
-                        tx = Math.min(tx, bbox_info.x - offset[0]*(scale-1) - self.bbox_zoom.x );
-                    }
-
-                    if (bbox_info.height*scale <=  self.bbox_zoom.height) {
-                        ty = Math.max(d3.event.transform.y, self.bbox_zoom.y - bbox_info.y - offset[1]*(scale-1));
-                        ty = Math.min(ty,
-                            self.bbox_zoom.height - (bbox_info.y - self.bbox_zoom.y + offset[1]*(scale-1))  - bbox_info.height*scale);
-                    } else {
-                        ty = Math.max(d3.event.transform.y, self.bbox_zoom.y - bbox_info.y - (bbox_info.height*scale - self.bbox_zoom.height) - offset[1]*(scale-1));
-                        ty = Math.min(ty, bbox_info.y - offset[1]*(scale-1) - self.bbox_zoom.y);
-                    }
-
-                    self.sels.containers.info_layer.attr("transform",
-                        'translate(' + [tx,ty] + ')scale(' + scale + ')');
-
-                    d3.event.transform.x = tx;
-                    d3.event.transform.y = ty;
+                var scale = d3.event.transform.k;
+                var tx=0;
+                var ty=0;
+                if (bbox_info.width*scale <= self.bbox_zoom.width) {
+                    tx = Math.max(d3.event.transform.x, self.bbox_zoom.x - bbox_info.x - offset[0]*(scale-1));
+                    tx = Math.min(tx,
+                        self.bbox_zoom.width - (bbox_info.x - self.bbox_zoom.x + offset[0]*(scale-1)) - bbox_info.width*scale);
+                } else {
+                    tx = Math.max(d3.event.transform.x, self.bbox_zoom.x - bbox_info.x - (bbox_info.width*scale - self.bbox_zoom.width) - offset[0]*(scale-1));
+                    tx = Math.min(tx, bbox_info.x - offset[0]*(scale-1) - self.bbox_zoom.x );
                 }
+
+                if (bbox_info.height*scale <=  self.bbox_zoom.height) {
+                    ty = Math.max(d3.event.transform.y, self.bbox_zoom.y - bbox_info.y - offset[1]*(scale-1));
+                    ty = Math.min(ty,
+                        self.bbox_zoom.height - (bbox_info.y - self.bbox_zoom.y + offset[1]*(scale-1))  - bbox_info.height*scale);
+                } else {
+                    ty = Math.max(d3.event.transform.y, self.bbox_zoom.y - bbox_info.y - (bbox_info.height*scale - self.bbox_zoom.height) - offset[1]*(scale-1));
+                    ty = Math.min(ty, bbox_info.y - offset[1]*(scale-1) - self.bbox_zoom.y);
+                }
+
+                d3.event.transform.x = tx;
+                d3.event.transform.y = ty;
+
+                self.sels.containers.info_layer.attr("transform",
+                    'translate(' + [tx, ty] + ')scale(' + scale + ')');
             });
         this.sels.containers.svg.call(zoom);
 

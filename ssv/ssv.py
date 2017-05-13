@@ -32,16 +32,18 @@ class SSV:
     @staticmethod
     def from_json(json):
         try:
-            ssv = SSV.create_vis(json['x_series'], json['x_series_unit'], json['tree'], json['title'], json['font_size'])
-            for element_data in json['elemens']:
-                element = ssv.add_element(element_data['element_type'], element_data['element_ids'],
-                                element_data['element_description'], **element_data['kwargs'])
-                for condition_data in element['conditions']:
-                    element.add_condition(condition_data['condition_cls'], *condition_data['args'],
-                                          **condition_data['kwargs'])
+            ssv = SSV.create_vis(json['x_series'], json['x_series_unit'], ET.fromstring(json['tree']), json['title'], json['font_size'])
+            for element_data in json['elements']:
+                condition_data = element_data.pop('conditions')
+                element = ssv.add_element(element_data.pop('type'), element_data.pop('ids'),
+                                element_data.pop('description'), **element_data)
+                for condition in condition_data:
+                    element.add_condition(condition.pop('type'), **condition)
 
         except KeyError as e:
             raise KeyError("Missing attribute from json input: ", e)
+        except ET.ParseError as e:
+            raise ET.ParseError('Invalid SVG string: ', e)
 
         return ssv
 
@@ -66,7 +68,7 @@ class Vis:
     _supported_svg_attribs = ['viewBox', 'xmlns']
     _supported_svg = ['path', 'circle', 'rect', 'ellipse']
 
-    def __init__(self, x_series, x_series_unit, svg_filepath_or_json, title='My Simulation', font_size=12):
+    def __init__(self, x_series, x_series_unit, svg_filepath_or_tree, title='My Simulation', font_size=12):
         # Validate inputs
         if not isinstance(x_series_unit, str):
             raise TypeError('\'x_series_unit\' input must be a string.')
@@ -83,15 +85,15 @@ class Vis:
             raise ValueError('\'x_series\' input must be provided in an array-like numeric format')
 
         try:
-            if isinstance(svg_filepath_or_json, str):
-                tree = ET.parse(svg_filepath_or_json)
-            else:
-                tree = ET.parse(svg_filepath_or_json['tree'])
-
             ET.register_namespace('', self._svg_namespace)
-            svg_root = tree.getroot()
+            if isinstance(svg_filepath_or_tree, str):
+                svg_root = ET.parse(svg_filepath_or_tree).getroot()
+            else:
+                svg_root = ET.ElementTree(svg_filepath_or_tree).getroot()
+
+            print(svg_root)
             if not svg_root.tag == '{%s}svg' % self._svg_namespace:
-                raise ValueError('\'svg_file\' root element must be an svg.')
+                raise ValueError('svg root element must be an svg.')
 
             # Loop through svg attributes and remove everything but viewBox so svg scales properly
             attribs = list(svg_root.attrib.keys())

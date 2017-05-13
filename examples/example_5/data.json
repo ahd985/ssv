@@ -1,0 +1,26 @@
+{
+  "x_series": [0,1],
+  "x_series_unit": "S",
+  "tree": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 500 500\"><g transform=\"translate(440, 220)\"><g style=\"fill: grey; stroke: black; stroke-width: 1\"><g id=\"s7d416d60-446e-4f93-8b89-aa8adc081840\"> <rect x=\"0\" y=\"0\" rx=\"0\" ry=\"0\" height=\"100\" width=\"100\" id=\"element\"></rect></g></g></g></svg>",
+  "title": "My Sim",
+  "font_size": 12,
+  "elements": [
+    {
+      "conditions": [
+        {
+          "color_levels": [372.7401979757573,408.50419817952684,444.2681983832963],
+          "color_scale": ["#fdd49e","#fdbb84","#ffffff"],
+          "data": [300, 500],
+          "description": "Vapor Temp",
+          "opacity": 1,
+          "report": false,
+          "type": "background",
+          "unit": "K"
+        }
+      ],
+      "description": "Quench Tank",
+      "ids": ["s7d416d60-446e-4f93-8b89-aa8adc081840"],
+      "type": "cell"
+    }
+  ]
+}
