@@ -96,22 +96,22 @@ class Cell extends Element {
                     if (condition.type == 'background') {
                         // background represents a changing cell background color only
                         // always 100% of the element height
-                        prop_data.push(condition.data.map(function(d) {
+                        prop_data.push(condition.color_data.map(function(d) {
                             return [max_order, condition.color_scale(d), condition.opacity, overlay]
                         }));
                     } else if (condition.type == 'levelstatic') {
                         // level_static represents a changing level in a cell that does not change color
-                        prop_data.push(condition.data.map(function(d) {
+                        prop_data.push(condition.level_data.map(function(d) {
                             var order_val = (Math.min((d - condition.min_height) /
                                 (condition.max_height - condition.min_height)), 1);
                             return [order_val, condition.color, condition.opacity, overlay]
                         }));
                     } else if (condition.type == 'dynamiclevel') {
-                        // level_dynamic represents a changing level in a cell that changes color
-                        prop_data.push(condition.data.map(function(d, j) {
+                        // dynamic_level represents a changing level in a cell that changes color
+                        prop_data.push(condition.level_data.map(function(d, j) {
                             var order_val = Math.min((d - condition.min_height) /
                                 (condition.max_height - condition.min_height), 1);
-                            var color = condition.color_scale(condition.data_dynamic[j]);
+                            var color = condition.color_scale(condition.color_data[j]);
                             return [order_val, color, condition.opacity, overlay]
                         }));
                     } else if (condition.type == 'logical') {
@@ -126,11 +126,11 @@ class Cell extends Element {
                         // zonal_y represents a zonal model in the y direction
                         // number of zones dictated by len of 2nd axis
                         var prop_data_slice = [];
-                        prop_data_slice = prop_data_slice.concat(condition.data.map(function(arr, j) {
+                        prop_data_slice = prop_data_slice.concat(condition.level_data.map(function(arr, j) {
                             return arr.map(function(d, k) {
                                 var order_val = Math.min((d - condition.min_height) /
                                     (condition.max_height - condition.min_height), 1);
-                                var color = condition.color_scale(condition.data_dynamic[j][k]);
+                                var color = condition.color_scale(condition.color_data[j][k]);
                                 return [order_val, color, condition.opacity, overlay]
                             })
                         }));
@@ -173,7 +173,7 @@ class Line extends Element {
                         // equal_y represents an open path element with equally sized patterns along the y axis
                         // number of y regions dictated by len of 2nd axis
                         var prop_data_slice = [];
-                        var prop_data_slice = prop_data_slice.concat(condition.data.map(function(arr) {
+                        var prop_data_slice = prop_data_slice.concat(condition.color_data.map(function(arr) {
                             return arr.map(function(d, k) {
                                 var order_val = k / arr.length;
                                 var color = condition.color_scale(d);
@@ -200,14 +200,14 @@ class Line extends Element {
 // Wrapper class for generating heatmaps
 class Heatmap extends Element {
     initialize_hook() {
-        var data = this.conditions[0].data;
+        var color_data = this.conditions[0].color_data;
         var color_scale = this.conditions[0].color_scale;
         var opacity = this.opacity;
 
         var _heatmap = this;
         _heatmap.selectors.map(function(sel) {
             sel.each(function() {
-                _heatmap.update_functions.push(renderers.render_rect_heatmap(this, data, color_scale, opacity));
+                _heatmap.update_functions.push(renderers.render_rect_heatmap(this, color_data, color_scale, opacity));
             });
         })
     }
@@ -275,4 +275,14 @@ function create_element(uuid, data, font_scale) {
         data.popover, font_scale)
 }
 
-module.exports = create_element;
+function remove_element(uuid) {
+    d3.selectAll(`#${uuid} #element`)
+        .attr('style', null)
+    d3.selectAll(`#${uuid} defs`)
+        .remove()
+}
+
+module.exports = {
+    "create_element": create_element,
+    "remove_element": remove_element
+};
