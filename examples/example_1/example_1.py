@@ -171,11 +171,11 @@ def run():
 
     # Wire up svg elements
     tank = ssv_model.add_element('cell', 'tank-1', 'Quench Tank', report_id='tank-1-report')
-    tank.add_condition('background', description='Vapor Temp', unit='K', data=sim_data['temp'],
+    tank.add_condition('background', description='Vapor Temp', unit='K', color_data=sim_data['temp'],
                        color_scale=gas_color_scale,
                        color_levels=gas_color_levels)
-    tank.add_condition('dynamiclevel', description='Water Level', unit='m', data=sim_data['wtr_lvl'],
-                       data_dynamic=sim_data['temp'], color_scale=water_color_scale,
+    tank.add_condition('dynamiclevel', description='Water Level', unit='m', level_data=sim_data['wtr_lvl'],
+                       color_data=sim_data['temp'], color_scale=water_color_scale,
                        color_levels=water_color_levels,
                        max_height=10, description_dynamic='Water Temp', unit_dynamic='K', overlay='bubbles',
                        min_height=0)

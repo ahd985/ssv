@@ -222,8 +222,10 @@ class Controls {
                 d3.event.transform.x = tx;
                 d3.event.transform.y = ty;
 
-                self.sels.containers.info_layer.attr("transform",
-                    'translate(' + [tx, ty] + ')scale(' + scale + ')');
+                if (this.pan_zoom_enabled) {
+                    self.sels.containers.info_layer.attr("transform",
+                        'translate(' + [tx, ty] + ')scale(' + scale + ')');
+                }
             });
         this.sels.containers.svg.call(zoom);
 

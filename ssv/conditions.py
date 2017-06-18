@@ -71,16 +71,16 @@ class Background(Condition):
 
         Args:
             x_len (int): Length of x-series.
-            data (array): input data representing input values along x-series
+            color_data (array): input data representing input values along x-series that map to a color value
             color_scale (array): Data able to be cast as numeric by numpy to represent color scale
             color_levels (array): Data able to be cast as str by numpy to represent color levels
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
-    @type_check("data.float.1.1&x_len", "color_scale&color_levels")
-    def __init__(self, x_len, data, color_scale, color_levels, **kwargs):
+    @type_check("color_data.float.1.1&x_len", "color_scale&color_levels")
+    def __init__(self, x_len, color_data, color_scale, color_levels, **kwargs):
         super(Background, self).__init__(**kwargs)
-        self.data = data
+        self.color_data = color_data
         self.color_scale = color_scale
         self.color_levels = color_levels
 
@@ -93,16 +93,16 @@ class StaticLevel(Condition):
 
         Args:
             x_len (int): Length of x-series.
-            data (array): input data representing input values along x-series
+            level_data (array): input data representing input values along x-series that map to a level value
             color_scale (array): Data able to be cast as numeric by numpy to represent color scale
             color_levels (array): Data able to be cast as str by numpy to represent color levels
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
-    @type_check("data.float.1.1&x_len", "color_scale&color_levels", "min_height&max_height")
-    def __init__(self, x_len, data, color_scale, color_levels, min_height, max_height, **kwargs):
+    @type_check("level_data.float.1.1&x_len", "color_scale&color_levels", "min_height&max_height")
+    def __init__(self, x_len, level_data, color_scale, color_levels, min_height, max_height, **kwargs):
         super(StaticLevel, self).__init__(**kwargs)
-        self.data = data
+        self.level_data = level_data
         self.color_scale = color_scale
         self.color_levels = color_levels
         self.min_height = min_height
@@ -117,8 +117,8 @@ class DynamicLevel(Condition):
 
         Args:
             x_len (int): Length of x-series.
-            data (array): input data representing vertical extent of values along x-series
-            data_dynamic (array): input data representing dynamic color values along x-series
+            level_data (array): input data representing vertical extent of values along x-series
+            color_data (array): input data representing dynamic color values along x-series
             color_scale (array): Data able to be cast as numeric by numpy to represent color scale
             color_levels (array): Data able to be cast as str by numpy to represent color levels
             min_height (int, float): Value representing min cutoff data value for visualization
@@ -126,20 +126,20 @@ class DynamicLevel(Condition):
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
-    @type_check("data.float.1.1&x_len", "data_dynamic.float.1.1&x_len", "color_scale&color_levels",
+    @type_check("level_data.float.1.1&x_len", "color_data.float.1.1&x_len", "color_scale&color_levels",
                 "min_height&max_height")
-    def __init__(self, x_len, data, data_dynamic, color_scale, color_levels, min_height, max_height,
+    def __init__(self, x_len, level_data, color_data, color_scale, color_levels, min_height, max_height,
                  description_dynamic='', unit_dynamic='', **kwargs):
         super(DynamicLevel, self).__init__(**kwargs)
-        self.data = data
-        self.data_dynamic = data_dynamic
+        self.level_data = level_data
+        self.color_data = color_data
         self.color_scale = color_scale
         self.color_levels = color_levels
         self.min_height = min_height
         self.max_height = max_height
 
         if description_dynamic != '' or unit_dynamic != '':
-            self.additional_info = Condition.create('info', x_len, data_dynamic, description=description_dynamic,
+            self.additional_info = Condition.create('info', x_len, level_data, description=description_dynamic,
                                                     unit=unit_dynamic).dump_attr()
 
 
@@ -173,8 +173,8 @@ class ZonalY(Condition):
 
         Args:
             x_len (int): Length of x-series.
-            data (array): 2d input data representing vertical extent of values along x-series
-            data_dynamic (array): 2d input data representing dynamic color values along x-series
+            level_data (array): 2d input data representing vertical extent of values along x-series
+            color_data (array): 2d input data representing dynamic color values along x-series
             color_scale (array): Data able to be cast as numeric by numpy to represent color scale
             color_levels (array): Data able to be cast as str by numpy to represent color levels
             min_height (int, float): Value representing min cutoff data value for visualization
@@ -182,23 +182,23 @@ class ZonalY(Condition):
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
-    @type_check("data.float.2.2&x_len", "data_dynamic.float.2.2&x_len", "color_scale&color_levels",
+    @type_check("level_data.float.2.2&x_len", "color_data.float.2.2&x_len", "color_scale&color_levels",
                 "min_height&max_height")
-    def __init__(self, x_len, data, data_dynamic, color_scale, color_levels, min_height, max_height,
+    def __init__(self, x_len, level_data, color_data, color_scale, color_levels, min_height, max_height,
                  description_dynamic='', unit_dynamic='', **kwargs):
         super(ZonalY, self).__init__(**kwargs)
-        self.data = data
-        self.data_dynamic = data_dynamic
+        self.level_data = level_data
+        self.color_data = color_data
         self.color_scale = color_scale
         self.color_levels = color_levels
         self.min_height = min_height
         self.max_height = max_height
 
-        if len(self.data[0]) != len(self.data_dynamic[0]):
+        if len(self.level_data[0]) != len(self.color_data[0]):
             raise ValueError("length of data inputs must be equal")
 
         if description_dynamic != '' or unit_dynamic != '':
-            self.additional_info = Condition.create('info', x_len, data_dynamic, description=description_dynamic,
+            self.additional_info = Condition.create('info', x_len, level_data, description=description_dynamic,
                                                     unit=unit_dynamic).dump_attr()
 
 
@@ -211,16 +211,16 @@ class EqualY(Condition):
 
         Args:
             x_len (int): Length of x-series.
-            data (array): 2d input data representing dynamic color values along x-series
+            color_data (array): 2d input data representing dynamic color values along x-series map
             color_scale (array): Data able to be cast as numeric by numpy to represent color scale
             color_levels (array): Data able to be cast as str by numpy to represent color levels
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
-    @type_check("data.float.2.2&x_len", "color_scale&color_levels")
-    def __init__(self, x_len, data, color_scale, color_levels, **kwargs):
+    @type_check("color_data.float.2.2&x_len", "color_scale&color_levels")
+    def __init__(self, x_len, color_data, color_scale, color_levels, **kwargs):
         super(EqualY, self).__init__(**kwargs)
-        self.data = data
+        self.color_data = color_data
         self.color_scale = color_scale
         self.color_levels = color_levels
 
@@ -234,16 +234,16 @@ class Rect(Condition):
 
         Args:
             x_len (int): Length of x-series.
-            data (array): 3d input data representing heatmap data slices along x-series
+            color_data (array): 3d input data representing heatmap data slices along x-series that map to a color
             color_scale (array): Data able to be cast as numeric by numpy to represent color scale
             color_levels (array): Data able to be cast as str by numpy to represent color levels
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
-    @type_check("data.float.3.3&x_len", "color_scale&color_levels")
-    def __init__(self, x_len, data, color_scale, color_levels, **kwargs):
+    @type_check("color_data.float.3.3&x_len", "color_scale&color_levels")
+    def __init__(self, x_len, color_data, color_scale, color_levels, **kwargs):
         super(Rect, self).__init__(**kwargs)
-        self.data = data
+        self.color_data = color_data
         self.color_scale = color_scale
         self.color_levels = color_levels
 

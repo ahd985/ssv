@@ -124,7 +124,7 @@ class Cell(Element):
             x_series (int, float): X-series data for simulation (e.g., time series).
     """
 
-    _allowed_conditions = ['Info', 'Background', 'StaticLevel', 'DynamicLevel', 'Logical', 'ZonalY']
+    _allowed_conditions = ['Background', 'StaticLevel', 'DynamicLevel', 'ZonalY']
 
     def __init__(self, id, description, x_series, **kwargs):
         super(Cell, self).__init__(id, description, x_series, **kwargs)
@@ -139,9 +139,9 @@ class Cell(Element):
                               'unit': kwargs['unit_dynamic'] if 'unit_dynamic' in kwargs else '',
                               'report': True}
             if kwargs['type'] == 'level_dynamic':
-                kwargs_dynamic['data'] = kwargs['data_dynamic']
+                kwargs_dynamic['data'] = kwargs['color_data']
             elif kwargs['type'] == 'zonal_y':
-                kwargs_dynamic['data_2d'] = kwargs['data_dynamic_2d']
+                kwargs_dynamic['data'] = kwargs['color_data']
 
             condition_id = '%s_%s' % ('_'.join(self.ids), 'dynamic')
             condition = Condition(condition_id, **kwargs_dynamic)
@@ -211,7 +211,7 @@ class Toggle(Element):
             x_series (int, float): X-series data for simulation (e.g., time series).
     """
 
-    _allowed_conditions = ['Info', 'ShowHide']
+    _allowed_conditions = ['ShowHide', 'Logical']
     _max_conditions = 1
 
     def __init__(self, id, description, x_series, **kwargs):

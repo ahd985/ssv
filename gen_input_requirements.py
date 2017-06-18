@@ -47,7 +47,7 @@ for cls in elements.Element.__subclasses__():
 
 
 def gen():
-    return json.dumps(input_requirements)
+    return json.dumps(input_requirements).lower()
 
 if __name__ == '__main__':
     print(gen())

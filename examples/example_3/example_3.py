@@ -63,12 +63,12 @@ def run():
     core_color_levels = np.linspace(300,800,5)
 
     node = ssv_model.add_element('heatmap', 'core', 'Core')
-    node.add_condition('rect', description='Core Heatmap', unit='K', data=core_temp,
+    node.add_condition('rect', description='Core Heatmap', unit='K', color_data=core_temp,
                        color_scale=core_color_scale, color_levels=core_color_levels)
 
     # Use outer vertical rows of heatmap to represent temperature in vessel wall
     walls = ssv_model.add_element('line', ['wall-left', 'wall-right'], 'Vessel Wall')
-    walls.add_condition('equaly', description='Vessel Wall Temp', unit='K', data=core_temp[:,:,0],
+    walls.add_condition('equaly', description='Vessel Wall Temp', unit='K', color_data=core_temp[:,:,0],
                         color_scale=core_color_scale, color_levels=core_color_levels)
 
     # Track average and max core temperature

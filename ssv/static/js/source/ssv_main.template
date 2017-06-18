@@ -1,5 +1,5 @@
 var add_controls = require("./ssv_controls.js");
-var create_element = require("./ssv_elements.js");
+var element_lib = require("./ssv_elements.js");
 var generate_sels= require("./ssv_selectors.js");
 
 // Main class to generate contextual information of ssv setup
@@ -59,7 +59,7 @@ class ElementContext {
         var self = this;
         element_data.forEach(function(d) {
             setTimeout(function(){
-                self.elements.push(create_element(uuid, d, font_scale));
+                self.elements.push(element_lib.create_element(uuid, d, font_scale));
                 self.update_loading_progress(len);
             }, 0)
         });
@@ -97,7 +97,10 @@ module.exports = {
         element_contexts[uuid] = new ElementContext(uuid, ...args);
     },
     create_demo_element: function(uuid, element_data, font_size) {
-        return create_element(uuid, element_data, 1)
+        return element_lib.create_element(uuid, element_data, 1)
+    },
+    remove_demo_element: function(uuid) {
+        element_lib.remove_element(uuid)
     },
     get_type_requirements: function() {
         return {{{ type_requirements }}}

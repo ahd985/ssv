@@ -10,7 +10,7 @@
         {
           "color_levels": [372.7401979757573,408.50419817952684,444.2681983832963],
           "color_scale": ["#fdd49e","#fdbb84","#fc8d59"],
-          "data": [450, 500],
+          "color_data": [450, 500],
           "description": "Vapor Temp",
           "opacity": 1,
           "report": false,

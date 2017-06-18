@@ -71,7 +71,12 @@ function render_report(node, font_scale, data, description) {
             var condition = data[i];
 
             if ("report" in condition && condition.report) {
-                var condition_data=condition.data;
+                // Loop through possible data stores and choose highest priority store
+                // If multiple data stores exist, the lower priority stores may be reported
+                // in a separate proxy condition
+                var condition_data = condition.data ? condition.data :
+                    (condition.level_data ? condition.level_data : condition.color_data);
+
                 var data_j_len = 1;
                 if (condition_data[0].constructor === Array) {
                     data_j_len = condition_data[0].length

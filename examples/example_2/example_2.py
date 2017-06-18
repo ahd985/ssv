@@ -27,8 +27,8 @@ def run():
         data['Layer Height Upper, Comp %d' % i] = 3.0
         node = ssv_model.add_element('cell', 'node-%d' % i, 'Node %d' % i, report_id='node-%d-report' % i)
         node.add_condition('zonaly', description='Zone Heights', unit='m',
-                           data=data[['Layer Height, Comp %d' % i, 'Layer Height Upper, Comp %d' % i]],
-                           data_dynamic=data[
+                           level_data=data[['Layer Height, Comp %d' % i, 'Layer Height Upper, Comp %d' % i]],
+                           color_data=data[
                                ['Lower Layer Temperature, Comp %d' % i,
                                 'Upper Layer Temperature, Comp %d' % i]],
                            color_scale=gas_color_scale,

@@ -28,9 +28,12 @@ input_map = {
     "headers.str.1.1": validate_array,
     "data.float.1.2&x_len": validate_array,
     "data.float.1.1&x_len": validate_array,
-    "data_dynamic.float.1.1&x_len": validate_array,
+    "color_data.float.1.1&x_len": validate_array,
+    "level_data.float.1.1&x_len": validate_array,
     "data.float.2.2&x_len": validate_array,
-    "data_dynamic.float.2.2&x_len": validate_array,
+    "color_data.float.3.3&x_len": validate_array,
+    "color_data.float.2.2&x_len": validate_array,
+    "level_data.float.2.2&x_len": validate_array,
     "data.float.3.3&x_len": validate_array,
 }
 
