@@ -30,7 +30,8 @@ class Condition:
         raise ValueError('condition type \'%s\' is not a supported type.' % cls_name)
 
     @type_check()
-    def __init__(self, id='', description='', unit='', opacity=1.0, report=True, overlay='', section_label='Zone'):
+    def __init__(self, id='', description='', unit='', opacity=1.0, report=True, overlay='',
+                 section_label='Zone', **kwargs):
         self.id = id
         self.type = self.__class__.__name__.lower()
         self.description = description
@@ -78,7 +79,7 @@ class Background(Condition):
     """
 
     @type_check("color_data.float.1.1&x_len", "color_scale&color_levels")
-    def __init__(self, x_len, color_data, color_scale, color_levels, **kwargs):
+    def __init__(self, x_len, color_data, color_scale, color_levels, unit_description_prepend='color_data', **kwargs):
         super(Background, self).__init__(**kwargs)
         self.color_data = color_data
         self.color_scale = color_scale
@@ -100,7 +101,8 @@ class StaticLevel(Condition):
     """
 
     @type_check("level_data.float.1.1&x_len", "color_scale&color_levels", "min_height&max_height")
-    def __init__(self, x_len, level_data, color_scale, color_levels, min_height, max_height, **kwargs):
+    def __init__(self, x_len, level_data, color_scale, color_levels, min_height, max_height,
+                 unit_description_prepend='level_data',**kwargs):
         super(StaticLevel, self).__init__(**kwargs)
         self.level_data = level_data
         self.color_scale = color_scale
@@ -129,7 +131,7 @@ class DynamicLevel(Condition):
     @type_check("level_data.float.1.1&x_len", "color_data.float.1.1&x_len", "color_scale&color_levels",
                 "min_height&max_height")
     def __init__(self, x_len, level_data, color_data, color_scale, color_levels, min_height, max_height,
-                 description_dynamic='', unit_dynamic='', **kwargs):
+                 color_data_description='', color_data_unit='', unit_description_prepend='level_data', **kwargs):
         super(DynamicLevel, self).__init__(**kwargs)
         self.level_data = level_data
         self.color_data = color_data
@@ -138,9 +140,9 @@ class DynamicLevel(Condition):
         self.min_height = min_height
         self.max_height = max_height
 
-        if description_dynamic != '' or unit_dynamic != '':
-            self.additional_info = Condition.create('info', x_len, level_data, description=description_dynamic,
-                                                    unit=unit_dynamic).dump_attr()
+        if color_data_description != '' or color_data_unit != '':
+            self.additional_info = Condition.create('info', x_len, level_data, description=color_data_description,
+                                                    unit=color_data_unit).dump_attr()
 
 
 class Logical(Condition):
@@ -185,7 +187,7 @@ class ZonalY(Condition):
     @type_check("level_data.float.2.2&x_len", "color_data.float.2.2&x_len", "color_scale&color_levels",
                 "min_height&max_height")
     def __init__(self, x_len, level_data, color_data, color_scale, color_levels, min_height, max_height,
-                 description_dynamic='', unit_dynamic='', **kwargs):
+                 color_data_description='', color_data_unit='', unit_description_prepend='level_data', **kwargs):
         super(ZonalY, self).__init__(**kwargs)
         self.level_data = level_data
         self.color_data = color_data
@@ -197,9 +199,9 @@ class ZonalY(Condition):
         if len(self.level_data[0]) != len(self.color_data[0]):
             raise ValueError("length of data inputs must be equal")
 
-        if description_dynamic != '' or unit_dynamic != '':
-            self.additional_info = Condition.create('info', x_len, level_data, description=description_dynamic,
-                                                    unit=unit_dynamic).dump_attr()
+        if color_data_description != '' or color_data_unit != '':
+            self.additional_info = Condition.create('info', x_len, level_data, description=color_data_description,
+                                                    unit=color_data_unit).dump_attr()
 
 
 # Line-specific classes
@@ -218,7 +220,7 @@ class EqualY(Condition):
     """
 
     @type_check("color_data.float.2.2&x_len", "color_scale&color_levels")
-    def __init__(self, x_len, color_data, color_scale, color_levels, **kwargs):
+    def __init__(self, x_len, color_data, color_scale, color_levels, unit_description_prepend='color_data', **kwargs):
         super(EqualY, self).__init__(**kwargs)
         self.color_data = color_data
         self.color_scale = color_scale
@@ -241,7 +243,7 @@ class Rect(Condition):
     """
 
     @type_check("color_data.float.3.3&x_len", "color_scale&color_levels")
-    def __init__(self, x_len, color_data, color_scale, color_levels, **kwargs):
+    def __init__(self, x_len, color_data, color_scale, color_levels, unit_description_prepend='color_data', **kwargs):
         super(Rect, self).__init__(**kwargs)
         self.color_data = color_data
         self.color_scale = color_scale

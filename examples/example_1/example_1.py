@@ -177,7 +177,7 @@ def run():
     tank.add_condition('dynamiclevel', description='Water Level', unit='m', level_data=sim_data['wtr_lvl'],
                        color_data=sim_data['temp'], color_scale=water_color_scale,
                        color_levels=water_color_levels,
-                       max_height=10, description_dynamic='Water Temp', unit_dynamic='K', overlay='bubbles',
+                       max_height=10, color_data_description='Water Temp', color_data_unit='K', overlay='bubbles',
                        min_height=0)
     tank.add_condition('info', data=sim_data['press'], description='Press', unit='MPa')
     tank.add_popover("sparkline", sim_data['wtr_lvl'], label='Tank #1 Wtr Lvl')

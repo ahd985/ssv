@@ -33,7 +33,7 @@ def run():
                                 'Upper Layer Temperature, Comp %d' % i]],
                            color_scale=gas_color_scale,
                            color_levels=gas_color_levels,
-                           max_height=3, description_dynamic='Zone Temperatures', unit_dynamic='C',
+                           max_height=3, color_data_description='Zone Temperatures', color_data_unit='C',
                            min_height=0, section_label='Zone')
         node.add_condition('info', data=data[['Pressure, Comp %d' % i]], description='Pressure', unit='Pa')
 
