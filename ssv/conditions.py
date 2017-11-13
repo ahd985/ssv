@@ -100,13 +100,12 @@ class StaticLevel(Condition):
             **kwargs: arbitrary keyword arguments for Condition super class.
     """
 
-    @type_check("level_data.float.1.1&x_len", "color_scale&color_levels", "min_height&max_height")
-    def __init__(self, x_len, level_data, color_scale, color_levels, min_height, max_height,
+    @type_check("level_data.float.1.1&x_len", "min_height&max_height")
+    def __init__(self, x_len, level_data, color, min_height, max_height,
                  unit_description_prepend='level_data',**kwargs):
         super(StaticLevel, self).__init__(**kwargs)
         self.level_data = level_data
-        self.color_scale = color_scale
-        self.color_levels = color_levels
+        self.color = color
         self.min_height = min_height
         self.max_height = max_height
 

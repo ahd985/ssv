@@ -20,6 +20,7 @@ input_map = {
     "color_data_unit": str,
     "color_data_description": str,
     "unit_description_prepend": str,
+    "color": validate_color,
     "true_color": validate_color,
     "false_color": validate_color,
     "color_levels": validate_color_levels,
