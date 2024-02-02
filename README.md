@@ -8,10 +8,10 @@ http://ssv.readthedocs.io/en/latest/
 ## Instructions
 
 See examples for practical instructions.  Rendered examples can be viewed here:
-* [Example 1](http://htmlpreview.github.com/?https://github.com/ahd985/ssv/blob/master/examples/example_1/example_1.html)
-* [Example 2](http://htmlpreview.github.com/?https://github.com/ahd985/ssv/blob/master/examples/example_2/example_2.html)
-* [Example 3](http://htmlpreview.github.com/?https://github.com/ahd985/ssv/blob/master/examples/example_3/example_3.html)
-* [Example 4](http://htmlpreview.github.com/?https://github.com/ahd985/ssv/blob/master/examples/example_4/example_4.html)
+* [Example 1](http://htmlpreview.github.io/?https://github.com/ahd985/ssv/blob/master/examples/example_1/example_1.html)
+* [Example 2](http://htmlpreview.github.io/?https://github.com/ahd985/ssv/blob/master/examples/example_2/example_2.html)
+* [Example 3](http://htmlpreview.github.io/?https://github.com/ahd985/ssv/blob/master/examples/example_3/example_3.html)
+* [Example 4](http://htmlpreview.github.io/?https://github.com/ahd985/ssv/blob/master/examples/example_4/example_4.html)
 
 ## Future Enhancements
 * Better documentation and more examples
